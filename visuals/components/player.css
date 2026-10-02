@@ -1,0 +1,43 @@
+.{{PREFIX}}{--ink:#172b43;--muted:#586e85;--line:#dce5ef;--blue:#326cce;--soft:#edf4ff;--amber:#98601b;--green:#277657;--red:#ad3947;--duration:{{DURATION}}s;--repeat:{{REPEAT}};display:block;position:relative;container-type:inline-size;width:100%;max-width:1080px;margin:16px auto;color:var(--ink);background:#fff;font:14px/1.65 "Malgun Gothic","Apple SD Gothic Neo",sans-serif;text-align:left;isolation:isolate}
+.{{PREFIX}} *{box-sizing:border-box}
+.{{PREFIX}} .ca-card{border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.{{PREFIX}} h3,.{{PREFIX}} h4,.{{PREFIX}} p{margin:0;padding:0;color:inherit}
+.{{PREFIX}} .ca-head{padding:22px 24px 14px}
+.{{PREFIX}} h3{font-size:21px;line-height:1.45;letter-spacing:-.5px}
+.{{PREFIX}} .ca-description{color:var(--muted);font-size:13px;margin-top:6px}
+.{{PREFIX}} .ca-meta{font-size:11px;color:var(--muted);margin-bottom:6px}
+.{{PREFIX}} .ca-state{position:absolute;width:1px;height:1px;padding:0;margin:-1px;clip:rect(0,0,0,0);clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+.{{PREFIX}} .ca-tools{display:flex;gap:8px;flex-wrap:wrap;padding:0 24px 16px}
+.{{PREFIX}} .ca-tools label{display:inline-flex;align-items:center;min-height:42px;padding:7px 13px;border:1px solid #cddbeb;border-radius:8px;cursor:pointer;background:#fff;font-size:12px;color:#2d4b6b}
+.{{PREFIX}} .ca-tools label:hover{background:var(--soft)}
+.{{PREFIX}} .ca-pause:focus-visible~.ca-tools .ca-pause-label,.{{PREFIX}} .ca-replay:focus-visible~.ca-tools .ca-replay-label,.{{PREFIX}} .ca-still:focus-visible~.ca-tools .ca-still-label{outline:3px solid #81a7dd;outline-offset:2px}
+.{{PREFIX}} .ca-pause:checked~.ca-tools .ca-pause-label,.{{PREFIX}} .ca-still:checked~.ca-tools .ca-still-label{background:var(--soft);border-color:#6d96ce}
+.{{PREFIX}} .ca-stage{padding:0 24px 22px}
+.{{PREFIX}} .ca-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:14px}
+.{{PREFIX}} .ca-pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:18px}
+.{{PREFIX}} .ca-node,.{{PREFIX}} .ca-panel{padding:16px;border:1px solid var(--line);border-radius:12px;background:#f7f9fc;min-width:0;overflow-wrap:anywhere}
+.{{PREFIX}} .ca-node h4{font-size:15px;line-height:1.5;margin-bottom:5px}
+.{{PREFIX}} .ca-node p{font-size:12px;color:var(--muted)}
+.{{PREFIX}} .ca-status{display:block;margin-top:10px;font-size:11px;font-weight:700}
+.{{PREFIX}} .ca-tag{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.{{PREFIX}} .ca-link{padding:8px 0;text-align:center;color:var(--muted);font-size:12px}
+.{{PREFIX}} .ca-callout{margin-top:14px;padding:12px 15px;border-left:3px solid #6b8dbe;background:var(--soft);border-radius:3px 9px 9px 3px;font-size:13px}
+.{{PREFIX}} .ca-metrics{display:flex;flex-wrap:wrap;gap:10px 20px;font-size:12px;margin-top:12px;font-variant-numeric:tabular-nums}
+.{{PREFIX}} .ca-chart{display:block;width:100%;height:auto;background:#f7f9fc;border-radius:12px}
+.{{PREFIX}} .ca-chart text{font-family:inherit;font-size:16px;fill:#536b83}
+.{{PREFIX}} .ca-chart .ca-axis{stroke:#d9e3ee;stroke-width:1}
+.{{PREFIX}} .ca-trace{fill:none;stroke:#326cce;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0}
+.{{PREFIX}} .ca-bar{fill:#5c84c6;transform-box:fill-box;transform-origin:center bottom;transform:scaleY(1)}
+.{{PREFIX}} .ca-caption{margin-top:16px;padding-top:13px;border-top:1px solid var(--line);font-size:13px}
+.{{PREFIX}} .ca-provenance{font-size:11px;color:var(--muted);margin-top:7px;overflow-wrap:anywhere}
+.{{PREFIX}} details{margin-top:12px;font-size:12px}
+.{{PREFIX}} summary{cursor:pointer;min-height:32px;color:#345b8a}
+.{{PREFIX}} table{border-collapse:collapse;width:100%;font-size:12px;margin-top:8px}
+.{{PREFIX}} th,.{{PREFIX}} td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;overflow-wrap:anywhere}
+.{{PREFIX}} .ca-anim{animation-name:var(--a);animation-duration:var(--duration);animation-timing-function:linear;animation-iteration-count:var(--repeat);animation-fill-mode:both}
+.{{PREFIX}} .ca-replay:checked~.ca-stage .ca-anim{animation-name:var(--b)}
+.{{PREFIX}} .ca-pause:checked~.ca-stage .ca-anim{animation-play-state:paused!important}
+.{{PREFIX}} .ca-still:checked~.ca-stage .ca-anim{animation:none!important}
+@container (max-width:460px){.{{PREFIX}} .ca-head{padding:18px 16px 12px}.{{PREFIX}} .ca-tools{padding:0 16px 14px}.{{PREFIX}} .ca-stage{padding:0 16px 18px}.{{PREFIX}} h3{font-size:18px}}
+@media (prefers-reduced-motion:reduce){.{{PREFIX}} .ca-anim{animation:none!important}.{{PREFIX}} .ca-tools,.{{PREFIX}} .ca-state{display:none!important}}
+@media print{.{{PREFIX}} .ca-anim{animation:none!important}.{{PREFIX}} .ca-tools,.{{PREFIX}} .ca-state{display:none!important}.{{PREFIX}}{max-width:none}.{{PREFIX}} .ca-card{break-inside:avoid}.{{PREFIX}} details>*{display:block!important}}

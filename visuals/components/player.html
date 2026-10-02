@@ -1,0 +1,12 @@
+<style>{{CSS}}
+{{ANIMATION_CSS}}</style>
+<section class="{{PREFIX}}" data-ca-prefix="{{PREFIX}}" data-ca-pattern="{{PATTERN}}" lang="ko" aria-labelledby="{{PREFIX}}-heading">
+<div class="ca-card">
+<header class="ca-head"><p class="ca-meta">{{MODE_LABEL}} · {{DURATION}}초 설명 연출 · 실제 소요 시간과 무관</p><h3 id="{{PREFIX}}-heading">{{TITLE}}</h3><p class="ca-description">{{DESCRIPTION}}</p></header>
+<input class="ca-state ca-pause" type="checkbox" id="{{PREFIX}}-pause" aria-label="애니메이션 일시정지 또는 계속 재생">
+<input class="ca-state ca-replay" type="checkbox" id="{{PREFIX}}-replay" aria-label="처음으로 되돌리기; 정지 상태이면 계속 재생도 선택">
+<input class="ca-state ca-still" type="checkbox" id="{{PREFIX}}-still" aria-label="전체 장면 보기 또는 애니메이션으로 복귀">
+<div class="ca-tools"><label class="ca-pause-label" for="{{PREFIX}}-pause">일시정지 / 계속</label><label class="ca-replay-label" for="{{PREFIX}}-replay">처음으로</label><label class="ca-still-label" for="{{PREFIX}}-still">전체 장면</label></div>
+<div class="ca-stage">{{SCENE}}<p class="ca-caption">{{CAPTION}}</p><p class="ca-provenance">{{MODE_LABEL}} · {{PROVENANCE}}</p>{{DATA_TABLE}}</div>
+</div>
+</section>

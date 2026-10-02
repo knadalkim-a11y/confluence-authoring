@@ -1,123 +1,103 @@
-# Confluence Authoring Skill
+---
+name: confluence-authoring
+description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
+compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
+metadata:
+  version: "0.2.0"
+---
 
-## Purpose
+# Confluence Authoring
 
-Use this repository as a reusable authoring system when the user wants to create, edit, restructure, explain, summarize, or publish information in Confluence.
+This is a general authoring system, not a weekly-report form or an animation-only skill.
+The user's purpose determines the structure. Reuse recipes as guidance, not mandatory headings.
 
-This is not a single document template. Choose the document structure and visual treatment from the user's purpose and source material.
+## Start
 
-## Start here
+1. Identify audience, purpose, source material, and requested destination/action.
+2. Retrieve relevant source evidence. A repository is not permanently loaded memory;
+   read the selected revision before claiming to use it. Pin the revision for the task.
+3. For an existing Confluence page, read its current content and version before editing.
+4. Read `references/authoring-principles.md` and only the necessary recipe.
+5. Choose prose, table, callout, static diagram, or motion according to meaning.
+6. Generate content; verify facts, states and preservation before any requested write.
+7. Only publish/update when the user requests it and the connector actually supports it.
+   Read the saved page back. Distinguish content-save verification from browser rendering.
 
-1. Understand the user's actual deliverable.
-2. Identify the source of truth: current conversation, supplied files, code, issue tracker, existing Confluence page, or other explicitly available source.
-3. If an existing Confluence page will be edited, read it before writing.
-4. Read only the recipe and references needed for the task.
-5. Use motion only when movement explains something that static content would explain poorly.
-6. If the user explicitly asks to record/update/publish in Confluence and a write tool is available, perform the write and then read back the result.
-7. Report what was changed, what evidence was used, and what was not verified.
+## Source and edit rules
 
-## Source-of-truth rules
+- Never convert planned work into completed, tested, approved or deployed work.
+- Do not invent measurements, dates, owners, causes, improvements or access rights.
+- Preserve uncertainty and separate facts, interpretation, proposals and examples.
+- Keep changes to the smallest appropriate section. Preserve unrelated text, links,
+  attachments, macros, IDs, anchors, layout and user edits.
+- Re-read before writing when concurrent edits are possible. Use the current version
+  supported by the tool. On conflict, reconcile; do not blindly overwrite the page.
+- Do not create a replacement page or change sharing to make editing easier.
+- A content request does not authorize changing this library, repository permissions,
+  Confluence configuration, or authentication. Never store PATs, cookies or real internal
+  content in this public reference repository.
 
-- Never turn an intention into a completed result.
-- Distinguish planned / in progress / completed / blocked / unknown.
-- Do not invent dates, metrics, owners, causes, or outcomes.
-- When a value is illustrative, label it as illustrative.
-- Preserve uncertainty when the source is uncertain.
-- Prefer primary project material over recollection when both are available.
+## Flexible recipes
 
-## Existing-page editing
+Read the closest relevant file under `recipes/`:
 
-When editing an existing page:
+| Purpose | Recipe |
+|---|---|
+| Periodic agenda or work notes | weekly-report.md |
+| Milestones, risks, present state | project-status.md |
+| Behavior, design, contracts | technical-design.md |
+| Components and interactions | architecture-explanation.md |
+| Symptoms, evidence, recovery | incident-analysis.md |
+| Executable implementation direction | implementation-handoff.md |
+| Alternatives or before/after | comparison.md |
+| Learning a concept or procedure | tutorial.md |
 
-1. Read the current page.
-2. Identify the smallest section that should change.
-3. Preserve unrelated text, links, attachments, images, macros, anchors, and page structure.
-4. Reuse the page's terminology unless the user explicitly requests terminology changes.
-5. Avoid creating a replacement page merely because rewriting is easier.
-6. Read the saved page after the change and compare the intended section.
+Compose a purpose-specific structure when none fits. Do not force a weekly-report
+layout onto a technical explanation, tutorial, comparison or discussion record.
 
-## Recipe selection
+## Visual selection
 
-Use the closest recipe under `recipes/` as guidance, not as a rigid form.
+Use text for nuance; tables for repeated comparable dimensions; static diagrams for
+stable structure. Motion is optional: select it only for progression, accumulation,
+transfer, branching, propagation or staged interpretation that benefits from movement.
+Keep ordinary updates static. Read `references/visual-guidelines.md` for visual tone.
 
-- weekly-report.md — periodic work notes, weekly agenda, short reporting
-- project-status.md — status, milestones, risks, next actions
-- technical-design.md — decisions, contracts, behavior, constraints
-- architecture-explanation.md — components and interactions
-- incident-analysis.md — symptoms, timeline, evidence, cause, recovery
-- implementation-handoff.md — executable implementation instructions
-- comparison.md — current vs proposed, option A vs B
-- tutorial.md — concept teaching and step-by-step learning
+When motion helps:
 
-If no recipe fits, compose a purpose-specific structure using `references/authoring-principles.md`.
+1. Read the compact `references/motion-index.md`, not all HTML files.
+2. Consult the selected entry in `references/motion-catalog.yaml` for fit and limits.
+   Entries marked `planned` are not implemented patterns.
+3. Read `references/motion-inputs.md`, the selected scene in `visuals/motion/`, and
+   the matching object in `examples/motion-inputs.json` only as an illustrative example.
+4. Supply a structured input with provenance. Use `scripts/render_motion.py` to
+   compute geometry and assemble the shared player. Never change only chart labels.
+5. Generate a unique prefix per block. The same output must not be pasted twice on
+   one page. The renderer generates a random prefix by default.
+6. Run `scripts/validate_html_macro.py` on the rendered fragment and on the combined
+   macros where possible. A standalone preview uses a different wrapper from a macro.
+7. Verify a readable static final state, controls, narrow layout and reduced motion.
+8. Distinguish local browser results from actual target Confluence rendering.
 
-## Representation selection
+If execution is unavailable, use a sourced static representation or clearly state
+which generation/validation steps were not run. Never paste an unassembled scene
+with template slots into Confluence or claim that a visual was verified from text alone.
 
-Choose the simplest representation that preserves meaning.
+## Runtime and publishing
 
-- prose: reasoning, context, nuanced explanation
-- bullets: short independent facts
-- table: repeated dimensions across comparable items
-- callout: warning, decision, assumption, important constraint
-- static diagram: structure or relationship that does not depend on time
-- motion: progression, accumulation, transfer, transition, bottleneck, cause propagation
+Read `references/confluence-rules.md`. The default rendered macro is self-contained
+HTML + CSS + inline SVG; no JavaScript, iframe, remote font, CDN or external request.
+Shared source files are bundled into each output; Confluence does not fetch them.
+The gallery may use JavaScript for search/selection, but macro code does not.
+The default animation plays once and retains the final state; replay is user controlled.
 
-Do not add motion merely to make a page look more dynamic.
+HTML macro availability is environment-specific. An enabled macro does not prove
+that every SVG/CSS/input element survives sanitization. Do not change server security
+settings. When publishing is unsupported, return the draft and fragment rather than
+claiming a successful edit.
 
-## Motion workflow
+## Completion report
 
-When motion is useful:
-
-1. Read `references/motion-catalog.yaml`.
-2. Select an implemented pattern whose `best_for` matches the explanation.
-3. Read that pattern only.
-4. Replace example labels and values with sourced content.
-5. Use a unique alphanumeric prefix for every motion block on the page.
-6. Keep a readable static final state.
-7. Label synthetic or illustrative values.
-8. Validate the rendered fragment with `scripts/validate_html_macro.py`.
-9. If possible, verify the published Confluence page separately.
-
-If only a planned pattern matches, use a static representation or explicitly create and register a new pattern. Never pretend a planned pattern already exists.
-
-## Confluence HTML macro baseline
-
-Read `references/confluence-rules.md` before generating HTML.
-
-Default implementation profile:
-- fragment only; no html/head/body wrapper
-- CSS + SVG + semantic HTML
-- no external network dependency
-- no iframe
-- no JavaScript unless the target environment is explicitly verified to allow it and it is materially necessary
-- selectors, IDs, and keyframes scoped by a unique prefix
-- responsive layout
-- prefers-reduced-motion fallback
-- print/static fallback
-- explanatory text remains understandable without motion
-
-## Visual style
-
-Read `references/visual-guidelines.md`.
-
-Default tone is technical, restrained, and readable. Motion directs attention; it does not decorate.
-
-## Validation checklist
-
-Before considering authoring complete:
-
-- Content: important claims are supported by supplied or retrieved evidence.
-- State: planned/in-progress/completed are not conflated.
-- Structure: headings and hierarchy match the purpose.
-- Preservation: unrelated existing page content was not damaged.
-- Motion: selected only when useful; example data is labeled.
-- HTML: no global CSS, unresolved template token, external dependency, duplicate prefix, or wrapper.
-- Accessibility: static final state and reduced-motion behavior exist.
-- Publishing: if a write was requested, saved content was read back.
-- Verification: browser preview and actual Confluence verification are reported separately.
-
-## Output report
-
-For substantial edits, end with a compact report containing target page/draft, recipe used, visual patterns used, important source material, sections changed, validation performed, and remaining unverified items.
-
-Do not expose secrets in the report.
+For substantial edits, report the target page/draft, source revision, recipe and patterns,
+sections changed, generation/validation performed, and unverified aspects. Sources and
+computed data must support visible conclusions. Do not expose credentials or claim
+installed-skill activation just because SKILL.md exists in a GitHub repository.

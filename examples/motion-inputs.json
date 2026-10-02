@@ -1,0 +1,334 @@
+{
+  "line-reveal": {
+    "title": "변화는 어디서 시작될까",
+    "description": "관측을 순서대로 그린 뒤, 입력한 관심 지점을 강조합니다.",
+    "caption": "값의 증가를 보여주는 예시입니다. 변화 원인은 그래프만으로 판단하지 않습니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "series": [
+      90,
+      95,
+      92,
+      100,
+      110,
+      160,
+      280,
+      410,
+      550,
+      640,
+      720
+    ],
+    "unit": "ms",
+    "x_label": "관측 순서",
+    "change_index": 5
+  },
+  "threshold-cross": {
+    "title": "기준을 넘는 첫 순간",
+    "description": "그래프와 함께 기준선을 표시하고 첫 초과 관측을 강조합니다.",
+    "caption": "이 예시에서 70을 처음 초과하는 값은 다섯 번째 관측의 76입니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "series": [
+      38,
+      43,
+      55,
+      62,
+      76,
+      84,
+      81,
+      88
+    ],
+    "unit": "%",
+    "x_label": "관측 순서",
+    "threshold": 70
+  },
+  "recovery": {
+    "title": "발생부터 회복까지",
+    "description": "입력된 발생·회복 시점을 지표 변화와 함께 확인합니다.",
+    "caption": "발생 지점과 회복 지점은 입력값입니다. 이 도구는 장애 원인이나 복구 성공을 자동 판정하지 않습니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "series": [
+      100,
+      105,
+      110,
+      250,
+      650,
+      780,
+      710,
+      420,
+      190,
+      110,
+      105
+    ],
+    "unit": "ms",
+    "x_label": "관측 순서",
+    "incident_index": 3,
+    "recovery_index": 9
+  },
+  "distribution-percentile": {
+    "title": "같은 요약값, 다른 관측들",
+    "description": "분포를 먼저 보여주고, 계산한 평균과 P95를 뒤이어 표시합니다.",
+    "caption": "가상 관측 100건에서 평균은 100 ms, P95는 550 ms입니다. 평균만으로 긴 지연을 설명하기 어렵습니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "values": [
+      50,
+      550
+    ],
+    "counts": [
+      90,
+      10
+    ],
+    "unit": "ms"
+  },
+  "sequential-flow": {
+    "title": "단계별로 업무 이해하기",
+    "description": "진행 순서와 최종 시나리오 상태를 분리해 보여줍니다.",
+    "caption": "마지막 검토 단계는 대기입니다. 화면의 움직임이 실제 도구 실행이나 승인 완료를 의미하지 않습니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "steps": [
+      {
+        "title": "업무 선택",
+        "detail": "대상과 필요한 입력 확인",
+        "state": "done"
+      },
+      {
+        "title": "자료 조회",
+        "detail": "연결된 도구로 근거 조회",
+        "state": "done"
+      },
+      {
+        "title": "기준 검증",
+        "detail": "결과와 완료 조건 비교",
+        "state": "done"
+      },
+      {
+        "title": "담당자 검토",
+        "detail": "근거를 읽고 판단",
+        "state": "waiting"
+      }
+    ]
+  },
+  "before-after": {
+    "title": "절차가 어떻게 달라졌을까",
+    "description": "변경 전과 후를 같은 화면에서 비교합니다.",
+    "caption": "단계 구성의 차이만 표현합니다. 처리 시간이나 절감률은 별도 측정이 필요합니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "before": [
+      {
+        "title": "찾기",
+        "detail": "자료 위치를 각각 확인",
+        "state": "neutral"
+      },
+      {
+        "title": "복사",
+        "detail": "내용을 문서로 이동",
+        "state": "neutral"
+      },
+      {
+        "title": "대조",
+        "detail": "누락과 일치 여부 확인",
+        "state": "neutral"
+      }
+    ],
+    "after": [
+      {
+        "title": "조회·대조",
+        "detail": "연결된 절차로 묶어 수행",
+        "state": "neutral"
+      },
+      {
+        "title": "검토",
+        "detail": "근거를 보고 사람이 판단",
+        "state": "neutral"
+      }
+    ]
+  },
+  "parallel-flow": {
+    "title": "동시에 시작하고, 함께 합류",
+    "description": "두 경로는 동시에 진행되고 합류는 두 경로 이후에 표시됩니다.",
+    "caption": "세로 화면에서도 A와 B는 병렬 경로입니다. 실제 작업 시간을 표현하는 타임라인은 아닙니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "start": {
+      "title": "준비",
+      "detail": "공통 입력 확인",
+      "state": "done"
+    },
+    "left": [
+      {
+        "title": "자료 A 조회",
+        "detail": "첫 번째 독립 작업",
+        "state": "done"
+      },
+      {
+        "title": "A 검증",
+        "detail": "첫 경로 검증",
+        "state": "done"
+      }
+    ],
+    "right": [
+      {
+        "title": "자료 B 조회",
+        "detail": "두 번째 독립 작업",
+        "state": "done"
+      },
+      {
+        "title": "B 검증",
+        "detail": "둘째 경로 검증",
+        "state": "done"
+      }
+    ],
+    "join": {
+      "title": "결과 합류",
+      "detail": "두 결과를 모아 검토",
+      "state": "waiting"
+    }
+  },
+  "branch-flow": {
+    "title": "조건에 따라 달라지는 경로",
+    "description": "여러 후보 경로 중 입력에 지정된 한 경로를 강조합니다.",
+    "caption": "조건 판정을 수행하는 실행기가 아니라, 선택 결과를 설명하는 예시입니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "decision": "추가 검토가 필요한가?",
+    "routes": [
+      "일반 확인 후 진행",
+      "담당자 추가 검토"
+    ],
+    "selected": 1
+  },
+  "approval-gate": {
+    "title": "자동화가 멈추는 지점",
+    "description": "준비와 검증 뒤에는 사람의 판단이 남아 있습니다.",
+    "caption": "검토 대기는 자동으로 통과하지 않습니다. 실제 승인 기능과 연출용 재생 버튼을 구분합니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "steps": [
+      {
+        "title": "입력 확인",
+        "detail": "실행 조건 준비",
+        "state": "done"
+      },
+      {
+        "title": "자동 검증",
+        "detail": "검증 근거 정리",
+        "state": "done"
+      }
+    ],
+    "reviewer": "담당자 승인 대기",
+    "gate": "담당자가 근거를 검토하기 전에는 다음 단계로 이동하지 않습니다."
+  },
+  "retry-loop": {
+    "title": "실패 뒤에도 무한 반복하지 않기",
+    "description": "실패한 시도와 다음 시도를 구분하고 지정된 횟수에서 끝냅니다.",
+    "caption": "이 예시에서는 두 번 실패한 뒤 세 번째 시도에서 완료됩니다. 실제 재시도 정책은 본문 근거를 따릅니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "attempts": [
+      {
+        "title": "첫 번째 시도",
+        "detail": "연결 실패",
+        "state": "error"
+      },
+      {
+        "title": "두 번째 시도",
+        "detail": "연결 실패",
+        "state": "error"
+      },
+      {
+        "title": "세 번째 시도",
+        "detail": "결과 확인",
+        "state": "done"
+      }
+    ]
+  },
+  "request-response": {
+    "title": "요청과 응답은 반대 방향",
+    "description": "위쪽은 요청, 아래쪽은 응답이 이동합니다.",
+    "caption": "점의 이동은 통신 방향을 설명하기 위한 연출입니다. 실제 네트워크 지연·패킷 수와 무관합니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "client": "요청자",
+    "server": "조회 서비스",
+    "request": "필요한 자료 요청",
+    "response": "조회 결과 반환"
+  },
+  "queue-buildup": {
+    "title": "처리량보다 유입량이 많아지면",
+    "description": "각 구간의 실제 처리량과 잔여 대기량을 계산합니다.",
+    "caption": "유입이 처리 한도를 초과하면 대기가 쌓입니다. 마지막 구간에는 처리 한도가 높아져 대기가 감소합니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "arrivals": [
+      3,
+      5,
+      8,
+      9,
+      9,
+      3
+    ],
+    "capacity": [
+      4,
+      4,
+      4,
+      4,
+      4,
+      9
+    ],
+    "initial": 0
+  },
+  "failure-propagation": {
+    "title": "한 지점의 문제가 다른 곳에 미치는 영향",
+    "description": "입력에 기술된 원인에서 영향으로 순서대로 강조합니다.",
+    "caption": "합성 인과 시나리오입니다. 실제 사고 분석에서는 각 연결을 로그나 측정 자료로 뒷받침해야 합니다.",
+    "provenance": "합성 예시입니다. 실제 운영 지표·제품 동작·승인·성과를 나타내지 않습니다.",
+    "data_mode": "illustrative",
+    "duration": 14,
+    "repeat": 1,
+    "components": [
+      {
+        "title": "저장소 지연",
+        "detail": "응답 지연 발생",
+        "state": "error"
+      },
+      {
+        "title": "조회 단계 지연",
+        "detail": "대기 시간이 증가",
+        "state": "error"
+      },
+      {
+        "title": "사용자 요청 실패",
+        "detail": "시간 제한을 초과",
+        "state": "error"
+      }
+    ]
+  }
+}

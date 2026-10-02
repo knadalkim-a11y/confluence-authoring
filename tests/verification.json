@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "checked_at": "2026-10-02T02:35:06.707285+00:00",
+  "baseline_commit": "c41445a6167f0d8194133e6115a1fb1f2d33fde0",
+  "python": "3.13.5",
+  "playwright": "1.57.0",
+  "commands": [
+    {
+      "command": "python -m compileall -q scripts tests",
+      "exit_code": 0
+    },
+    {
+      "command": "python -m unittest discover -s tests -v",
+      "exit_code": 0,
+      "test_methods": 20
+    },
+    {
+      "command": "python scripts/build_gallery.py",
+      "exit_code": 0,
+      "implemented_patterns": 13
+    },
+    {
+      "command": "python tests/browser_smoke.py",
+      "exit_code": 0,
+      "pattern_cases": 13,
+      "report": "tests/browser-report.json"
+    }
+  ],
+  "source_fingerprint_sha256": "a898576a538e332108a40b885e6cc344b8133c3e3df66d5de1d33d9e20adf1fe",
+  "fingerprint_rule": "For each source path sorted lexicographically: relative POSIX path UTF-8 + NUL + file bytes + NUL; concatenate and SHA-256. Paths listed below.",
+  "source_paths": [
+    "examples/motion-inputs.json",
+    "gallery/index.html",
+    "references/motion-catalog.yaml",
+    "scripts/build_gallery.py",
+    "scripts/motion.py",
+    "scripts/render_motion.py",
+    "scripts/render_template.py",
+    "scripts/validate_html_macro.py",
+    "tests/browser_smoke.py",
+    "tests/test_motion.py",
+    "visuals/components/player.css",
+    "visuals/components/player.html",
+    "visuals/motion/approval-gate.html",
+    "visuals/motion/before-after.html",
+    "visuals/motion/branch-flow.html",
+    "visuals/motion/distribution-percentile.html",
+    "visuals/motion/failure-propagation.html",
+    "visuals/motion/line-reveal.html",
+    "visuals/motion/parallel-flow.html",
+    "visuals/motion/queue-buildup.html",
+    "visuals/motion/recovery.html",
+    "visuals/motion/request-response.html",
+    "visuals/motion/retry-loop.html",
+    "visuals/motion/sequential-flow.html",
+    "visuals/motion/threshold-cross.html"
+  ],
+  "manual_visual_review": "wide and 390px screenshots for all 13 patterns; gallery wide and narrow",
+  "confluence": "not-verified; no page written",
+  "github_actions": "not-configured",
+  "outbound_git_clone": "failed: Could not resolve host: github.com; authorized connector used instead"
+}

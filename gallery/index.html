@@ -1,68 +1,15 @@
 <!doctype html>
 <html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Confluence Authoring Motion Gallery</title>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Confluence Authoring · Motion Library</title>
 <style>
-:root{--ink:#172b43;--muted:#617287;--line:#dfe6ef;--blue:#326cce;--amber:#b66c22;--purple:#7951b0;--green:#277657}
-*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans CJK KR",sans-serif;line-height:1.6}
-main{max-width:1120px;margin:0 auto;padding:44px 22px 72px}.intro{margin-bottom:28px}.intro h1{margin:0 0 8px;font-size:30px}.intro p{margin:0;color:var(--muted)}
-.grid{display:grid;gap:22px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}.head{padding:22px 24px 14px}.head h2{font-size:20px;margin:0}.head p{font-size:13px;color:var(--muted);margin:6px 0 0}.meta{font-size:11px;color:var(--blue);font-weight:700;letter-spacing:.5px}
-.stage{padding:0 24px 24px}.panel{background:#f8fafc;border:1px solid #e7edf4;border-radius:12px;padding:16px}
-svg{display:block;width:100%;height:auto}.gridline{stroke:#dfe7f0;stroke-width:1}
-.trace{fill:none;stroke:var(--blue);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:760;animation:draw 10s linear infinite}.focus{animation:focus 10s linear infinite}
-@keyframes draw{0%,6%{stroke-dashoffset:760}68%,96%{stroke-dashoffset:0}100%{stroke-dashoffset:760}}@keyframes focus{0%,48%{opacity:0}56%,96%{opacity:1}100%{opacity:0}}
-.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.node{position:relative;min-height:110px;padding:14px;border:1px solid #dce4ee;border-radius:11px;background:#f8fafc}.node:after{content:"";position:absolute;right:-15px;top:34px;width:14px;height:1px;background:#bbc9d9}.node:last-child:after{display:none}.node b{display:block;margin-bottom:4px}.node small{color:var(--muted)}.n1{animation:n1 12s linear infinite}.n2{animation:n2 12s linear infinite}.n3{animation:n3 12s linear infinite}.n4{animation:n4 12s linear infinite}
-@keyframes n1{0%,2%{background:#f8fafc}4%,22%{background:#edf4ff;border-color:#77a0dd}26%,100%{background:#f3faf6;border-color:#bdd8c9}}@keyframes n2{0%,24%{background:#f8fafc}28%,45%{background:#edf4ff;border-color:#77a0dd}50%,100%{background:#f3faf6;border-color:#bdd8c9}}@keyframes n3{0%,48%{background:#f8fafc}52%,69%{background:#edf4ff;border-color:#77a0dd}74%,100%{background:#f3faf6;border-color:#bdd8c9}}@keyframes n4{0%,72%{background:#f8fafc}77%,100%{background:#fff8ed;border-color:#d8b77f}}
-.hist .bar{fill:#6188c8;transform-box:fill-box;transform-origin:center bottom;animation:bars 11s linear infinite}.hist .tail{fill:var(--purple)}.hist .mean{animation:mean 11s linear infinite}.hist .p95{animation:p95 11s linear infinite}
-@keyframes bars{0%,5%{transform:scaleY(0)}42%,96%{transform:scaleY(1)}100%{transform:scaleY(0)}}@keyframes mean{0%,46%{opacity:0}54%,96%{opacity:1}100%{opacity:0}}@keyframes p95{0%,67%{opacity:0}75%,96%{opacity:1}100%{opacity:0}}
-.note{margin:12px 0 0;color:var(--muted);font-size:12px}.path{font-family:ui-monospace,Consolas,monospace;font-size:11px;background:#eef2f7;border-radius:5px;padding:2px 6px}
-@media(max-width:760px){.flow{grid-template-columns:1fr 1fr}.node:after{display:none}}
-@media(prefers-reduced-motion:reduce){*{animation:none!important}}
-</style>
-</head>
-<body>
-<main>
-<section class="intro">
-  <h1>Confluence Authoring · Motion Gallery</h1>
-  <p>AI와 사람이 패턴을 고르기 위한 로컬 미리보기입니다. 실제 Confluence 게시 결과는 별도로 검증합니다.</p>
-</section>
-
-<section class="grid">
-<article class="card">
-  <div class="head"><div class="meta">CHANGE / TREND</div><h2>Line reveal</h2><p>변화가 시간에 따라 진행되고, 특정 구간부터 패턴이 달라지는 상황.</p></div>
-  <div class="stage"><div class="panel">
-    <svg viewBox="0 0 720 260" role="img" aria-label="응답 시간이 중간 이후 증가하는 예시 그래프">
-      <line class="gridline" x1="55" y1="210" x2="690" y2="210"/><line class="gridline" x1="55" y1="150" x2="690" y2="150"/><line class="gridline" x1="55" y1="90" x2="690" y2="90"/>
-      <polyline class="trace" points="55,198 95,196 135,197 175,194 215,196 255,193 295,189 335,178 375,161 415,138 455,113 495,96 535,85 575,73 615,64 655,57 690,53"/>
-      <g class="focus"><line x1="335" y1="35" x2="335" y2="210" stroke="#b66c22" stroke-dasharray="4 4"/><text x="345" y="52" font-size="12" fill="#9a5b1d">변화 시작</text></g>
-    </svg>
-  </div><p class="note"><span class="path">visuals/motion/line-reveal.html</span> · 실제 수치가 없으면 예시 데이터임을 표시합니다.</p></div>
-</article>
-
-<article class="card">
-  <div class="head"><div class="meta">PROCESS / WORKFLOW</div><h2>Sequential flow</h2><p>작업이 단계별로 이동하고, 자동화와 사람의 판단 경계를 구분하는 상황.</p></div>
-  <div class="stage"><div class="panel"><div class="flow">
-    <div class="node n1"><b>01 · 업무 선택</b><small>대상과 입력 확인</small></div>
-    <div class="node n2"><b>02 · 도구 실행</b><small>연결 기능 실행</small></div>
-    <div class="node n3"><b>03 · 결과 검증</b><small>완료 기준 비교</small></div>
-    <div class="node n4"><b>04 · 담당자 검토</b><small>사람이 최종 판단</small></div>
-  </div></div><p class="note"><span class="path">visuals/motion/sequential-flow.html</span> · 승인 대기 상태를 자동 완료처럼 표현하지 않습니다.</p></div>
-</article>
-
-<article class="card">
-  <div class="head"><div class="meta">DATA / DISTRIBUTION</div><h2>Distribution + percentile</h2><p>분포를 먼저 쌓고 평균과 percentile을 뒤이어 보여주어 숨은 차이를 설명하는 상황.</p></div>
-  <div class="stage"><div class="panel">
-    <svg class="hist" viewBox="0 0 720 280" role="img" aria-label="분포 막대가 나타난 뒤 평균과 P95가 강조되는 예시">
-      <line class="gridline" x1="55" y1="225" x2="685" y2="225"/><line class="gridline" x1="55" y1="160" x2="685" y2="160"/><line class="gridline" x1="55" y1="95" x2="685" y2="95"/>
-      <rect class="bar" x="105" y="178" width="46" height="47" rx="3"/><rect class="bar" x="175" y="122" width="46" height="103" rx="3"/><rect class="bar" x="245" y="66" width="46" height="159" rx="3"/><rect class="bar" x="315" y="110" width="46" height="115" rx="3"/><rect class="bar" x="385" y="162" width="46" height="63" rx="3"/><rect class="bar tail" x="525" y="201" width="46" height="24" rx="3"/>
-      <g class="mean"><line x1="330" y1="48" x2="330" y2="225" stroke="#466b9e" stroke-dasharray="4 4"/><text x="330" y="38" text-anchor="middle" font-size="12" fill="#466b9e">평균</text></g>
-      <g class="p95"><line x1="548" y1="68" x2="548" y2="225" stroke="#7951b0" stroke-dasharray="4 4"/><text x="548" y="58" text-anchor="middle" font-size="12" fill="#7951b0">P95</text></g>
-    </svg>
-  </div><p class="note"><span class="path">visuals/motion/distribution-percentile.html</span> · 평균만으로 보이지 않는 tail을 설명할 때 사용합니다.</p></div>
-</article>
-</section>
-</main>
-</body>
-</html>
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#172b43;font:14px/1.6 "Malgun Gothic","Apple SD Gothic Neo",sans-serif}header.hero{background:#fff;border-bottom:1px solid #dce5ef;padding:28px max(20px,calc((100vw - 1280px)/2))}.eyebrow{font-size:11px;letter-spacing:1px;font-weight:700;color:#326cce}.hero h1{font-size:29px;margin:6px 0;letter-spacing:-.8px}.hero p{color:#586e85;margin:0}main{max-width:1320px;margin:0 auto;padding:22px;display:grid;grid-template-columns:270px minmax(0,1fr);gap:22px}aside{position:sticky;top:18px;align-self:start;background:#fff;border:1px solid #dce5ef;border-radius:14px;padding:16px;max-height:90vh;overflow:auto}input,select,button,textarea{font:inherit}input,select{display:block;width:100%;min-height:42px;border:1px solid #cbd8e7;border-radius:8px;padding:8px 10px;margin:6px 0 12px}label{font-size:12px;color:#415d78}button{cursor:pointer;border:1px solid #cbd8e7;border-radius:9px;padding:10px 13px;background:#fff;color:#294e7c;min-height:42px}button:hover{background:#edf4ff}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #81a7dd;outline-offset:2px}.items{display:grid;gap:7px}.items button{text-align:left;width:100%}.items button[aria-pressed=true]{border-color:#7099d0;background:#edf4ff}.items small{display:block;color:#586e85;font-size:11px}.panel{min-width:0}.selection-meta{background:#fff;border:1px solid #dce5ef;border-radius:12px;padding:17px 20px}.selection-meta h2{margin:0;font-size:19px}.selection-meta p{margin:5px 0;color:#586e85;font-size:13px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.count{font-size:11px;color:#586e85;margin:10px 0}.source{display:none;margin-top:14px}.source.open{display:block}textarea{width:100%;height:300px;resize:vertical;font:12px/1.6 monospace;border:1px solid #cbd8e7;border-radius:10px;padding:12px}.notice{background:#fff7e8;border-left:3px solid #ac7538;padding:12px 15px;margin:18px}.empty{font-size:13px;color:#586e85}.footer{font-size:12px;color:#586e85;margin-top:18px}.preview>section{margin:14px 0!important}
+@media(max-width:800px){main{grid-template-columns:1fr;padding:14px}aside{position:static;max-height:none}.items{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}.hero h1{font-size:24px}}@media print{aside,.toolbar,.source,.hero{display:none}main{display:block;padding:0}.selection-meta{border:0}}
+</style></head><body>
+<header class="hero"><div class="eyebrow">CONFLUENCE AUTHORING / 0.2</div><h1>설명 목적에 맞는 움직임</h1><p>13개 패턴 · 선택한 하나만 재생 · 원본과 같은 렌더러로 생성 · 예시 데이터</p></header>
+<p id="setup" class="notice">저장소에서 처음 실행할 때: <code>python scripts/build_gallery.py</code>를 실행하세요. 결과는 <code>dist/gallery.html</code>이며 서버 없이 열 수 있습니다.</p>
+<main><aside><label for="search">패턴 검색</label><input id="search" type="search" placeholder="예: 병렬, 승인, 대기열" autocomplete="off"><label for="category">설명 목적</label><select id="category"><option value="all">전체</option><option value="change">변화·추세</option><option value="comparison">비교</option><option value="process">절차·진행</option><option value="system">시스템</option><option value="cause-effect">원인·영향</option><option value="data">데이터</option></select><p id="count" class="count" aria-live="polite"></p><nav class="items" aria-label="모션 패턴" id="items"></nav></aside>
+<section class="panel"><div id="metadata" class="selection-meta"></div><div id="preview" class="preview"></div><div id="source" class="source"><label for="code">이 예시의 Confluence HTML 매크로 코드</label><textarea id="code" readonly spellcheck="false"></textarea></div><p id="feedback" role="status"></p><p class="footer">갤러리 UI에만 JavaScript를 사용합니다. 생성된 매크로에는 JavaScript·외부 요청·공통 파일 의존성이 없습니다. 실제 Confluence 게시 검증은 별도입니다.</p></section></main>
+<!-- BUILD_DATA -->
+<script>
+(()=>{'use strict';const data=window.CA_GALLERY;if(!data)return;document.getElementById('setup').hidden=true;const $=id=>document.getElementById(id);let current=null;let shown=data;function filter(){const q=$('search').value.trim().toLowerCase(),cat=$('category').value;shown=data.filter(x=>(cat==='all'||x.category===cat)&&[x.id,x.title,x.best_for].join(' ').toLowerCase().includes(q));$('items').replaceChildren();$('count').textContent=shown.length+' / '+data.length+'개 패턴';for(const item of shown){const b=document.createElement('button');b.type='button';b.dataset.id=item.id;b.setAttribute('aria-pressed',String(item===current));const title=document.createElement('span');title.textContent=item.title;const id=document.createElement('small');id.textContent=item.id;b.append(title,id);b.addEventListener('click',()=>select(item));$('items').append(b)}if(!shown.length){const p=document.createElement('p');p.className='empty';p.textContent='검색 결과가 없습니다. 검색어나 분류를 바꿔보세요.';$('items').append(p)}}function select(item){current=item;$('preview').innerHTML=item.html;$('code').value=item.html;$('feedback').textContent='';$('source').classList.remove('open');const title=document.createElement('h2');title.textContent=item.title;const p=document.createElement('p');p.textContent='사용: '+item.best_for.join(' · ');const avoid=document.createElement('p');avoid.textContent='주의: '+item.avoid_when.join(' · ');const tools=document.createElement('div');tools.className='toolbar';const source=document.createElement('button');source.textContent='매크로 코드 보기';source.type='button';source.onclick=()=>{$('source').classList.toggle('open')};const copy=document.createElement('button');copy.textContent='매크로 코드 복사';copy.type='button';copy.onclick=async()=>{try{if(!navigator.clipboard)throw Error('clipboard');await navigator.clipboard.writeText(item.html);$('feedback').textContent='예시 코드가 복사됐습니다. 같은 페이지에 재사용할 때는 고유 prefix를 새로 생성하세요.'}catch(e){$('source').classList.add('open');$('code').focus();$('code').select();$('feedback').textContent='브라우저가 자동 복사를 허용하지 않습니다. 선택된 코드를 Ctrl+C로 복사하세요.'}};tools.append(source,copy);$('metadata').replaceChildren(title,p,avoid,tools);filter()}$('search').addEventListener('input',filter);$('category').addEventListener('change',filter);select(data[0]);})();
+</script></body></html>

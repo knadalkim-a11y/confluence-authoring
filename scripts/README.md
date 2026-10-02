@@ -1,43 +1,24 @@
-# Scripts
+# Local generation tools
 
-No third-party Python packages are required.
+`render_motion.py PATTERN OUTPUT --input INPUT.json [--prefix PREFIX] [--preview FILE]`
+assembles one typed motion instance. Use `--example` instead of `--input` only for an
+explicitly illustrative demo. The output is a copy-ready macro fragment; the optional
+preview adds document-level wrappers that must not be pasted into an HTML macro.
 
-## Render a motion template
+`build_gallery.py [--output DIRECTORY]` renders every implemented example with the same
+renderer, checks each fragment and generates a standalone search/filter gallery,
+individual previews, macro fragments, input JSON files and a byte-size manifest.
 
-Example:
+`validate_html_macro.py FILE` lints rendered fragments, including multiple combined
+blocks: duplicate IDs/prefixes/keyframes, unscoped CSS, undefined animation names,
+broken ID references, unresolved tokens, external runtime resources, unsafe tags or
+event attributes, and required reduced-motion/print fallbacks. This is not a sanitizer.
 
-```bash
-python scripts/render_template.py \
-  visuals/motion/line-reveal.html \
-  rendered/line-demo.html \
-  --prefix ca-line-001 \
-  --set "TITLE=응답 시간 변화" \
-  --set "DESCRIPTION=설명용 예시 데이터" \
-  --set "ACCESSIBLE_DESCRIPTION=응답 시간이 중간 이후 증가하는 선 그래프" \
-  --set "CHANGE_LABEL=변화 시작" \
-  --set "CAPTION=중간 구간부터 응답 시간이 증가합니다."
-```
+`render_template.py TEMPLATE OUTPUT --prefix PREFIX --set KEY=value` remains an escaped
+text-template helper for ordinary templates. v0.2 scene sources require typed input via
+render_motion.py; the legacy command fails with migration guidance rather than silently
+relabeling fixed numerical geometry. Do not use --allow-unresolved output for publishing.
 
-The renderer fails when required tokens remain unresolved unless `--allow-unresolved` is explicitly passed.
-
-## Validate rendered macro HTML
-
-```bash
-python scripts/validate_html_macro.py rendered/line-demo.html
-```
-
-The validator rejects:
-- html/head/body wrappers;
-- script and iframe;
-- external network dependencies;
-- unresolved tokens;
-- missing reduced-motion behavior;
-- missing print/static behavior.
-
-Template source files intentionally contain tokens. To inspect a template directly:
-
-```bash
-python scripts/validate_html_macro.py visuals/motion/line-reveal.html --allow-template-tokens
-```
-
-This is static validation only. Actual Confluence rendering must still be checked in the target instance.
+Generation requires Python 3.10+ and no third-party packages. Catalog is serialized as
+JSON-compatible YAML (YAML 1.2 subset), so standard-library json.load can read it.
+No generation command logs into GitHub or Confluence or performs a remote write.

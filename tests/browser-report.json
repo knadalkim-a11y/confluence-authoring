@@ -1,0 +1,153 @@
+{
+  "checked_at": "2026-10-02T02:33:31.965296+00:00",
+  "mode": "local generated content",
+  "javascript_in_macro_context": false,
+  "confluence": "not-verified",
+  "patterns": {
+    "line-reveal": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "threshold-cross": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "recovery": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "distribution-percentile": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "sequential-flow": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "before-after": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "parallel-flow": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "branch-flow": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "approval-gate": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "retry-loop": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "request-response": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "queue-buildup": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    },
+    "failure-propagation": {
+      "clock": "pass",
+      "state_transitions": "pass",
+      "pause_resume": "pass",
+      "replay": "pass",
+      "static_equals_final": "pass",
+      "width_390": "pass",
+      "reduced_motion": "pass",
+      "print": "pass"
+    }
+  },
+  "gallery": {
+    "all_13_selectable": "pass",
+    "search": "pass",
+    "category_filter": "pass",
+    "empty_state": "pass",
+    "source_code_view": "pass",
+    "only_one_live_preview": "pass",
+    "width_390": "pass",
+    "script_errors": []
+  },
+  "network_requests": [],
+  "browser": "144.0.7559.96",
+  "multi_instance_controls": "pass",
+  "keyboard": "pass",
+  "result": "pass"
+}
