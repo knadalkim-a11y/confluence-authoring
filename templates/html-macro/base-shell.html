@@ -1,0 +1,20 @@
+<!--
+Confluence HTML Macro base shell.
+Replace every {{PREFIX}} with one unique alphanumeric-hyphen prefix before publishing.
+Do not add html/head/body wrappers.
+-->
+<style>
+.{{PREFIX}}{--ink:#172b43;--muted:#617287;--line:#dfe6ef;--accent:#326cce;display:block;width:100%;max-width:1120px;margin:0 auto;color:var(--ink);font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans CJK KR",sans-serif}
+.{{PREFIX}} *{box-sizing:border-box}
+.{{PREFIX}} .card{border:1px solid var(--line);border-radius:16px;background:#fff;padding:22px}
+.{{PREFIX}} .muted{color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.{{PREFIX}} *{animation:none!important;transition:none!important}}
+@media print{.{{PREFIX}} *{animation:none!important;transition:none!important}}
+</style>
+<div class="{{PREFIX}}" lang="ko">
+  <section class="card">
+    <h3>{{TITLE}}</h3>
+    <p class="muted">{{DESCRIPTION}}</p>
+    <!-- content -->
+  </section>
+</div>

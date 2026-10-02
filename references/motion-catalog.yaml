@@ -1,0 +1,61 @@
+version: 0.1
+selection_rule: "Choose motion only when progression, accumulation, transfer, propagation, or staged reveal materially improves understanding."
+default_profile:
+  external_dependencies: false
+  javascript: false
+  svg: true
+  reduced_motion: required
+  static_final_state: required
+  unique_prefix: required
+
+patterns:
+  - id: line-reveal
+    status: implemented
+    file: visuals/motion/line-reveal.html
+    category: change
+    purpose: "Show a metric changing over time and focus attention on where behavior changes."
+    best_for: [trend, incident_signal, before_after_over_time, threshold_context]
+    avoid_when: [single_number, unordered_categories]
+    inputs: [title, unit, series, change_point, explanation, data_provenance]
+
+  - id: sequential-flow
+    status: implemented
+    file: visuals/motion/sequential-flow.html
+    category: process
+    purpose: "Show work moving through ordered stages and distinguish automation from human judgment."
+    best_for: [workflow, runbook, approval_gate, automation_boundary]
+    avoid_when: [unordered_list, architecture_without_sequence]
+    inputs: [steps, actor_or_role, state, gate, explanation]
+
+  - id: distribution-percentile
+    status: implemented
+    file: visuals/motion/distribution-percentile.html
+    category: data
+    purpose: "Build a distribution first, then reveal aggregate and percentile markers."
+    best_for: [latency_distribution, tail_behavior, average_vs_percentile, outlier_effect]
+    avoid_when: [tiny_sample_without_context, categorical_comparison]
+    inputs: [bins, counts, average, percentile, unit, data_provenance]
+
+  - {id: before-after, status: planned, category: comparison, purpose: "Transition from current state to proposed state."}
+  - {id: threshold-cross, status: planned, category: change, purpose: "Show a value crossing an operational threshold."}
+  - {id: recovery, status: planned, category: change, purpose: "Show degradation followed by recovery."}
+  - {id: parallel-flow, status: planned, category: process, purpose: "Show multiple tasks executing concurrently before joining."}
+  - {id: branch-flow, status: planned, category: process, purpose: "Show decision-based branching."}
+  - {id: retry-loop, status: planned, category: process, purpose: "Show retry, validation, and bounded failure handling."}
+  - {id: approval-gate, status: planned, category: process, purpose: "Focus on a human or policy gate."}
+  - {id: request-response, status: planned, category: system, purpose: "Show request and response movement between components."}
+  - {id: data-flow, status: planned, category: system, purpose: "Show data transfer and transformation."}
+  - {id: service-chain, status: planned, category: system, purpose: "Show dependency calls across services."}
+  - {id: queue-buildup, status: planned, category: cause-effect, purpose: "Show incoming work exceeding processing capacity."}
+  - {id: failure-propagation, status: planned, category: cause-effect, purpose: "Show one failure affecting downstream components."}
+  - {id: resource-exhaustion, status: planned, category: cause-effect, purpose: "Show a finite pool becoming exhausted."}
+  - {id: bar-growth, status: planned, category: data, purpose: "Reveal category magnitudes progressively."}
+  - {id: scatter-build, status: planned, category: data, purpose: "Accumulate observations to reveal a pattern."}
+  - {id: anomaly-separation, status: planned, category: data, purpose: "Reveal normal observations then isolate anomalies."}
+  - {id: hierarchy-expand, status: planned, category: structure, purpose: "Expand nested levels progressively."}
+  - {id: layer-reveal, status: planned, category: structure, purpose: "Reveal architecture layers from foundation upward."}
+  - {id: component-focus, status: planned, category: structure, purpose: "Dim context and focus one component at a time."}
+  - {id: relationship-map, status: planned, category: structure, purpose: "Reveal relationships between entities."}
+  - {id: problem-solution, status: planned, category: story, purpose: "Move from problem symptoms to the chosen solution."}
+  - {id: current-future, status: planned, category: story, purpose: "Show current operation and target operation."}
+  - {id: cause-effect, status: planned, category: story, purpose: "Reveal causal chain in ordered stages."}
