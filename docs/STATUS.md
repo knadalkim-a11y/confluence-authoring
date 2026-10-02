@@ -1,37 +1,54 @@
-# Status — 0.2.0
+# Status — v0.3.0 reference benchmark pack
 
-Target: `knadalkim-a11y/confluence-authoring`, existing Draft PR #1,
-branch `feat/initial-authoring-skill`. Baseline: `c41445a6167f0d8194133e6115a1fb1f2d33fde0`.
-This change does not authorize main merge, Draft removal, release or Confluence publishing.
+Repository: knadalkim-a11y/confluence-authoring. Existing Draft PR #1.
+Branch: feat/initial-authoring-skill. Preserved baseline:
+`e6468aa08f55d2efbff58b328cb4c5ab5f3bb3f1`.
+No main merge, Draft removal, force-push, release or Confluence publishing authorized.
 
-## Implemented
+## Current delivery
 
-13 motion patterns: original 3 + 10 expansion patterns. Structured-input renderer,
-shared player, escape and numerical validation, compact AI index, typed input reference,
-search/category gallery, one active preview, static lint and runnable unit/browser tests.
-8 existing general-purpose recipes remain unchanged in Git.
+18 article animation cases implemented and compared against the explanatory text and
+published component code, plus one clearly separate GC-pause bonus. All produce actual
+self-contained macro HTML and identical preview/gallery fragments. Each has provenance,
+assumptions, source/component mapping and comparison notes in examples/monitoring-cases.json.
 
-## Actual validation
+Existing 8 recipes, 13 basic patterns, shared player and old evidence remain unchanged.
+The new pack is illustrative reference material, not 19 unrestricted measured-data tools.
+No stories hierarchy was introduced. Read references/monitoring-index.md.
 
-20 Python unit test methods pass (including parameterized/subtest cases).
-13/13 macro patterns pass Chromium browser checks: running clock, visual state changes,
-CSS pause/resume/replay, static equals final state, 390px layout, reduced motion and print.
-Separate checks cover keyboard, independent controls for two blocks, gallery selection,
-search/category/empty results, code display, one preview and zero external requests.
-Wide/narrow screenshots of every example have been reviewed locally.
+## Actual new validation
 
-Evidence: `tests/verification.json`, `tests/browser-report.json`.
-Generated files and screenshots live in `dist/`, which is intentionally not tracked.
+- 30 numerical/input/render unit-test methods PASS.
+- 19 generated macro fragments PASS the existing static validator.
+- 19 Chromium cases PASS: intermediate property changes, playback controls,
+  final/static equivalence, 320/390px and narrow-container layouts, reduced motion, print.
+- Independent-instance controls, visible keyboard focus, actual event-loop pause,
+  eight occupied workers at model 5s, all gallery selections/filter/search/code, and
+  zero external runtime requests/script errors PASS.
+- Full final browser workload rerun in 10+9 shards plus extras; merged with test and
+  artifact SHA256 checks. Contact-sheet generation also handles a fresh partial shard.
+- Wide/middle/final/narrow output screenshots and the gallery visually reviewed.
+- Numerical and synchronization issues found during review were corrected and retested.
 
-## Boundaries and limitations
+Evidence: tests/monitoring-verification.json and tests/monitoring-browser-report.json.
+Reproduce using references/monitoring-tests.md. Generated dist is not tracked.
 
-- Actual target Confluence rendering: **not verified**; no page has been published/edited.
-- Static lint is not a security sanitizer. Shared source is trusted code, not arbitrary
-  untrusted HTML input. Input strings are escaped.
-- Line charts assume equal observation spacing. Distribution input represents discrete
-  values/frequencies. Queue rendering is deterministic bookkeeping, not waiting-time estimation.
-- Gallery source must be built; use dist/gallery.html or the packaged standalone gallery.
-- GitHub Actions is not configured. LLM-based recipe/selection evaluations were not run.
-- Container cannot resolve github.com for git clone; repository reads/writes use the
-  authorized GitHub connector. Local rendering does not need network access.
-- Additional 13 catalog patterns remain planned. They must not be counted as implemented.
+## Optimization
+
+Same final inputs/prefixes, no model or data thinning: 19 macro outputs shrink from
+1,681,158 to 1,228,380 UTF-8 bytes (26.93%) through redundant collinear CSS keyframe
+removal. One active gallery preview avoids running all cases simultaneously.
+This is neither an old-vs-new version size comparison nor an FPS/gzip claim.
+
+## Verification boundaries
+
+Original live website A/B: NOT VERIFIED. Original text and published code were inspected;
+only our output was rendered in the local browser. Target Confluence rendering:
+NOT VERIFIED. No page was edited. No visual-equivalence or reader-comprehension score.
+
+Container could not resolve github.com; source reads/writes used the authorized connector.
+Local source-snapshot checks are not a fresh git-clone or CI check. Historical v0.2 tests
+were preserved but not all rerun; their previous results remain historical evidence.
+GitHub Actions is not configured. Cross-browser behavior and real frame-rate are unmeasured.
+Lint is not a security sanitizer. All new reference outputs are synthetic; descriptions
+must not turn illustrative geometry into measured data or correlations into proven causes.

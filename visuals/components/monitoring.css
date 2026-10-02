@@ -1,0 +1,34 @@
+.{{PREFIX}} .mr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:16px}
+.{{PREFIX}} .mr-stack{display:grid;gap:14px}
+.{{PREFIX}} .mr-panel{container-type:inline-size;border:1px solid var(--line);border-radius:12px;padding:15px 16px 12px;min-width:0;background:#fafbfd}
+.{{PREFIX}} .mr-panel h4{font-size:14px;margin-bottom:4px;line-height:1.5}
+.{{PREFIX}} .mr-unit{font-size:11px;color:var(--muted);margin-bottom:8px}
+.{{PREFIX}} .mr-svg{display:block;width:100%;height:auto;overflow:visible}
+.{{PREFIX}} .mr-svg text{font-family:inherit;font-size:16px;fill:#536b83}
+.{{PREFIX}} .mr-svg .mr-label{font-size:18px;font-weight:700;fill:#274563}
+.{{PREFIX}} .mr-summary{margin-top:8px;color:#274563;font-size:12px;line-height:1.6;font-variant-numeric:tabular-nums}
+.{{PREFIX}} .mr-metric-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,130px),1fr));gap:10px;margin:12px 0}
+.{{PREFIX}} .mr-metric{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff}
+.{{PREFIX}} .mr-metric span{display:block;font-size:11px;color:var(--muted)}
+.{{PREFIX}} .mr-metric b{font-size:20px;font-variant-numeric:tabular-nums;color:#284b73;display:block;margin:3px 0}
+.{{PREFIX}} .mr-phases{display:grid;padding:13px 15px;border-left:3px solid #668ccc;background:#eef4fc;border-radius:3px 9px 9px 3px;margin-top:16px}
+.{{PREFIX}} .mr-phase{grid-area:1/1;line-height:1.65;font-size:13px;min-width:0}
+.{{PREFIX}} .mr-phase b{display:block;font-size:11px;color:#406fa2;letter-spacing:.05em;margin-bottom:3px}
+.{{PREFIX}} .mr-progress{height:3px;background:#e5edf6;margin-top:13px;overflow:hidden;border-radius:8px}
+.{{PREFIX}} .mr-progress i{display:block;width:100%;height:100%;transform-origin:left;background:#668ccc}
+.{{PREFIX}} .mr-log{font:12px/1.8 Consolas,"Malgun Gothic",monospace;padding:9px 10px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.{{PREFIX}} .mr-note{font-size:11px;color:var(--muted);margin:10px 0;line-height:1.7}
+.{{PREFIX}} .mr-actors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:10px}
+.{{PREFIX}} .mr-actors>div{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0;background:#fafbfd}
+.{{PREFIX}} .mr-actors h4{font-size:13px;line-height:1.5}
+.{{PREFIX}} .mr-actors p{font-size:11px;line-height:1.6;color:var(--muted);margin-top:4px}
+.{{PREFIX}} .mr-rail{fill:none;stroke:#b4c5d9;stroke-width:2;stroke-linecap:round}
+.{{PREFIX}} .mr-sr{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
+.{{PREFIX}} .mr-table{overflow:auto;max-height:280px}
+@container (max-width:540px){.{{PREFIX}} .mr-grid{grid-template-columns:1fr}.{{PREFIX}} .mr-actors{grid-template-columns:1fr}.{{PREFIX}} .mr-panel{padding:13px 10px}.{{PREFIX}} .mr-svg text{font-size:18px}.{{PREFIX}} .mr-svg .mr-label{font-size:20px}.{{PREFIX}} .mr-metric b{font-size:18px}}
+@media print{.{{PREFIX}} .mr-progress{display:none}.{{PREFIX}} .mr-table{max-height:none;overflow:visible}.{{PREFIX}} details{break-inside:auto}}
+
+.{{PREFIX}} .mr-legend{display:flex;gap:9px 18px;flex-wrap:wrap;font-size:11px;margin-top:6px;color:#536b83}
+.{{PREFIX}} .mr-legend span{display:inline-flex;gap:5px;align-items:center}
+.{{PREFIX}} .mr-legend i{display:inline-block;width:14px;height:3px;border-radius:2px}
+@container (min-width:700px){.{{PREFIX}} .mr-svg text{font-size:9px}.{{PREFIX}} .mr-svg .mr-label{font-size:11px}}

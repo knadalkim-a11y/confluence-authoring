@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
 metadata:
-  version: "0.2.0"
+  version: "0.3.0"
 ---
 
 # Confluence Authoring
@@ -81,6 +81,26 @@ When motion helps:
 If execution is unavailable, use a sourced static representation or clearly state
 which generation/validation steps were not run. Never paste an unassembled scene
 with template slots into Confluence or claim that a visual was verified from text alone.
+
+## Composite reference examples
+
+For multi-chart, resource-flow, distribution-comparison or timeline explanations,
+read `references/monitoring-index.md` before assuming the basic 13 patterns are enough.
+The v0.3 reference pack covers 18 cases in the linked monitoring article plus one
+explicitly separate bonus. These are authored, synthetic reference examples, not
+19 additional unrestricted measured-data import tools.
+
+Read only the selected object in `examples/monitoring-cases.json` and its documented
+limits. Generate with `scripts/build_monitoring_suite.py --case <id> --input <file>
+--output <directory>`. Cases with empty `params` need implementation work to accept
+new numeric sources; do not relabel their illustrative geometry as measured data.
+The existing player is reused; no `stories/` hierarchy is required.
+
+Read `references/monitoring-quality-review.md` for case-by-case decisions and
+`references/monitoring-tests.md` for reproducible tests. Original text and published
+code were inspected, but original live browser A/B and Confluence rendering were
+not verified. Do not claim equal visual quality or frame rate from source review.
+Preview and macro must embed the identical generated fragment, not a separate chat demo.
 
 ## Runtime and publishing
 

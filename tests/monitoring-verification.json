@@ -1,0 +1,43 @@
+{
+  "pack": "0.3.0",
+  "date": "2026-10-02",
+  "base_revision": "e6468aa08f55d2efbff58b328cb4c5ab5f3bb3f1",
+  "new_unit_test_methods": 30,
+  "new_unit_result": "PASS",
+  "macro_lint_count": 19,
+  "macro_lint_result": "PASS",
+  "browser_cases": 19,
+  "browser_result": "PASS",
+  "browser_test_sha256": "8b8b8fa714ade0a65bd961a55da01e82e927959d700efebd4f85251bd8249dc2",
+  "browser": "Chromium 144.0.7559.96",
+  "python": "3.13.5",
+  "playwright": "1.57.0",
+  "pillow": "12.3.0",
+  "original_live_browser_comparison": false,
+  "confluence_rendering": false,
+  "historical_basic_suite_rerun": false,
+  "github_ci": false,
+  "optimization": {
+    "uncompressed_utf8_bytes_before": 1681158,
+    "uncompressed_utf8_bytes_after": 1228380,
+    "reduction_percent": 26.93,
+    "same_models": true,
+    "same_input_and_prefix": true,
+    "scope": "19 generated self-contained reference macros, identical final sources; not the older v0.2 package"
+  },
+  "source_git_blobs": {
+    "scripts/reference_scene.py": "d507910973ef7db4ff0f70df27bb021a7b865ca9",
+    "scripts/monitoring_cases.py": "6500d78fad4f0bead4e2536e4337205bf65cda34",
+    "scripts/build_monitoring_suite.py": "1f57b8aa16438bc0694d5090fb326cba67039778",
+    "examples/monitoring-cases.json": "749ece64d1b57f7aaf5a9a68b574e89fcc542e46",
+    "gallery/monitoring-suite.html": "36493a1e44d623f1515156323700fc28b6832f38",
+    "visuals/components/monitoring.css": "dd3213cc3b6fdd1979c1d860bed2ea41873629e0",
+    "visuals/motion/monitoring-reference.html": "3e4729d044858684397b51c5a7195a8c208329bf",
+    "tests/test_monitoring_suite.py": "5b6813401ccf9c338e887afd6ad203b595ca3cac",
+    "tests/browser_monitoring.py": "54588d95c697435895c221fc46d49192a8ad71b6",
+    "tests/merge_monitoring_reports.py": "d0b022d805eac1b50c4decdd2763b2368be2f843",
+    "visuals/components/player.css": "37b33a33daac5393d3786cd31b488157fb5234b4",
+    "visuals/components/player.html": "1340bba1e87274e7296cc2752cb3b829bfbdc926",
+    "scripts/validate_html_macro.py": "9faa33ee005956ffeef5abf70788fb1aa89f1861"
+  }
+}
