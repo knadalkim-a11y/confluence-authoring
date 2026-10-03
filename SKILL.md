@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
 metadata:
-  version: "0.3.0"
+  version: "0.3.2"
 ---
 
 # Confluence Authoring
@@ -101,6 +101,16 @@ Read `references/monitoring-quality-review.md` for case-by-case decisions and
 code were inspected, but original live browser A/B and Confluence rendering were
 not verified. Do not claim equal visual quality or frame rate from source review.
 Preview and macro must embed the identical generated fragment, not a separate chat demo.
+
+## Diagram layout
+
+Read `references/diagram-layout.md` before drawing structure or request-flow diagrams.
+Place and align nodes before animating them. Prefer straight connectors, use orthogonal
+lanes only when needed, and use explicit boundary ports. Semantic event-loop circles
+are an exception, not a reason to curve external connectors. Generate visible rails
+and particle motion from the same route geometry. Read `references/layout-quality-review.md`
+for the three v0.3.2 revisions; other reference cases have not all received this layout pass.
+Preserve the 1.25x default and the numerical model when adjusting layout or playback.
 
 ## Runtime and publishing
 

@@ -1,0 +1,51 @@
+{
+  "result": "PASS",
+  "cases": [
+    {
+      "id": "cluster-cascade",
+      "checks": [
+        "1160px: actual token/rail coincidence, no label overlap, no page overflow",
+        "390px: actual token/rail coincidence, no label overlap, no page overflow",
+        "320px: actual token/rail coincidence, no label overlap, no page overflow",
+        "responsive switch preserves every animation clock"
+      ],
+      "max_path_deviation_px": 0.00027198558346095753,
+      "visible_tokens_checked": 204,
+      "sha256": "c96a6b2416364135a31947220bceebe55dcf438412d9a83f210d9c92aca54742"
+    },
+    {
+      "id": "event-loop",
+      "checks": [
+        "1160px: actual token/rail coincidence, no label overlap, no page overflow",
+        "390px: actual token/rail coincidence, no label overlap, no page overflow",
+        "320px: actual token/rail coincidence, no label overlap, no page overflow",
+        "responsive switch preserves every animation clock"
+      ],
+      "max_path_deviation_px": 8.134089772609639e-05,
+      "visible_tokens_checked": 21,
+      "sha256": "c4fe4c0b432cabf08df54607f8a650a0c6b6998202d6a47719807f504ab6e1c5"
+    },
+    {
+      "id": "pipeline-bottleneck",
+      "checks": [
+        "1160px: actual token/rail coincidence, no label overlap, no page overflow",
+        "390px: actual token/rail coincidence, no label overlap, no page overflow",
+        "320px: actual token/rail coincidence, no label overlap, no page overflow",
+        "responsive switch preserves every animation clock"
+      ],
+      "max_path_deviation_px": 0.00014424676874570677,
+      "visible_tokens_checked": 162,
+      "sha256": "e71ead9c7effb79a7e4dfd40cbe227bdd96c3672e9d35a96f779e609d344a078"
+    }
+  ],
+  "original_live_ab": false,
+  "confluence_rendering": false,
+  "browser": "144.0.7559.96",
+  "gallery_checks": [
+    "cluster-cascade: previous v0.3.1/current at all 3 speeds; exact macro export",
+    "event-loop: previous v0.3.1/current at all 3 speeds; exact macro export",
+    "pipeline-bottleneck: previous v0.3.1/current at all 3 speeds; exact macro export"
+  ],
+  "macro_external_requests": [],
+  "test_sha256": "454d03b81f3ba4e1b90c748a84dfb692a98582b3c609433c6721eb9f9ed33f72"
+}

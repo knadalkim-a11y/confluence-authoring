@@ -70,10 +70,10 @@ with sync_playwright() as p:
   page.set_content((OUT/'traffic-patterns'/'preview.html').read_text());page.keyboard.press('Tab');assert page.locator('.ca-pause').evaluate('(e)=>e===document.activeElement');page.keyboard.press('Space');assert page.locator('.ca-pause').is_checked();assert page.locator('.ca-pause-label').evaluate('(e)=>getComputedStyle(e).outlineStyle')!='none'
   report['checks']['keyboard_visible_focus']=True
   # Event-loop rotation holds while global time proceeds.
-  page.set_content((OUT/'event-loop'/'preview.html').read_text());seek(page,6.5);a=page.locator('svg g.ca-anim').first.evaluate('(e)=>getComputedStyle(e).transform');seek(page,8);b=page.locator('svg g.ca-anim').first.evaluate('(e)=>getComputedStyle(e).transform');assert a==b,(a,b)
+  page.set_content((OUT/'event-loop'/'preview.html').read_text());seek(page,14.4*(.06+.8*.4));a=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');seek(page,14.4*(.06+.8*.55));b=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');assert a==b,(a,b)
   report['checks']['event_loop_actual_rotation_holds']=True
   # Exact worker state at a model time, not merely an animation presence test.
-  page.set_content((OUT/'thread-pool'/'preview.html').read_text());seek(page,18*(.06+.8*5/14));colors=page.locator('[data-mr-slot]').evaluate_all('(els)=>els.map(e=>getComputedStyle(e).fill)');assert colors.count('rgb(169, 198, 239)')==8,colors
+  page.set_content((OUT/'thread-pool'/'preview.html').read_text());seek(page,14.4*(.06+.8*5/14));colors=page.locator('[data-mr-slot]').evaluate_all('(els)=>els.map(e=>getComputedStyle(e).fill)');assert colors.count('rgb(169, 198, 239)')==8,colors
   report['checks']['eight_worker_slots_at_model_5s']=True
   report['checks']['macro_external_requests']=[u for u in requests if u.startswith(('http:','https:'))];assert not report['checks']['macro_external_requests'];assert not errors
   # Gallery JavaScript is used only for UI and mounts the exact pre-rendered fragment.

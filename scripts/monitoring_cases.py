@@ -202,65 +202,18 @@ def pool(s,p):
     return s.stack(diagrams,metrics,chart),phase((0,'정상 처리','같은 간격으로 요청이 들어오고 빈 슬롯을 얻는다.'),(p['slow_start']/h,'처리 지연','반납이 늦어지며 슬롯과 대기열이 점유된다.'),(p['recovery']/h,'처리 속도 회복','회복 전에 시작한 긴 작업까지 즉시 끝나지는 않는다.'),(.9,'수지를 확인한다','도착 = 완료 + 실행 중 + 대기. 각 값을 사건표로 검증한다.'))
 
 def cascade(s,p):
-    fail=[.4,.6,.77]
-    normal=s.track([(0,'opacity:1'),(.22,'opacity:1'),(.24,'opacity:0'),(1,'opacity:0')]);slow=s.reveal(.22)
-    body=s.box(4,100,94,70,'LB','재분배')+s.box(405,100,90,70,'DB','정상',B,normal)+s.box(405,100,90,70,'DB','지연',R,slow)
-    for i,at in enumerate(fail):
-        y=25+i*94
-        faded=s.track([(0,'opacity:1'),(at-.01,'opacity:1'),(at,'opacity:.22'),(1,'opacity:.22')])
-        body+=f'<path class="mr-rail {faded}" d="M98 135 L185 {y+28} M315 {y+28} L405 135"/>'
-        cls=s.track([(0,'opacity:1'),(at-.01,'opacity:1'),(at,'opacity:.38'),(1,'opacity:.38')])
-        body+=s.box(185,y,130,56,f'서버 {i+1}',state=cls)
-        cross=s.reveal(at)
-        body+=f'<g class="{cross}"><path d="M275 {y+8} l23 23 m0 -23 l-23 23" stroke="{R}" stroke-width="3"/><text x="250" y="{y+78}" text-anchor="middle" style="fill:{R}">제외</text></g>'
-        body+=s.token_stream(100,135,185,y+28,0,at,6)
-    curves=[]
-    for i,at in enumerate(fail):
-        fn=lambda t,i=i,at=at:0 if t>=at else 100/sum(t<f for f in fail)
-        curves.append((f'서버 {i+1}',samples(fn,101),[B,P,G][i]))
-    shares=[[t,sum(0 if t>=at else 1/sum(t<f for f in fail) for at in fail)] for t in [0,.5,.7,.9]]
-    s.numeric['shares_sum']=shares
-    content=s.stack(s.panel('로드밸런서 → 3개 서버 → 공유 DB',s.svg(body,'서버 제외와 경로 재분배',325),'그림은 원인을 이미 지정한 합성 시나리오'),s.chart('남은 서버의 트래픽 분담',curves,'%',100,[(.4,'첫 제외',R),(.77,'대상 없음',R)]))
-    return content,phase((0,'3개 대상으로 분배','각 서버는 정확히 1/3의 몫을 받는다.'),(.4,'한 대 제외','두 서버로 1/2씩 재분배된다.'),(.6,'남은 한 대','모든 새 요청이 마지막 한 곳으로 향한다.'),(.8,'보낼 대상 없음','공유 의존성의 회복 여부를 따로 확인해야 한다.'))
+    from mechanism_scenes import cascade as mechanism_cascade
+    return mechanism_cascade(s,p)
+
 
 def event_loop(s,p):
-    h=finite(p['horizon'],'horizon',1,60);a=finite(p['block_start'],'block_start',0,h);b=finite(p['block_end'],'block_end',a+.01,h)
-    aa=a/h;bb=b/h
-    theta=lambda t:540*t/aa if t<aa else 540 if t<bb else 540+720*(t-bb)/(1-bb)
-    rotate=s.track([(i/80,f'transform:rotate({theta(i/80):.3f}deg);transform-origin:250px 125px') for i in range(81)])
-    blocked=s.pulse(aa,bb)
-    body='<path class="mr-rail" d="M70 125 H185 M315 125 H430 M250 190 V242"/><circle cx="250" cy="125" r="67" fill="#eef5ff" stroke="#759bcb" stroke-width="3"/>'
-    body+=f'<g class="{rotate}"><circle cx="317" cy="125" r="8" fill="{B}"/></g><g class="{blocked}"><rect x="184" y="91" width="132" height="66" rx="8" fill="#fff0e4" stroke="{R}"/><text class="mr-label" x="250" y="118" text-anchor="middle">CPU 점유</text><text x="250" y="144" text-anchor="middle">{fmt(b-a)}초 정지</text></g>'
-    body+=s.box(3,99,92,54,'대기')+s.box(405,99,92,54,'응답')+s.box(165,237,170,48,'위임 I/O')
-    # Packets on I/O continue while the JS loop marker pauses; callbacks wait for the loop.
-    body+=s.token_stream(250,198,250,235,0,.9,7,A)
-    body+=s.token_stream(95,125,180,125,0,aa,5,B)+s.token_stream(320,125,405,125,bb,1,9,B)
-    for i in range(6):
-        at=aa+.015+i*(bb-aa-.07)/6;finish=min(.96,bb+.035+i*.035)
-        cls=s.pulse(at,finish)
-        body+=f'<circle class="{cls}" cx="{23+(i%3)*22}" cy="{181+(i//3)*23}" r="6" fill="{A}"/>'
-    lag=samples(lambda t:0 if t<aa else (t-aa)*h*1000 if t<bb else (b-a)*1000*max(0,1-(t-bb)/.12))
-    s.numeric.update(block_ms=(b-a)*1000,block_window=[aa,bb])
-    return s.stack(s.panel('한 JS 실행 스레드',s.svg(body,'회전하는 이벤트 루프가 CPU 작업 구간에서 멈추고 다시 진행',302),'I/O 위임과 콜백 실행은 다른 단계'),s.chart('현재 콜백 대기 지연',[('예시 지연',lag,R)],'ms',(b-a)*1000*1.2,[(aa,'정지',R),(bb,'재개',G)])),phase((0,'위임과 실행','I/O를 기다리는 동안에도 루프는 다른 작업을 진행할 수 있다.'),(aa,'CPU 실행이 길어진다','위임된 외부 작업이 끝나도 루프의 콜백 처리는 기다린다.'),(bb,'루프 재개','대기 콜백을 처리하며 지연이 줄어든다.'))
+    from mechanism_scenes import event_loop as mechanism_event_loop
+    return mechanism_event_loop(s,p)
 
 def pipeline_flow(s,rows,p):
-    horizon=p['horizon'];change=p['change_time']/horizon
-    body='<path class="mr-rail" d="M8 85 H491"/>'
-    body+=s.box(22,58,112,56,'Gateway')+s.box(230,58,124,56,'Application',color=R)+s.box(408,58,80,56,'DB')
-    body+=s.token_stream(4,85,22,85,0,1,15)+s.token_stream(136,85,226,85,0,change,4)
-    body+=s.token_stream(356,85,406,85,0,1,9)
-    maxq=max(row['q'] for row in rows)
-    for i in range(12):
-        at=next((r['t']/horizon for r in rows if r['q']>=maxq*(i+1)/12),1)
-        cls=s.reveal(max(0,at-.04))
-        body+=f'<rect class="{cls}" x="{152+(i%6)*11}" y="{53+(i//6)*17}" width="8" height="11" rx="2" fill="{A}"/>'
-    for x,label,cap,ratef in [(27,'GW',p['gateway_capacity'],lambda r:r['rate']),(236,'APP',p['application_capacity'],lambda r:r['served_rate']),(408,'DB',p['database_capacity'],lambda r:r['served_rate'])]:
-        w=100 if x<400 else 78
-        seq=[(r['t']/horizon,'transform:scaleX('+str(min(1,ratef(r)/cap))+');transform-origin:'+str(x)+'px 160px') for r in rows]
-        cls=s.track(seq)
-        body+=f'<rect x="{x}" y="155" width="{w}" height="8" fill="#e6edf5"/><rect class="{cls}" x="{x}" y="155" width="{w}" height="8" fill="{R if label=="APP" else G}"/><text x="{x+w/2}" y="186" text-anchor="middle">{fmt(cap)}/s</text>'
-    body+=f'<text x="190" y="30" text-anchor="middle">대기 공간</text><text x="250" y="223" text-anchor="middle">점·작은 블록은 개수 비례가 아닌 경로/누적의 상징</text>'
-    return s.panel('각 단계의 한도와 앞쪽 대기',s.svg(body,'세 단계 처리 한도와 Application 앞에 쌓이는 대기',237),'아래 게이지 = 처리율 / 단계별 한도')
+    from diagram_scenes import pipeline_flow as draw
+    return draw(s,rows,p)
+
 
 def pipeline(s,p):
     for key in ['gateway_capacity','database_capacity']:finite(p[key],key,.001)
@@ -390,7 +343,7 @@ def gc_pause(s,p):
 
 BUILDERS={'traffic-patterns':traffic,'percentile-comparison':distributions,'survivorship-bias':survivorship,'cpu-latency':cpu,'cpu-throttling':throttling,'memory-leak':memory,'memory-spike':spike,'thread-pool':pool,'cluster-cascade':cascade,'event-loop':event_loop,'pipeline-bottleneck':pipeline,'utilization-wait':utilization,'bounded-queue':bounded,'cache-stampede':cache,'timeout-mismatch':timeout,'slow-degradation':slow,'deploy-comparison':deploy,'postmortem-timeline':postmortem,'gc-pause':gc_pause}
 
-def build_case(meta,prefix=None):
+def build_case(meta,prefix=None,speed=1.25):
     from reference_scene import assemble
     if not isinstance(meta,dict) or meta.get('id') not in BUILDERS:raise ValueError('Unknown reference case')
     for key in ['title','goal','conclusion','assumptions']:
@@ -403,5 +356,6 @@ def build_case(meta,prefix=None):
     allowed=next(x['params'] for x in defaults if x['id']==meta['id'])
     if set(meta['params'])!=set(allowed):raise ValueError('Missing or unknown case parameters')
     s=ReferenceScene(prefix);content,phases=BUILDERS[meta['id']](s,meta['params'])
-    fragment=assemble(s,meta,content,phases)
+    if isinstance(speed,bool) or speed not in (1,1.25,1.5):raise ValueError('speed must be 1, 1.25 or 1.5')
+    fragment=assemble(s,meta,content,phases,duration=18/speed)
     return fragment,s.numeric

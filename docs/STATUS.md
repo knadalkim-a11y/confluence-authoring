@@ -1,54 +1,40 @@
-# Status — v0.3.0 reference benchmark pack
+# Status — v0.3.2 layout revision
 
-Repository: knadalkim-a11y/confluence-authoring. Existing Draft PR #1.
-Branch: feat/initial-authoring-skill. Preserved baseline:
-`e6468aa08f55d2efbff58b328cb4c5ab5f3bb3f1`.
-No main merge, Draft removal, force-push, release or Confluence publishing authorized.
+Review branch: `feat/initial-authoring-skill`, existing Draft PR #1.
+Remote starting point: `a4334ef6f0d9b063dd6b246765199bf4ada4a28f`.
+Local starting point: delivered v0.3.1 ZIP (previously not pushed).
+No main merge, Draft removal, release, permission change or Confluence publication.
 
-## Current delivery
+## Changed
 
-18 article animation cases implemented and compared against the explanatory text and
-published component code, plus one clearly separate GC-pause bonus. All produce actual
-self-contained macro HTML and identical preview/gallery fragments. Each has provenance,
-assumptions, source/component mapping and comparison notes in examples/monitoring-cases.json.
+- Preserved v0.3.1 mechanism models and the 1.25x default / three-speed gallery.
+- Cascade: equal peer nodes/gaps; centred LB/DB; straight desktop fan; two deliberate,
+  single-stroke mobile trunks with visible branch junctions.
+- Event loop: aligned primary flow; direct I/O delegation and orthogonal callback
+  return. External curves removed. Internal circular execution remains meaningful.
+- Pipeline: equal node sizes/gaps, explicit queue block, straight shared-axis ports;
+  equivalent top-down narrow layout. Existing fluid-accounting model preserved.
+- Visible rails and moving tokens use one Route point list; SVG port markers expose
+  endpoints. No stories hierarchy or dependency on an external layout library.
+- Before/after gallery toggle compares the previous v0.3.1 and current versions of
+  these three cases at the same selected speed.
 
-Existing 8 recipes, 13 basic patterns, shared player and old evidence remain unchanged.
-The new pack is illustrative reference material, not 19 unrestricted measured-data tools.
-No stories hierarchy was introduced. Read references/monitoring-index.md.
+## Actual validation
 
-## Actual new validation
+54 available Python test methods pass (30 prior monitoring + 12 prior mechanism +
+12 new layout tests). All 19 reference macros pass static lint and local Chromium
+regression. Additional geometry checks cover the three revised cases at 1160/390/320px,
+intermediate token positions, label overlap, clock preservation on resize, and exact
+old/current preview/code/export at 1x, 1.25x and 1.5x. See tests/layout-verification.json.
 
-- 30 numerical/input/render unit-test methods PASS.
-- 19 generated macro fragments PASS the existing static validator.
-- 19 Chromium cases PASS: intermediate property changes, playback controls,
-  final/static equivalence, 320/390px and narrow-container layouts, reduced motion, print.
-- Independent-instance controls, visible keyboard focus, actual event-loop pause,
-  eight occupied workers at model 5s, all gallery selections/filter/search/code, and
-  zero external runtime requests/script errors PASS.
-- Full final browser workload rerun in 10+9 shards plus extras; merged with test and
-  artifact SHA256 checks. Contact-sheet generation also handles a fresh partial shard.
-- Wide/middle/final/narrow output screenshots and the gallery visually reviewed.
-- Numerical and synchronization issues found during review were corrected and retested.
+The other 16 generated macros are byte-identical to the delivered v0.3.1 at the same
+prefix/speed. The three original numerical models are identical after excluding the
+new layout metadata. Their input assumptions have not been changed by this revision.
 
-Evidence: tests/monitoring-verification.json and tests/monitoring-browser-report.json.
-Reproduce using references/monitoring-tests.md. Generated dist is not tracked.
+## Boundaries
 
-## Optimization
-
-Same final inputs/prefixes, no model or data thinning: 19 macro outputs shrink from
-1,681,158 to 1,228,380 UTF-8 bytes (26.93%) through redundant collinear CSS keyframe
-removal. One active gallery preview avoids running all cases simultaneously.
-This is neither an old-vs-new version size comparison nor an FPS/gzip claim.
-
-## Verification boundaries
-
-Original live website A/B: NOT VERIFIED. Original text and published code were inspected;
-only our output was rendered in the local browser. Target Confluence rendering:
-NOT VERIFIED. No page was edited. No visual-equivalence or reader-comprehension score.
-
-Container could not resolve github.com; source reads/writes used the authorized connector.
-Local source-snapshot checks are not a fresh git-clone or CI check. Historical v0.2 tests
-were preserved but not all rerun; their previous results remain historical evidence.
-GitHub Actions is not configured. Cross-browser behavior and real frame-rate are unmeasured.
-Lint is not a security sanitizer. All new reference outputs are synthetic; descriptions
-must not turn illustrative geometry into measured data or correlations into proven causes.
+Original-site live A/B, target Confluence rendering, other browser engines and real
+frame-rate measurements: not verified. This is a rendering-source snapshot test,
+not a fresh git clone or GitHub Actions run. The 13 basic pattern suite and 8 document
+recipes remain outside this change and were not re-tested here. Historical reports
+retain their original scope; tests passing is not a visual-equivalence rating.
