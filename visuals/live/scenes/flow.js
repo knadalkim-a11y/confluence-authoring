@@ -16,7 +16,7 @@ CA_SCENES['flow']=function(D,K,GR){
       if(l.stages.length===1)o.nodeW=lw<420?68:84;if(l.limit)o.slots=l.limit;
       var c=FQ.chainGeom(lw,two?20:0,o);c.x=side?i*(lw+28):0;c.y=side?0:y;
       /* one lane: a history strip keeps the story visible after the queue drains (print/no-JS) */
-      c.hist=!two&&l.peak_q>1e-6;c.h=c.bottom+(two?4+30+34:0)+(c.hist?52:0);g.lanes.push(c);y+=c.h+(two?18:0);});
+      c.hist=!two&&l.peak_q>1e-6;c.h=c.bottom+(two?4+30+34:0)+(c.hist?70:0);g.lanes.push(c);y+=c.h+(two?18:0);});
     g.H=Math.max.apply(null,g.lanes.map(function(c){return c.y+c.h;}))+18;return g;}
   function lane(c,i,T){var l=lanes[i],qv=at(l.q,T),hot=qv>1e-6,o='',multi=l.stages.length>1,rin=rateIn(T),sr=served(l,T);
     var st=l.stages.map(function(s,j){var isB=j===l.b,flow=j<l.b?rin:sr;
@@ -37,6 +37,7 @@ CA_SCENES['flow']=function(D,K,GR){
       o+=TP.spark(K,0,c.W,ry+30,30,end,D.axes.wait_max,t,wv,T,l.tone==='good'?C.green:l.tone==='bad'?C.red:C.blue,l.tone==='good'?C.greenSoft:l.tone==='bad'?C.redSoft:C.blueSoft,'');}
     if(c.hist){var hy=c.bottom+8;o+=K.text(0,hy+10,L.history,{fs:11,c:C.text,w:700});
       o+=TP.spark(K,0,c.W,hy+16,28,end,l.peak_q*1.15,t,l.q,T,C.amber,C.amberSoft,'');
+      o+=K.text(0,hy+57,'0'+L.time_unit,{fs:10,c:C.muted})+K.text(c.W,hy+57,K.grp(end)+L.time_unit,{fs:10,c:C.muted,a:'end'});
       if(T>=l.peak_t-1e-9){var px=c.W*l.peak_t/end,py=hy+16+28-28*l.peak_q/(l.peak_q*1.15);
         o+=K.text(Math.min(c.W-2,Math.max(2,px)),py-4,'최대 '+K.grp(l.peak_q)+L.count_unit,{fs:11,c:C.amberText,a:px>c.W-60?'end':px<60?'start':'middle',w:700,halo:1});}}
     return '<g transform="translate('+K.f(c.x)+','+K.f(c.y)+')">'+o+'</g>';}

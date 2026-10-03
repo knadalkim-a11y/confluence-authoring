@@ -82,5 +82,52 @@ class VisualSpecTests(unittest.TestCase):
             build(s)
 
 
+    def test_funnel(self):
+        info = build(load('signup-funnel.json')); f = info['data']['funnel']
+        self.assertEqual(f['worst'], 3)                                   # lowest conversion: 1,900 -> 420
+        self.assertEqual(f['lost'][1], 8900)
+        s = load('signup-funnel.json'); s['drop'] = 'count'
+        self.assertEqual(build(s)['data']['funnel']['worst'], 1)         # most people lost: 12,000 -> 3,100
+        s = load('signup-funnel.json'); s['items'][2]['value'] = 5000     # a step that grows is not a funnel
+        with self.assertRaises(SpecError):
+            build(s)
+
+    def test_share(self):
+        info = build(load('infra-cost-share.json')); d = info['data']
+        self.assertIn('−9%p', d['change']); self.assertAlmostEqual(sum(d['rows'][0]['pct']), 100)
+        s = load('infra-cost-share.json'); s['rows'][0]['values'][0] = 70  # 109% is not a composition
+        with self.assertRaises(SpecError):
+            build(s)
+        s = load('infra-cost-share.json'); s['unit'] = '억 원'             # raw values are normalised
+        self.assertAlmostEqual(sum(build(s)['data']['rows'][1]['pct']), 100)
+
+    def test_clock_timeline(self):
+        info = build(load('incident-timeline.json')); d = info['data']
+        self.assertEqual(d['time']['start'], 14 * 60); self.assertEqual([t['note'] for t in d['tracks']], ['3분', '7분', '19분', '9분'])
+        self.assertFalse(d['legend'])
+        self.assertTrue(all(':' in x[1] for x in d['ticks']))
+        s = load('incident-timeline.json'); s['time'] = {'start': '23:40', 'end': '00:30'}
+        s['tracks'] = [{'label': '야간 점검', 'start': '23:50', 'end': '00:20', 'status': 'active'}]; s['milestones'] = []
+        d = build(s)['data']; self.assertEqual(d['tracks'][0]['b'] - d['tracks'][0]['a'], 30)   # wraps past midnight
+
+    def test_static_kinds_mark_illustrative_data(self):
+        from live_scene import node_static
+        for name in ('signup-funnel.json', 'infra-cost-share.json', 'incident-timeline.json', 'quarterly-revenue.json'):
+            with self.subTest(name=name):
+                self.assertIn('예시 데이터', node_static(build(load(name))['data'])['svg'])
+
+    def test_figure_footer_fits(self):
+        # the exported SVG's source line wraps inside the figure (a 90-char source used to overflow)
+        from live_scene import wrap_text, text_width
+        for src, cut in (('출처: 사내 집계', False), ('출처: ' + '재무팀 월간 결산 보고서와 분기 검토 자료 ' * 3, False),
+                         ('출처: ' + '재무팀 월간 결산 보고서와 분기 검토 자료를 합친 값 ' * 12, True), ('https://example.com/' + 'x' * 400, True)):
+            with self.subTest(chars=len(src)):
+                lines = wrap_text(src, 716, 11)
+                self.assertTrue(1 <= len(lines) <= 3)
+                self.assertTrue(all(text_width(ln, 11) <= 716 for ln in lines))
+                self.assertEqual(lines[-1].endswith('…'), cut)
+                if not cut:
+                    self.assertEqual(' '.join(lines).split(), src.split())   # nothing lost when it fits
+
 if __name__ == '__main__':
     unittest.main()

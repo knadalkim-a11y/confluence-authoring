@@ -85,8 +85,8 @@ CA_GRAMMARS.flowQueue.chainDraw=function(K,g,st){
   /* stages */
   st.stages.forEach(function(sg,j){var x=g.sx[j],w=g.nodeW,hot=sg.state==='hot',ok=sg.state==='ok';
     o+=K.rect(x,g.y0,w,g.nh,{r:8,fill:hot?C.hotPaper:C.paper,st:hot?C.red:ok?C.green:C.edge,sw:hot||ok?1.6:1.2});
-    o+=K.text(x+w/2,my+(sg.sub?-2:4.5),sg.name,{fs:g.c?12:13,c:hot?C.redText:C.ink,a:'middle',w:700});
-    if(sg.sub)o+=K.text(x+w/2,my+13,sg.sub,{fs:11,c:hot?C.redText:ok?C.greenText:C.muted,a:'middle',w:700});
+    o+=K.text(x+w/2,my+(sg.sub?-4:4.5),sg.name,{fs:g.c?12:13,c:hot?C.redText:C.ink,a:'middle',w:700});
+    if(sg.sub)o+=K.text(x+w/2,my+14,sg.sub,{fs:11,c:hot?C.redText:ok?C.greenText:C.muted,a:'middle',w:700});
     o+=K.text(x+w/2,g.y0+g.nh+15,sg.limit,{fs:11,c:C.muted,a:'middle'});
     o+=K.gauge(x+4,g.y0+g.nh+22,w-8,sg.frac,sg.gaugeHot);
     if(sg.pill)o+=K.pill(x+w/2,g.top+10,sg.pill[0],sg.pill[1]);});

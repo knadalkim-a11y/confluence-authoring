@@ -28,7 +28,10 @@ CA_GRAMMARS.timePanels.area=function(K,p,ts,vs,T,color){var pts=this.cut(K,p,ts,
 CA_GRAMMARS.timePanels.series=function(K,p,ts,vs,T,color,sw){var pts=this.cut(K,p,ts,vs,T);if(pts.length<2)return '';
   return '<path d="M'+pts.join('L')+'" fill="none" stroke="'+color+'" stroke-width="'+(sw||2)+'" stroke-linejoin="round"/>';};
 CA_GRAMMARS.timePanels.mark=function(K,a,b,t,label,c){return K.line(a.X(t),a.y,a.X(t),b.y+b.h,c||K.C.red,{d:'4 3',op:.7})+(label?K.text(a.X(t)+4,a.y+12,label,{fs:11,c:c||K.C.red}):'');};
-CA_GRAMMARS.timePanels.ticksX=function(K,p,ticks){return ticks.map(function(t){return K.text(p.X(t[0]),p.y+p.h+15,t[1],{fs:11,c:K.C.muted,a:t[0]<=0?'start':t[0]>=p.end?'end':'middle'});}).join('');};
+/* Custom x ticks; a tick that would touch the previous kept one is dropped (the last tick always stays). */
+CA_GRAMMARS.timePanels.ticksX=function(K,p,ticks){var box=function(t){var w=K.tw(t[1],11),x=p.X(t[0]),a=t[0]<=0?'start':t[0]>=p.end?'end':'middle';return {t:t,a:a,l:a==='start'?x:a==='end'?x-w:x-w/2,r:a==='start'?x+w:a==='end'?x:x+w/2};};
+  var keep=[];ticks.map(box).forEach(function(b,i,all){if(keep.length&&b.l<keep[keep.length-1].r+6){if(i===all.length-1)keep.pop();else return;}keep.push(b);});
+  return keep.map(function(b){return K.text(p.X(b.t[0]),p.y+p.h+15,b.t[1],{fs:11,c:K.C.muted,a:b.a});}).join('');};
 /* Sparkline on a shared time axis: soft area + line up to T, end dot and value label. */
 CA_GRAMMARS.timePanels.spark=function(K,x0,x1,y,h,end,ymax,ts,vs,T,color,soft,label){var p=this.panelIn(x0,x1,y,h,end,ymax),o=K.line(x0,y+h,x1,y+h,K.C.rule);
   var pts=this.cut(K,p,ts,vs,T);if(pts.length<2)return o;var last=Math.min(T,ts[ts.length-1]),v=this.at(ts,vs,last);

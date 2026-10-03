@@ -11,7 +11,7 @@ import datetime as dt, math, re
 from monitoring_cases import (finite, fluid_tokens, first_reach, interp, token_speed, paced_rate, caption_walls,
                               caption_need, nice_max, grp, DEFAULT_SPEED)
 
-KINDS = ('flow', 'trend', 'bars', 'timeline')
+KINDS = ('flow', 'trend', 'bars', 'share', 'timeline')
 DATA_KINDS = {'measured': '측정값', 'estimate': '추정값', 'example': '예시 데이터'}
 CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫'
 TONES = ('neutral', 'good', 'bad')
@@ -62,6 +62,11 @@ def decimals_of(values, cap=2):
         if 'e' not in s and '.' in s and not float(v).is_integer():
             d = max(d, len(s.split('.')[1].rstrip('0')))
     return min(d, cap)
+
+
+def r1(x):
+    """Round half up to 0.1, like the scenes' Math.round(x*10)/10 (Python's round() is half-even)."""
+    return math.floor(x * 10 + 0.5) / 10
 
 
 def fill(template, values, name):
@@ -277,7 +282,7 @@ def flow_data(spec):
     rows = [[fmt(t[i], 2)] + [grp(l['S']['q'][i]) for l in lanes] + [grp(lanes[-1]['S']['srv'][i])] + ([grp(lanes[-1]['S']['rej'][i])] if any(l['limit'] for l in lanes) else [])
             for i in range(0, len(t), step)]
     def expect(T):
-        st = {'queue': [round(max(0, interp(t, l['S']['q'], T)), 1) for l in lanes], 'rejected': [round(max(0, interp(t, l['S']['rej'], T)), 1) for l in lanes]}
+        st = {'queue': [r1(max(0, interp(t, l['S']['q'], T))) for l in lanes], 'rejected': [r1(max(0, interp(t, l['S']['rej'], T))) for l in lanes]}
         stats = []
         if len(lanes) == 1:
             l = lanes[0]; cap = l['stages'][l['b']]['capacity']; i = next((k for k in range(1, len(t)) if t[k] > T + 1e-9), len(t) - 1)
@@ -365,7 +370,7 @@ def trend_data(spec):
     data = dict(scene='trend', time=dict(unit=tu, end=end), groups=groups, thresholds=thresholds, events=ev_marks, ticks=ticks,
                 captions=captions, rate=rate, labels=dict(data_kind=DATA_KINDS[data_kind]))
     def expect(T):
-        return dict(state={'values': [[[round(interp(s['t'], s['v'], T), 1) for s in p['series']] for p in g['panels']] for g in groups]}, stats=[])
+        return dict(state={'values': [[[r1(interp(s['t'], s['v'], T)) for s in p['series']] for p in g['panels']] for g in groups]}, stats=[])
     ann = [[x[1], x[0]] for g in groups for x in g['pill'] + g['note'] if 0 < x[0] < end] + [[lb, at] for at, lb in ev_marks if 0 < at < end]
     samples = sorted({round(x, 4) for x in [0.05 * end] + [c[0] + 0.03 * end for c in captions if c[0] + 0.03 * end < end] + [end]})
     while len(samples) < 6:
@@ -383,7 +388,8 @@ def trend_data(spec):
 def bars_data(spec):
     kind, title, claim, source, data_kind, motion = common(spec)
     only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'unit', 'items', 'highlight', 'target', 'better',
-                'decimals', 'max', 'pair_labels', 'flat_pct'), 'bars spec')
+                'decimals', 'max', 'pair_labels', 'flat_pct', 'mode', 'drop'), 'bars spec')
+    mode = spec.get('mode', 'compare'); need(mode in ('compare', 'funnel'), 'mode: compare|funnel')
     unit = text(spec.get('unit', ''), 'unit', 0, 8) if spec.get('unit') else ''
     items = spec.get('items'); need(isinstance(items, list) and 1 <= len(items) <= 12, 'items: 1-12')
     paired = any('before' in i for i in items)
@@ -396,6 +402,16 @@ def bars_data(spec):
             only(it, ('label', 'value'), f'items[{i}]')
             out.append(dict(label=text(it.get('label'), f'items[{i}].label', 1, 16), value=num(it.get('value'), 'value', 0)))
     better = spec.get('better', 'higher'); need(better in ('higher', 'lower'), 'better: higher|lower')
+    funnel = None
+    if mode == 'funnel':
+        need(not paired and len(out) >= 2, 'funnel: 2-12 steps with "value"')
+        vals = [x['value'] for x in out]
+        need(vals[0] > 0 and all(b <= a for a, b in zip(vals, vals[1:])), 'funnel: each step must be <= the previous one (a step that grows is not a funnel)')
+        conv = [None] + [b / a * 100 if a else 0 for a, b in zip(vals, vals[1:])]
+        lost = [None] + [a - b for a, b in zip(vals, vals[1:])]
+        basis = spec.get('drop', 'rate'); need(basis in ('rate', 'count'), 'drop: rate (lowest conversion) or count (most people lost)')
+        worst = min(range(1, len(vals)), key=lambda i: (conv[i], i)) if basis == 'rate' else max(range(1, len(vals)), key=lambda i: (lost[i], -i))
+        funnel = dict(conv=conv, lost=lost, worst=worst, basis=basis, overall=vals[-1] / vals[0] * 100)
     hl = spec.get('highlight') or []; need(all(h in [x['label'] for x in out] for h in hl), 'highlight: labels must match items')
     tgt = None
     if spec.get('target'):
@@ -409,7 +425,12 @@ def bars_data(spec):
     live = motion == 'play'
     captions = [[1.0, '', claim]]
     data = dict(scene='bars', time=dict(unit='', end=1.0), items=out, paired=paired, unit=unit, highlight=hl, target=tgt, max=vmax,
-                better=better, pair_labels=pl, decimals=dec, flat_pct=flat, captions=captions, rate=[[0, 0.35]], labels=dict(data_kind=DATA_KINDS[data_kind]))
+                better=better, pair_labels=pl, decimals=dec, flat_pct=flat, funnel=funnel, captions=captions, rate=[[0, 0.35]], labels=dict(data_kind=DATA_KINDS[data_kind]))
+    if funnel:
+        head = ['단계', '값', '이전 단계 대비', '이탈', '처음 대비']
+        rows = [[x['label'], fmt(x['value'], dec), '-' if i == 0 else fmt(funnel['conv'][i], 1) + '%', '-' if i == 0 else fmt(funnel['lost'][i], dec), fmt(x['value'] / out[0]['value'] * 100, 1) + '%'] for i, x in enumerate(out)]
+        return dict(data=data, aria=f'{title}. {claim}', notes=f'출처: {source} ({DATA_KINDS[data_kind]}). 단위: {unit or "-"}. 전환율 = 해당 단계 ÷ 이전 단계.',
+                    table=(head, rows), checks=dict(end=1.0, samples=[1.0] * 6, annotations=[], expect=None, resize_at=0.5), live=live, numeric=dict(items=out, funnel=funnel), title=title)
     head = ['항목'] + ([pl[0], pl[1], '변화'] if paired else ['값'])
     rows = [[x['label'], fmt(x['before'], dec), fmt(x['after'], dec), (fmt(100 * (x['after'] - x['before']) / x['before'], 1) + '%') if x['before'] else '-']
             if paired else [x['label'], fmt(x['value'], dec)] for x in out]
@@ -418,8 +439,48 @@ def bars_data(spec):
                 table=(head, rows), checks=checks, live=live, numeric=dict(items=out), title=title)
 
 
+# ---------------------------------------------------------------- share
+def share_data(spec):
+    kind, title, claim, source, data_kind, motion = common(spec)
+    only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'categories', 'rows', 'unit', 'highlight', 'decimals'), 'share spec')
+    cats = spec.get('categories'); need(isinstance(cats, list) and 2 <= len(cats) <= 6, 'categories: 2-6 names')
+    cats = [text(c, f'categories[{i}]', 1, 12) for i, c in enumerate(cats)]
+    rows = spec.get('rows'); need(isinstance(rows, list) and 1 <= len(rows) <= 4, 'rows: 1-4 (e.g. 작년, 올해)')
+    unit = spec.get('unit', '%')
+    out = []
+    for i, r in enumerate(rows):
+        only(r, ('label', 'values'), f'rows[{i}]')
+        vals = r.get('values'); need(isinstance(vals, list) and len(vals) == len(cats), f'rows[{i}].values: one value per category ({len(cats)})')
+        vals = [num(v, f'rows[{i}].values', 0) for v in vals]; tot = sum(vals); need(tot > 0, f'rows[{i}]: values sum to 0')
+        if unit == '%':
+            need(abs(tot - 100) <= 1.0, f'rows[{i}]: percentages add to {tot:g}, not 100 (give raw values with another unit to normalise)')
+        out.append(dict(label=text(r.get('label'), f'rows[{i}].label', 1, 10), raw=vals, pct=[v / tot * 100 for v in vals]))
+    hl = spec.get('highlight')
+    need(hl is None or hl in cats, 'highlight: one of the categories')
+    h = cats.index(hl) if hl else -1
+    dec = spec.get('decimals', decimals_of([v for r in out for v in r['raw']] if unit == '%' else [0]))
+    change = None
+    if h >= 0 and len(out) >= 2:
+        a, b = out[0]['pct'][h], out[-1]['pct'][h]
+        change = f'{cats[h]} {fmt(a, dec)}% → {fmt(b, dec)}% ({"+" if b >= a else "−"}{fmt(abs(b - a), dec)}%p)'
+    data = dict(scene='share', time=dict(unit='', end=1.0), categories=cats, rows=out, highlight=h, decimals=dec, change=change,
+                captions=[[1.0, '', claim]], rate=[[0, 1]], labels=dict(data_kind=DATA_KINDS[data_kind]))
+    head = ['구분'] + cats
+    trows = [[r['label']] + [fmt(p, dec) + '%' + ('' if unit == '%' else f' ({fmt(v)}{unit})') for p, v in zip(r['pct'], r['raw'])] for r in out]
+    return dict(data=data, aria=f'{title}. {claim}', notes=f'출처: {source} ({DATA_KINDS[data_kind]}). 각 막대는 100%입니다.', table=(head, trows),
+                checks=dict(end=1.0, samples=[1.0] * 6, annotations=[], expect=None, resize_at=0.5), live=False, numeric=dict(rows=out), title=title)
+
+
 # ---------------------------------------------------------------- timeline
-def as_day(v, name, origin):
+CLOCK = re.compile(r'^([01]?\d|2[0-3]):([0-5]\d)$')
+
+
+def as_day(v, name, origin, clock=None):
+    """Days from a date origin, minutes for HH:MM clock times (after midnight wraps), or a number."""
+    if isinstance(v, str) and clock is not None:
+        m = CLOCK.match(v); need(m, f'{name}: HH:MM like the time range')
+        x = int(m[1]) * 60 + int(m[2])
+        return x + 1440 if x < clock else x
     if isinstance(v, str):
         try:
             d = dt.date.fromisoformat(v)
@@ -432,40 +493,58 @@ def as_day(v, name, origin):
 
 def timeline_data(spec):
     kind, title, claim, source, data_kind, motion = common(spec)
-    only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'time', 'tracks', 'milestones', 'today'), 'timeline spec')
+    only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'time', 'tracks', 'milestones', 'today', 'today_label', 'durations', 'legend', 'status_labels'), 'timeline spec')
+    sl = only(spec.get('status_labels') or {}, ('done', 'active', 'planned', 'late', 'risk'), 'status_labels')
     tm = only(spec.get('time'), ('start', 'end', 'unit'), 'time')
-    origin = dt.date.fromisoformat(tm['start']) if isinstance(tm.get('start'), str) else None
-    t0 = as_day(tm.get('start'), 'time.start', origin) if origin is None else 0
-    t1 = as_day(tm.get('end'), 'time.end', origin)
+    clock = None
+    if isinstance(tm.get('start'), str) and CLOCK.match(tm['start']):
+        m = CLOCK.match(tm['start']); clock = int(m[1]) * 60 + int(m[2])
+    origin = dt.date.fromisoformat(tm['start']) if isinstance(tm.get('start'), str) and clock is None else None
+    day = lambda v, n: as_day(v, n, origin, clock)
+    t0 = clock if clock is not None else (as_day(tm.get('start'), 'time.start', origin) if origin is None else 0)
+    t1 = day(tm.get('end'), 'time.end')
     need(t1 > t0, 'time.end after time.start')
     tracks = spec.get('tracks'); need(isinstance(tracks, list) and 1 <= len(tracks) <= 10, 'tracks: 1-10')
     out = []
     for i, tr in enumerate(tracks):
         only(tr, ('label', 'start', 'end', 'status', 'note'), f'tracks[{i}]')
-        a, b = as_day(tr.get('start'), f'tracks[{i}].start', origin), as_day(tr.get('end'), f'tracks[{i}].end', origin)
+        a, b = day(tr.get('start'), f'tracks[{i}].start'), day(tr.get('end'), f'tracks[{i}].end')
         need(t0 <= a < b <= t1, f'tracks[{i}]: start < end, inside the time range')
         st = tr.get('status', 'planned'); need(st in ('done', 'active', 'planned', 'late', 'risk'), f'tracks[{i}].status: done|active|planned|late|risk')
         out.append(dict(label=text(tr.get('label'), f'tracks[{i}].label', 1, 16), a=a, b=b, status=st, note=text(tr['note'], 'note', 1, 16) if tr.get('note') else ''))
     ms = []
     for i, m in enumerate(spec.get('milestones') or []):
         only(m, ('at', 'label'), f'milestones[{i}]')
-        ms.append([as_day(m.get('at'), f'milestones[{i}].at', origin), text(m.get('label'), 'milestone label', 1, 14)])
-    today = as_day(spec['today'], 'today', origin) if spec.get('today') is not None else None
+        ms.append([day(m.get('at'), f'milestones[{i}].at'), text(m.get('label'), 'milestone label', 1, 14)])
+    today = day(spec['today'], 'today') if spec.get('today') is not None else None
     ticks = []
-    if origin is not None:
+    if clock is not None:
+        span = t1 - t0; step = next(x for x in (5, 10, 15, 30, 60, 120, 240) if span / x <= 7)
+        hm = lambda x: f'{int(x) // 60 % 24:02d}:{int(x) % 60:02d}'
+        ticks = [[x, hm(x)] for x in range(int(math.ceil(t0 / step) * step), int(t1) + 1, step)]
+        label_day = hm
+        dur = lambda d: ' '.join(x for x in (f'{int(d) // 60}시간' if d >= 60 else '', f'{int(d) % 60}분' if d % 60 or d < 60 else '') if x)
+    elif origin is not None:
         d = dt.date(origin.year, origin.month, 1)
         while (d - origin).days <= t1:
             if (d - origin).days >= t0:
                 ticks.append([(d - origin).days, f'{d.month}월'])
             d = dt.date(d.year + (d.month == 12), d.month % 12 + 1, 1)
         label_day = lambda x: f'{(origin + dt.timedelta(days=round(x))).month}/{(origin + dt.timedelta(days=round(x))).day}'
+        dur = lambda d: f'{d:g}일'
     else:
         unit = text(tm.get('unit', '주'), 'time.unit', 1, 4)
         step = max(1, round((t1 - t0) / 6))
         ticks = [[x, f'{x:g}{unit}'] for x in range(int(t0), int(t1) + 1, step)]
         label_day = lambda x: f'{x:g}{unit}'
+        dur = lambda d: f'{d:g}{unit}'
+    if spec.get('durations'):   # e.g. incident reviews: how long detection, response and recovery took
+        for x in out:
+            x['note'] = x['note'] or dur(x['b'] - x['a'])
+    tl = text(spec.get('today_label', '오늘'), 'today_label', 1, 6)
     data = dict(scene='timeline', time=dict(unit='', end=1.0, start=t0, stop=t1), tracks=out, milestones=[[a, l, label_day(a)] for a, l in ms],
-                today=[today, '오늘 ' + label_day(today)] if today is not None else None, ticks=ticks,
+                today=[today, tl + ' ' + label_day(today)] if today is not None else None, ticks=ticks, legend=spec.get('legend', True),
+                status_labels={k: text(v, f'status_labels.{k}', 1, 8) for k, v in sl.items()},
                 captions=[[1.0, '', claim]], rate=[[0, 1]], labels=dict(data_kind=DATA_KINDS[data_kind]))
     head = ['항목', '시작', '끝', '상태']
     names = dict(done='완료', active='진행', planned='예정', late='지연', risk='위험')
@@ -475,7 +554,7 @@ def timeline_data(spec):
                 checks=checks, live=False, numeric=dict(tracks=out), title=title)
 
 
-BUILDERS = dict(flow=flow_data, trend=trend_data, bars=bars_data, timeline=timeline_data)
+BUILDERS = dict(flow=flow_data, trend=trend_data, bars=bars_data, share=share_data, timeline=timeline_data)
 
 
 def build(spec):

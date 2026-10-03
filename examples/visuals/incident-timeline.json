@@ -1,0 +1,61 @@
+{
+  "kind": "timeline",
+  "title": "2월 14일 DB 커넥션 풀 장애 타임라인",
+  "claim": "감지에 3분, 대응 착수에 7분, 조치에 19분이 걸렸다. 가장 긴 구간은 조치다.",
+  "source": "예시: 장애 회고: 알림·작업 로그 시각",
+  "data_kind": "example",
+  "time": {
+    "start": "14:00",
+    "end": "14:45"
+  },
+  "durations": true,
+  "tracks": [
+    {
+      "label": "감지 지연",
+      "start": "14:02",
+      "end": "14:05",
+      "status": "risk"
+    },
+    {
+      "label": "대응 착수 대기",
+      "start": "14:05",
+      "end": "14:12",
+      "status": "late"
+    },
+    {
+      "label": "원인 조치",
+      "start": "14:12",
+      "end": "14:31",
+      "status": "active"
+    },
+    {
+      "label": "회복 확인",
+      "start": "14:31",
+      "end": "14:40",
+      "status": "done"
+    }
+  ],
+  "milestones": [
+    {
+      "at": "14:02",
+      "label": "풀 고갈"
+    },
+    {
+      "at": "14:05",
+      "label": "알림"
+    },
+    {
+      "at": "14:12",
+      "label": "대응 시작"
+    },
+    {
+      "at": "14:31",
+      "label": "풀 크기 조정"
+    },
+    {
+      "at": "14:40",
+      "label": "정상화"
+    }
+  ],
+  "legend": false
+}

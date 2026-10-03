@@ -27,12 +27,28 @@ COVER_JS = """(root)=>{const bad=[];for(const s of """ + VISIBLE + """){const al
    const w=Math.min(a.right,b.right)-Math.max(a.left,b.left),h=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
    if(w>0&&h>0&&w*h>0.3*area){bad.push([t.textContent.slice(0,20),e.tagName]);break}}});}return bad}"""
 MINFONT_JS = """(sel)=>{let m=99;for(const s of document.querySelectorAll(sel)){const r=s.getBoundingClientRect();if(!r.width)continue;const k=r.width/s.viewBox.baseVal.width;for(const t of s.querySelectorAll('text')){if(!t.textContent.trim())continue;m=Math.min(m,parseFloat(t.getAttribute('font-size'))*k)}}return m}"""
+FIGURE_BOX_JS = """(s)=>{const r=s.getBoundingClientRect();return [...s.querySelectorAll('text')].filter(e=>e.textContent.trim()).filter(e=>{const b=e.getBoundingClientRect();
+ return b.left<r.left-1||b.right>r.right+1||b.top<r.top-1||b.bottom>r.bottom+1}).map(e=>e.textContent.slice(0,30))}"""
+
+
+def figure_problems(page) -> list[str]:
+    """The exported figure.svg loaded alone in `page` (viewport = figure width): every text inside
+    the figure, no overlapping or painted-over text, contrast >= 4.5:1."""
+    body = page.locator('body')
+    found = [('text outside the figure', page.locator('svg').first.evaluate(FIGURE_BOX_JS)),
+             ('overlapping text', body.evaluate(OVERLAP_JS)['bad']), ('text painted over', body.evaluate(COVER_JS)),
+             ('low contrast', body.evaluate(CONTRAST_JS))]
+    return [f'figure.svg: {what} {v}' for what, v in found if v]
+
+
+FONT = None   # set by run(font=...): forces one font family to test layout under other metrics
 
 
 def wrap(fragment, width):
     box = f'<div style="width:{width}px;margin:0 auto">' if width else '<div>'
+    force = f'<style>[data-ca-prefix],[data-ca-prefix] *{{font-family:"{FONT}"!important}}</style>' if FONT else ''
     return ('<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            '</head><body style="margin:0">' + box + fragment + '</div></body></html>')
+            + force + '</head><body style="margin:0">' + box + fragment + '</div></body></html>')
 
 
 def close(a, b):
@@ -41,8 +57,11 @@ def close(a, b):
     return abs(a - b) <= 0.051
 
 
-def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_path: str | None = None, browser=None) -> dict:
-    """checks: {end, samples, annotations:[[label, t]], expect: callable(T)->{state, stats} | None, resize_at}."""
+def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_path: str | None = None, browser=None, font: str | None = None) -> dict:
+    """checks: {end, samples, annotations:[[label, t]], expect: callable(T)->{state, stats} | None, resize_at}.
+    font: run every check with this font family forced (e.g. NanumGothic) to catch metric-dependent overlaps."""
+    global FONT
+    FONT = font
     from playwright.sync_api import sync_playwright
     out.mkdir(parents=True, exist_ok=True)
     live = 'data-ca-runtime="live"' in fragment

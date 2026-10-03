@@ -8,8 +8,11 @@ python scripts/build_gallery.py
 python tests/browser_smoke.py --browser /path/to/chromium
 python scripts/build_monitoring_suite.py && python tests/browser_monitoring.py
 python tests/browser_live.py [--browser /path/to/chromium]
+python tests/browser_live.py --font NanumGothic --output dist/live-nanum   # second Korean font
+python scripts/build_monitoring_suite.py --baseline <previous build> && python tests/browser_diagram_layout.py
 python tests/compare_baseline.py --baseline <previous build dir>   # before/after sheets
 for f in examples/visuals/*.json; do python scripts/build_visual.py "$f" --out dist/visuals/$(basename "$f" .json) --check; done
+# repeat the loop with --font NanumGothic (any installed Korean font) to catch metric-dependent overlaps
 ```
 
 `test_visual_spec.py` covers the spec layer: honesty fields, unknown keys/events/placeholders,

@@ -19,7 +19,10 @@ var CA_KIT=(function(){
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   /* halo: white outline under the glyphs, for labels placed over lines, areas or dots. */
   function halo(o){return o.halo?' stroke="#fff" stroke-width="3" stroke-linejoin="round" paint-order="stroke"':'';}
-  function text(x,y,s,o){o=o||{};return '<text x="'+f(x)+'" y="'+f(y)+'" font-size="'+(o.fs||12)+'" fill="'+(o.c||C.muted)+'"'+
+  /* plate: white backing behind a label that crosses a reference line (estimated width). */
+  function text(x,y,s,o){o=o||{};if(o.plate){var pw=tw(s,o.fs||12)+4,px=o.a==='end'?x-pw+2:o.a==='middle'?x-pw/2:x-2,q={};for(var k in o)if(k!=='plate')q[k]=o[k];
+    return rect(px,y-(o.fs||12)+1,pw,(o.fs||12)+3,{r:2,fill:'#fff'})+text(x,y,s,q);}
+    return '<text x="'+f(x)+'" y="'+f(y)+'" font-size="'+(o.fs||12)+'" fill="'+(o.c||C.muted)+'"'+
     (o.a?' text-anchor="'+o.a+'"':'')+(o.w?' font-weight="'+o.w+'"':'')+halo(o)+'>'+esc(s)+'</text>';}
   /* One text run with coloured/bold parts: parts = [[string, colour|null, bold]]. */
   function rich(x,y,parts,o){o=o||{};return '<text x="'+f(x)+'" y="'+f(y)+'" font-size="'+(o.fs||12)+'" fill="'+(o.c||C.muted)+'"'+(o.a?' text-anchor="'+o.a+'"':'')+halo(o)+'>'+

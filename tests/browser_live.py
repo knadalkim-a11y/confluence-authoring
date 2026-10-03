@@ -14,7 +14,7 @@ from monitoring_cases import build_case, live_checks, LIVE_BUILDERS
 from reference_scene import document
 from visual_gates import run
 
-ap = argparse.ArgumentParser(); ap.add_argument('--browser'); ap.add_argument('--output', type=Path, default=ROOT / 'dist/live')
+ap = argparse.ArgumentParser(); ap.add_argument('--browser'); ap.add_argument('--font'); ap.add_argument('--output', type=Path, default=ROOT / 'dist/live')
 opt = ap.parse_args(); OUT = opt.output; SHOTS = OUT / 'screenshots'; SHOTS.mkdir(parents=True, exist_ok=True)
 CASES = [c for c in json.loads((ROOT / 'examples/monitoring-cases.json').read_text())['cases'] if c.get('runtime') == 'live']
 report = {'confluence_verified': False, 'tested_at_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'), 'cases': []}
@@ -27,7 +27,7 @@ with sync_playwright() as pw:
         data = LIVE_BUILDERS[c['id']](c['params'])[0]
         (OUT / c['id']).mkdir(parents=True, exist_ok=True)
         (OUT / c['id'] / 'macro.html').write_text(frag, encoding='utf8'); (OUT / c['id'] / 'preview.html').write_text(document(frag, c['title']), encoding='utf8')
-        rec = run(frag, live_checks(c['id'], c['params']), data, SHOTS, c['id'], browser=browser)
+        rec = run(frag, live_checks(c['id'], c['params']), data, SHOTS, c['id'], browser=browser, font=opt.font)
         # Gallery mounts and runs the exact macro (innerHTML never executes scripts; the gallery re-creates them).
         gallery = ROOT / 'dist/monitoring-suite/gallery.html'
         if gallery.exists():

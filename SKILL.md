@@ -1,9 +1,9 @@
 ---
 name: confluence-authoring
-description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
-compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
+description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence, and make report visuals that fit the situation (backlog/capacity flows, metric trends around events, comparisons and before/after, funnels, composition, schedules and incident timelines; animated only when movement explains). Builds validated Confluence HTML macros plus standalone HTML, SVG and PNG figures from a JSON spec. Preserve existing pages and distinguish verified facts from proposals.
+compatibility: Reading via authorized repository and Confluence tools. Building visuals requires Python 3.10+ and Node.js (it renders the static scenes); the browser quality gates and PNG export need Playwright with Chromium (without them builds still succeed and report the gates as not run).
 metadata:
-  version: "0.7.0"
+  version: "0.8.0"
 ---
 
 # Confluence Authoring
@@ -65,16 +65,21 @@ To make a visual for a report or document, use the spec path (default):
 
 1. Read `references/visual-specs.md`. Pick the kind by the reader's question: `flow`
    (backlog, queue, capacity, bottleneck), `trend` (metrics over time, around an event,
-   against a target), `bars` (comparison, before/after), `timeline` (schedule).
+   against a target), `bars` (comparison, before/after; `"mode": "funnel"` for drop-off
+   between steps), `share` (how a whole splits and how the split changed; instead of a pie),
+   `timeline` (schedule; incident minutes with `HH:MM` times).
 2. Copy the closest spec from `examples/visuals/` and replace claim, data, source and
    `data_kind` (`measured` / `estimate` / `example`). Bind captions to model events; put
    computed numbers in text through placeholders, never by typing them.
 3. Build and gate: `python scripts/build_visual.py spec.json --out <dir> --check`.
+   Exit 0 = built and checked, 1 = a `FAIL` to fix, 2 = built but the browser gates could
+   not run (no Playwright/Chromium): say so instead of reporting it as checked.
    Fix what a `FAIL` names; then look at the screenshots in `<dir>/shots/` at both widths
    and revise until the picture shows the claim at a glance.
 4. Paste `<dir>/macro.html` into one HTML macro per visual. Animated output needs inline
    scripts in the target Confluence (smoke check in `confluence-rules.md`); otherwise
-   rebuild with `"motion": "none"` for a static figure of the same quality.
+   rebuild with `"motion": "none"` for a static figure of the same quality. For slides,
+   word processors or wikis without HTML embedding use `<dir>/figure.svg` or `figure.png`.
 5. Report the spec, mode, gate result and what was not verified.
 
 For a mechanism no kind expresses, write a custom live scene (`references/live-runtime.md`;

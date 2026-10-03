@@ -70,7 +70,7 @@ with sync_playwright() as p:
     gp.set_content((OUT/'gallery.html').read_text())
     for cid in CASES:
         gp.locator('#lab-search').fill(cid);gp.locator('#lab-list button').click()
-        assert gp.locator('#lab-baseline').is_enabled()
+        assert gp.locator('#lab-baseline').is_enabled(),'build the suite with --baseline <previous build> first (references/layout-quality-review.md)'
         for old in (False,True):
             if old:gp.locator('#lab-baseline').click()
             for speed in ('1','1.25','1.5'):

@@ -53,6 +53,53 @@ def node_static(data: dict, width: int = STATIC_WIDTH) -> dict:
     return json.loads(done.stdout)
 
 
+FONT_STACK = 'Pretendard, "Pretendard Variable", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "Noto Sans CJK KR", sans-serif'
+
+
+def text_width(s: str, fs: float) -> float:
+    """Same conservative estimate as the kit's K.tw (Hangul 1em, digits/Latin 0.62em)."""
+    return fs * sum(1.0 if ord(ch) >= 0x1100 else 0.3 if ch == ' ' else 0.36 if ch in '.,·:()/' else 0.62 for ch in s)
+
+
+def wrap_text(s: str, max_px: float, fs: float, max_lines: int = 3) -> list[str]:
+    """Greedy wrap at spaces (characters when one word is too long); the last line ends in …"""
+    lines, cur = [], ''
+    for word in s.split():
+        while word:
+            cand = (cur + ' ' + word) if cur else word
+            if text_width(cand, fs) <= max_px:
+                cur, word = cand, ''
+            elif cur:
+                lines.append(cur); cur = ''
+            else:   # a single word wider than the line: break it
+                n = len(word)
+                while n > 1 and text_width(word[:n], fs) > max_px:
+                    n -= 1
+                lines.append(word[:n]); word = word[n:]
+    if cur:
+        lines.append(cur)
+    if len(lines) > max_lines:
+        last = lines[max_lines - 1]
+        while last and text_width(last + '…', fs) > max_px:
+            last = last[:-1]
+        lines = lines[:max_lines - 1] + [last.rstrip() + '…']
+    return lines
+
+
+def figure_svg(data: dict, width: int = STATIC_WIDTH, footer: str = '') -> str:
+    """Standalone SVG of the final scene (same scene code) for documents that cannot embed
+    HTML: slides, word processors, wikis. White background, system Korean font stack, and a
+    provenance footer so an exported image never loses whether its numbers are real."""
+    st = node_static(data, width)
+    lines = wrap_text(footer, width - 4, 11) if footer else []
+    h = st['H'] + 16 + (8 + 15 * len(lines) if lines else 0)
+    foot = ''.join('<text x="2" y="%g" font-size="11" fill="#697077">%s</text>' % (h - 6 - 15 * (len(lines) - 1 - i), html.escape(ln))
+                   for i, ln in enumerate(lines))
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %g" width="%d" height="%g" '
+            'font-family=\'%s\' style="font-variant-numeric:tabular-nums">' % (width, h, width, h, FONT_STACK)
+            + '<rect width="100%%" height="100%%" fill="#fff"/><g transform="translate(0,8)">' + st['svg'] + '</g>' + foot + '</svg>')
+
+
 def stats_html(stats: dict) -> str:
     if not stats.get('left') and not stats.get('right'):
         return ''   # empty -> the status line collapses (static figures)

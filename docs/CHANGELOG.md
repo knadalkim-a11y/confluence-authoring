@@ -1,5 +1,30 @@
 # Changes
 
+## 0.8.0 — more report situations, portable output, second-font gates
+
+- New kind `share` (100% bars: composition and how it changed, highlighted category with its
+  %p change; replaces pie charts). `bars` gains `"mode": "funnel"` (conversion and people lost
+  per step, overall conversion, `drop: rate|count` because "most drop-off" is ambiguous).
+  `timeline` accepts `HH:MM` clock times, `durations`, `legend: false`, `status_labels`,
+  `today_label` for incidents.
+- Output for places without HTML macros: `figure.svg` (final scene + source line) and
+  `figure.png` (2x). Without Playwright/Chromium the build still writes the HTML/SVG and exits
+  2 ("BUILT (unchecked)"); exit 1 is reserved for real failures.
+- `--font` repeats the gates under another installed font (NanumGothic tested); the font
+  stack includes Noto Sans CJK KR. Static kinds print "예시 데이터"/"추정값" in the picture.
+- Fixes found by a six-request self-run from the docs and by the final gate runs: milestone
+  label rows, x-tick thinning, trend value labels placed in free slots in dot order, node
+  name vs capacity label spacing, history strip vs legend spacing, JS/Python rounding
+  mismatch (half-up `r1`), a needless "29/29일" counter removed, and the exported SVG's
+  source line wrapping instead of running off the figure.
+- 12 example specs (added: signup funnel, incident timeline, infra cost share).
+- `--check` also gates the exported `figure.svg` (text inside the figure, overlap, painted-over
+  text, contrast).
+- Verification: unit 107; live 4/4 and examples 12/12 under both fonts (figure gate included);
+  CSS suites pass.
+  Not verified: target Confluence, macOS/Windows fonts, SVG/PNG in office apps; the
+  self-run was not independent.
+
 ## 0.7.0 — spec-driven document visuals
 
 The default way to make a visual is now a JSON spec (`references/visual-specs.md`):

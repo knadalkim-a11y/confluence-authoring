@@ -19,10 +19,14 @@ text-template helper for ordinary templates. v0.2 scene sources require typed in
 render_motion.py; the legacy command fails with migration guidance rather than silently
 relabeling fixed numerical geometry. Do not use --allow-unresolved output for publishing.
 
-`build_visual.py SPEC.json --out DIR [--check]` builds one document visual from a JSON spec
-(`visual_spec.py`: validation, models, events, placeholders, pacing) into `DIR/macro.html`,
-`preview.html` and `report.json`; `--check` runs the shared browser gates (`visual_gates.py`)
-and writes screenshots to `DIR/shots/`. See references/visual-specs.md.
+`build_visual.py SPEC.json --out DIR [--check] [--font FAMILY] [--browser PATH]` builds one
+document visual from a JSON spec (`visual_spec.py`: validation, models, events, placeholders,
+pacing) into `DIR/macro.html`, `preview.html`, `figure.svg` (final scene with a source line),
+`figure.png` (2x, when Chromium starts) and `report.json`; `--check` runs the shared browser
+gates (`visual_gates.py`, including the exported figure) and writes screenshots to
+`DIR/shots/` (cleared each run); `--font`
+repeats the gates under another installed font. Exit 0 = pass, 1 = spec/lint/gate failure,
+2 = built but the gates could not run (no Playwright or Chromium). See references/visual-specs.md.
 `build_visual_gallery.py SPEC_DIR --out DIR [--check]` builds every spec in a folder into one
 review page (`DIR/index.html`) that embeds each macro.
 

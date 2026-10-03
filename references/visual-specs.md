@@ -1,4 +1,4 @@
-# Document visuals from a spec (v0.7.0)
+# Document visuals from a spec (v0.8.0)
 
 Purpose: when someone wants a visual for a report or document, write a short JSON spec that
 states the claim, the data and its provenance; `scripts/build_visual.py` computes the model,
@@ -21,7 +21,9 @@ specs it cannot render well.
 | how work piles up in front of a limit (backlog, queue, capacity, bottleneck, throughput), or what changes with more capacity or a queue limit | `flow` (one lane, or two variants side by side) | animated: accumulation is the point |
 | how metrics moved over time, around an event (release, change, incident), against a target | `trend` | animated when captions tell a story (≥ 2 captions), else static |
 | how a few categories compare, or before vs after per item (same unit) | `bars` | static |
-| a schedule: phases, status, milestones, today | `timeline` | static |
+| where people drop out of a sequence of steps (sign-up, hiring, conversion) | `bars` with `"mode": "funnel"` | static |
+| how a whole splits into parts, and how that split changed (cost mix, cause mix) | `share` | static |
+| a schedule: phases, status, milestones, today; or an incident's minutes (detection, response, recovery) | `timeline` (dates, numbers, or `HH:MM` clock times; `"durations": true`) | static |
 | a mechanism none of these express (discrete workers, retries, routing, cycles) | custom live scene, see `live-runtime.md` (thread-pool is the example) | animated |
 | structure without change over time (architecture, components) | static diagram, see `diagram-layout.md` | — |
 
@@ -33,7 +35,7 @@ scripts); `"play"` animates a kind that is static by default (bars grow once).
 
 | Field | Rule |
 |---|---|
-| `kind` | `flow` · `trend` · `bars` · `timeline` |
+| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` |
 | `title` | Accessible name (≤ 120 chars). The page heading usually says it too. |
 | `claim` | The one-sentence takeaway (≤ 120). Shown under a static figure; use it as the last caption of an animated one. |
 | `source` | Where the numbers come from. Required. |
@@ -108,6 +110,25 @@ unknown events are build errors that list what is available. Never type a comput
 - ≤ 12 items, one unit and one scale for all. Decimals follow the author's data (12.8 stays
   12.8). Pairs show the change in %; `better` sets which direction is good; changes within
   `flat_pct` read "≈ 그대로" instead of a misleading coloured percentage.
+- `"mode": "funnel"`: items in step order, each ≤ the previous. Each row shows its conversion
+  from the previous step and the people lost ("25.8% (−8,900명)"); the overall conversion is
+  printed under the bars. `"drop": "rate"` (default) marks the lowest conversion, `"count"` the
+  step that loses most people. "가장 많이 이탈" is ambiguous: these can be different steps, so
+  say which one the claim means and set `drop` to match.
+
+### `share` — composition (100% bars)
+
+```json
+{"kind": "share", "categories": ["컴퓨팅", "DB", "스토리지", "네트워크", "기타"],
+ "rows": [{"label": "작년", "values": [61, 12, 14, 10, 3]}, {"label": "올해", "values": [52, 14, 18, 12, 4]}],
+ "unit": "%", "highlight": "컴퓨팅"}
+```
+
+- 2–6 categories, 1–4 rows. With `"unit": "%"` each row must add to 100 (±1); with any other
+  unit (e.g. `"억 원"`) rows are normalised and raw values go to the table. `highlight` makes
+  that category the only saturated one and prints its change in %p between the first and last
+  row. Percentages appear inside a segment only where they fit; the table has all of them.
+  Category names are written inside segments where they fit. Use `share` instead of a pie chart.
 
 ### `timeline` — schedule
 
@@ -118,13 +139,22 @@ unknown events are build errors that list what is available. Never type a comput
 ```
 
 - ≤ 10 tracks; status `done` · `active` · `planned` · `late` · `risk` (legend lists only those
-  used). Dates as `YYYY-MM-DD` (month ticks), or numbers with `time.unit` (e.g. weeks).
+  used). Dates as `YYYY-MM-DD` (month ticks), numbers with `time.unit` (e.g. weeks), or clock
+  times `HH:MM` (ticks every 5–240 min; times after midnight wrap). `"durations": true` writes each
+  track's length (e.g. "3분", "1시간 20분", "12일") where no `note` is given. `today_label`
+  renames the today line (e.g. "현재"). The status legend speaks schedule language (완료, 진행,
+  예정, 지연, 위험): for an incident or anything else set `"legend": false` (the track labels
+  already name the phases) or rename with `"status_labels": {"late": "감지 공백"}`.
+- Static kinds print "예시 데이터" / "추정값" in the picture when `data_kind` is not `measured`.
 
 ## 5. Workflow
 
 1. Start from the closest file in `examples/visuals/` (backlog, pipeline, nightly batch, incident,
    lead time, revenue, before/after steps, cloud cost, schedule) and replace claim, data and captions.
 2. `python scripts/build_visual.py spec.json --out dist/visuals/<name> --check`
+   (exit 0 = built and checked; 1 = spec, lint or gate failure; 2 = built but the browser
+   gates could not run, e.g. no Playwright: say so in your report). `--font NanumGothic`
+   repeats the gates under another Korean font.
 3. On `FAIL spec:` fix the field named in the message. On `FAIL gate:` fix the cause
    (shorter labels or captions, fewer items, merge captions that are too close).
 4. Look at `shots/<name>-715-*.png`, `-360-*.png` and `-nojs-*.png` (the folder is cleared on
@@ -134,7 +164,9 @@ unknown events are build errors that list what is available. Never type a comput
    anything shown that the text never uses? Revise the spec, rebuild.
 5. Paste `macro.html` into one Confluence HTML macro per visual (each build has its own
    prefix). Animated output needs inline scripts in the target Confluence (smoke check in
-   `confluence-rules.md`); otherwise rebuild with `"motion": "none"`.
+   `confluence-rules.md`); otherwise rebuild with `"motion": "none"`. For slides, word
+   processors or wikis that cannot embed HTML use `figure.svg` or `figure.png` (final scene with
+   a source line); `preview.html` is a standalone page.
 6. Report the spec, the mode (live/static), the gate result and what was not verified
    (rendering in the target Confluence).
 
@@ -145,5 +177,6 @@ widths, no text painted over by a later shape, text contrast ≥ 4.5:1, text ≥
 ≤ 520 px at 715 px and ≤ 600 px at 360 px, captions readable at the default speed, labels
 not shown before their event, browser state equal to the model at sample times, working
 controls, reduced motion, print, two independent blocks, readable no-JS figure on phones,
-no external requests. Not judged: whether the visual is the right one, whether the claim is
+no external requests; the exported `figure.svg` has all text inside the figure, no overlap,
+nothing painted over and readable contrast. Not judged: whether the visual is the right one, whether the claim is
 true, whether the picture is beautiful. Step 4 is where that happens.
