@@ -3,7 +3,7 @@ from pathlib import Path
 import copy,json,re,sys,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
 from monitoring_cases import (build_case,pool_model,pool_live_data,pipeline_live_data,bounded_live_data,cpu_live_data,
-                              cpu_scenarios,fluid_queue,live_checks,LIVE_BUILDERS)
+                              cpu_scenarios,fluid_queue,live_checks,LIVE_BUILDERS,caption_walls,caption_need,CAPTION_MAX_CHARS)
 from live_scene import node_static,json_for_script,core_js
 from validate_html_macro import validate
 CASES={c['id']:c for c in json.loads((ROOT/'examples/monitoring-cases.json').read_text())['cases']}
@@ -105,6 +105,33 @@ class LiveRuntimeTests(unittest.TestCase):
   st=node_static(data)['svg'];self.assertIn('CPU 100%에 붙었다',st);self.assertIn('CPU는 노는데 느리다',st)
   # Verdict must not be in a frame drawn before its event (same draw code, Node).
   self.assertNotIn('노는데 느리다',static_at(data,ev['p99_plateau']-0.5));self.assertNotIn('100%에 붙었다',static_at(data,ev['cpu_saturated']-0.5))
+
+ def test_captions_readable_at_default_speed(self):
+  # Every caption but the last (which stays after playback) is on screen long enough to read.
+  for c in LIVE:
+   with self.subTest(id=c['id']):
+    d=LIVE_BUILDERS[c['id']](c['params'])[0];end=live_checks(c['id'],c['params'])['end']
+    walls=caption_walls(d['captions'],d['rate'],end)
+    for cap,w in list(zip(d['captions'],walls))[:-1]:self.assertGreaterEqual(w+1e-6,caption_need(cap[2]),cap)
+    self.assertTrue(all(len(x[2])<=CAPTION_MAX_CHARS for x in d['captions']))
+ def test_palette_text_contrast(self):
+  kit=(ROOT/'visuals/live/kit.js').read_text()
+  C=dict(re.findall(r"(\w+):'(#[0-9a-f]{3,6})'",kit.split('var PILL')[0]))
+  for key in ['ink','text','muted','blueText','redText','amberText','greenText','purpleText']:
+   with self.subTest(key=key):self.assertGreaterEqual(contrast(C[key],'#fff'),4.5)
+  for kind,bg,fg in re.findall(r"(\w+):\['(#[0-9a-f]{3,6})','(#[0-9a-f]{3,6})'\]",kit.split('var PILL')[1].split(';')[0]):
+   with self.subTest(pill=kind):self.assertGreaterEqual(contrast(fg,bg),4.5)
+ def test_two_static_scenes(self):
+  for c in LIVE:
+   with self.subTest(id=c['id']):
+    f,_=build_case(c,'ca-live-n');self.assertEqual(f.count('data-ca-static'),2);self.assertIn('data-ca-narrow',f)
+
+def contrast(a,b):
+ def lum(h):
+  h=h.lstrip('#');h=''.join(x*2 for x in h) if len(h)==3 else h
+  v=[int(h[i:i+2],16)/255 for i in (0,2,4)];v=[x/12.92 if x<=0.03928 else ((x+0.055)/1.055)**2.4 for x in v]
+  return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2]
+ la,lb=sorted([lum(a),lum(b)],reverse=True);return (la+0.05)/(lb+0.05)
 
 def static_at(data,t,width=720):
  import shutil,subprocess,tempfile

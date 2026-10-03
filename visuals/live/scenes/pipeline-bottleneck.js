@@ -8,11 +8,11 @@ CA_SCENES['pipeline-bottleneck']=function(D,K,GR){
   function geom(W){var g=FQ.chainGeom(W,0,{stages:[0,1,2],queueAt:1,lead:true,tail:true,rows:2});g.H=g.bottom+18;return g;}
   function draw(T,g){var qv=q(T),sr=served(T),rin=rateIn(T),hot=qv>1e-6,unit=g.c?'':'건/s',lim=function(v){return (g.c?'':'한도 ')+K.grp(v)+unit;};
     var spare=hot?['여유(한가함)','ok']:null,o='';
-    o+=FQ.chainDraw(K,g,{T:T,q:qv,unit:D.unit,tokens:D.tokens,tail:q,v:D.speed,qLabel:K.grp(qv)+'건 대기',qHot:true,qDot:C.red,
+    o+=FQ.chainDraw(K,g,{T:T,q:qv,unit:D.unit,tokens:D.tokens,tail:q,v:D.speed,qLabel:K.grp(qv)+'건 대기',qHot:true,final:T>=P.horizon-1e-9,
       stages:[{name:L.source,limit:lim(P.gateway_capacity),frac:rin/P.gateway_capacity,pill:spare},
               {name:g.c?L.server_short:L.server,limit:lim(cap),frac:sr/cap,gaugeHot:hot,state:hot?'hot':null,pill:hot?['한도 도달','hot']:null},
               {name:L.dependency,limit:lim(P.database_capacity),frac:sr/P.database_capacity,pill:spare}]});
-    o+=K.text(g.W,g.H-2,L.unit,{fs:11,c:C.faint,a:'end'});
+    o+=K.text(g.W,g.H-2,L.unit,{fs:11,c:C.muted,a:'end'});
     return o;}
   function stats(T){var qv=q(T),sr=served(T),rin=rateIn(T);
     return {left:[['트래픽 ',K.grp(rin),'건/s',rin>cap],['처리 ',K.grp(sr),'건/s',qv>1e-6],['새 요청 대기 ',K.num(qv/cap),'초',qv>1e-6]]};}

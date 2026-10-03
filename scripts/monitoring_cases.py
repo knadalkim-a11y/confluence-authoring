@@ -348,6 +348,49 @@ def gc_pause(s,p):
     return charts,phase((0,'보너스 케이스','배포 코드에는 있지만 현재 본문에 삽입되지 않은 데모를 별도로 다룬다.'),(.45,'시각을 맞춘다','지연 스파이크와 GC 이벤트가 같은 시간에 놓이도록 한다.'),(.85,'추가 로그로 검증한다','시간 정렬은 가설을 돕는다. 실제 정지 로그를 확인해야 한다.'))
 
 # ---- live runtime cases (inline JS + SVG; see references/live-runtime.md) ----
+
+CAPTION_CPS=12.0      # reading speed assumed for Korean captions (chars per second)
+CAPTION_MIN_S=2.5     # minimum wall seconds any caption stays on screen
+CAPTION_MAX_CHARS=50  # longer captions are a writing problem, not a pacing problem
+DEFAULT_SPEED=1.25
+
+def caption_need(text):return max(CAPTION_MIN_S,len(text)/CAPTION_CPS)
+
+def rate_at(rate,t):
+    r=1
+    for x in rate:
+        if t>=x[0]-1e-9:r=x[1]
+    return r
+
+def caption_walls(captions,rate,end,speed=DEFAULT_SPEED):
+    """Wall seconds each caption is on screen during one play (last caption: until the end)."""
+    caps=sorted(captions,key=lambda c:c[0]);pts=sorted({0.0,end}|{x[0] for x in rate if 0<=x[0]<=end}|{c[0] for c in caps});out=[]
+    for i,c in enumerate(caps):
+        a=c[0];b=caps[i+1][0] if i+1<len(caps) else end
+        out.append(sum((y-x)/(rate_at(rate,x)*speed) for x,y in zip(pts,pts[1:]) if x>=a-1e-9 and y<=b+1e-9))
+    return out
+
+def paced_rate(captions,end,base,speed=DEFAULT_SPEED,floor=0.12):
+    """Playback-rate map: `base` (model-time pacing) slowed wherever a caption would otherwise
+    disappear before it can be read. Raises when captions are too close to be read at all."""
+    caps=sorted(captions,key=lambda c:c[0])
+    for c in caps:
+        if len(c[2])>CAPTION_MAX_CHARS:raise ValueError(f'Caption longer than {CAPTION_MAX_CHARS} chars: {c[2]}')
+    pts=sorted({0.0,end}|{x[0] for x in base if 0<=x[0]<=end}|{c[0] for c in caps});out=[]
+    for i,c in enumerate(caps):
+        a=c[0];b=caps[i+1][0] if i+1<len(caps) else end
+        segs=[(x,y,rate_at(base,x)) for x,y in zip(pts,pts[1:]) if x>=a-1e-9 and y<=b+1e-9]
+        need=caption_need(c[2]) if i+1<len(caps) else 0
+        wall=sum((y-x)/(r*speed) for x,y,r in segs)
+        if need and wall<=1e-9:raise ValueError(f'Caption {c[1]} has no time on screen; merge it with the next one')
+        k=1 if wall>=need else wall/need
+        for x,y,r in segs:
+            if r*k<floor:raise ValueError(f'Caption {c[1]} needs a playback rate below {floor}; merge or move captions')
+            out.append([round(x,4),math.floor(r*k*1e4)/1e4])   # round down: never shorter than needed
+    merged=[]
+    for x in out:
+        if not merged or abs(merged[-1][1]-x[1])>1e-9:merged.append(x)
+    return merged
 def nice_ceiling(v,step):return max(step,math.ceil(v/step-1e-9)*step)
 
 def pool_live_data(p):
@@ -366,18 +409,20 @@ def pool_live_data(p):
     ns,ss,s0,s1=p['normal_service'],p['slow_service'],p['slow_start'],p['recovery']
     rate=1/p['arrival_interval'];need_n=ns*rate;need_s=ss*rate
     f1=lambda v:f'{v:.1f}';fg=lambda v:f'{v:g}';fn=lambda v:f'{round(v,1):g}'
-    captions=[[0,'①',f'평소: 요청 하나가 {fg(ns)}초면 끝나므로, {w}칸 중 {fn(need_n)}칸 정도만 돌아도 충분하다.'],
-              [s0,'②',f'{fg(s0)}초, DB가 느려진다. 처리 시간이 {fg(ss)}초가 되자 스레드가 반납되지 않고 빈칸이 빠르게 줄어든다.']]
+    captions=[[0,'①',f'평소엔 요청이 {fg(ns)}초면 끝나 {w}칸 중 {fn(need_n)}칸만 쓴다.'],
+              [s0,'②',f'{fg(s0)}초, DB가 느려져 처리 시간이 {fg(ss)}초로 늘었다.']]
     if t_queue is not None:
-        captions.append([t_queue,'③',f'{w}칸이 다 차면 새 요청은 줄을 선다. 체감 응답은 앞사람 대기 + 자기 처리라서 수직으로 뛴다.'])
-    captions.append([s1,'④',f'{fg(s1)}초, DB가 회복됐다. 하지만 이미 시작한 {fg(ss)}초짜리 작업이 끝나야 칸이 비고 줄이 빠진다.' if t_queue is not None
-                     else f'{fg(s1)}초, DB가 회복됐다. 필요한 칸 수({fn(need_s)})가 풀({w}) 안이라 대기는 생기지 않았다.'])
+        captions.append([t_queue,'③',f'{w}칸이 다 차자 새 요청이 줄을 서기 시작한다.'])
     end_at=max(s1,(t_drain or s1))+0.3
-    captions.append([min(end_at,h),'⑤',f'트래픽은 처음부터 끝까지 그대로였다. 처리 시간이 늘어 필요한 칸 수({fn(need_s)})가 풀({w})을 넘은 만큼이 대기가 됐다.'
-                     if need_s>w else f'트래픽은 그대로였고, 필요한 칸 수({fn(need_s)})가 풀({w}) 안이라 응답 시간만 처리 시간만큼 늘었다.'])
+    if t_queue is not None:
+        captions.append([s1,'④',f'{fg(s1)}초에 DB가 회복돼도 시작한 작업이 끝나야 줄이 빠진다.'])
+        captions.append([min(end_at,h),'⑤',f'트래픽은 그대로였다. 필요한 칸({fn(need_s)})이 {w}칸을 넘었을 뿐이다.'])
+    else:   # no queue: recovery and conclusion are one claim (two captions 0.3 s apart cannot both be read)
+        captions.append([s1,'③',f'{fg(s1)}초, DB 회복. 칸이 남아 줄 없이 응답만 늘었었다.'])
     captions.sort(key=lambda c:c[0])
-    # Pacing: slow down from the incident until the queue is visible, speed past the tail.
-    rate_map=[[0,1.1],[s0,0.5],[min(s1,(t_queue if t_queue is not None else s0+1.2)+0.4),1.0],[s1,0.8],[min(h,end_at),1.5]]
+    # Pacing: slow down from the incident until the queue is visible, speed past the tail;
+    # paced_rate then guarantees reading time for every caption.
+    rate_map=paced_rate(captions,h,[[0,1.1],[s0,0.5],[min(s1,(t_queue if t_queue is not None else s0+1.2)+0.4),1.0],[s1,0.8],[min(h,end_at),1.5]])
     stack_max=nice_ceiling((w+q_max)*1.2,4);rmax=nice_ceiling(max(resp)*1.05,2)
     data=dict(scene='thread-pool',
       params={k:p[k] for k in ['workers','arrival_interval','normal_service','slow_service','slow_start','recovery','horizon']},
@@ -462,12 +507,12 @@ def pipeline_live_data(p):
     before,after,cap,c0=p['before_rate'],p['after_rate'],p['application_capacity'],p['change_time']
     gw,db=p['gateway_capacity'],p['database_capacity'];unit=token_unit(after);qend=S['q'][-1]
     t1=first_reach(S['t'],S['q'],cap);t2=first_reach(S['t'],S['q'],2*cap)
-    captions=[[0,'①',f'평소 유입 {grp(before)}건/s는 Application 한도 {grp(cap)}건/s 안이라 들어온 만큼 바로 처리된다. 대기가 없다.'],
-              [c0,'②',f'{c0:g}초, 유입이 {grp(after)}건/s로 늘었다. Gateway(한도 {grp(gw)})는 모두 통과시키지만 Application은 {grp(cap)}건/s까지만 처리한다.']]
-    if t1 is not None:captions.append([t1,'③',f'처리하지 못한 {grp(after-cap)}건/s가 Application 앞에 쌓인다. 대기 {grp(cap)}건이면 새 요청은 1초를 기다린다.'])
-    if t2 is not None:captions.append([t2,'④',f'DB는 {grp(db)}건/s를 처리할 수 있지만 Application이 넘겨준 {grp(cap)}건/s만 받는다. 병목 뒤에는 여유가 남는다.'])
-    captions.append([h,'⑤',f'{h:g}초 시점 대기 {grp(qend)}건, 새 요청은 {qend/cap:.1f}초를 기다린다. 유입이 한도 아래로 내려오기 전에는 줄지 않는다.'])
-    rate=live_rate_map([[0,1.2],[c0-.5,.6],[(t1 or c0)+.5,1.0],[(t2 or c0+1)+.8,1.5]],h)
+    captions=[[0,'①',f'평소 {grp(before)}건/s는 Application 한도 {grp(cap)}건/s 안이다.'],
+              [c0,'②',f'{c0:g}초, 트래픽이 {grp(after)}건/s로 늘었다.']]
+    if t1 is not None:captions.append([t1,'③',f'한도를 넘는 {grp(after-cap)}건/s가 Application 앞에 쌓인다.'])
+    if t2 is not None:captions.append([t2,'④','Gateway와 DB는 오히려 여유가 있다. 병목은 한 곳이다.'])
+    captions.append([h,'⑤' if t2 is not None else '④',f'{h:g}초 뒤 대기 {grp(qend)}건, 새 요청은 {qend/cap:.1f}초를 기다린다.'])
+    rate=paced_rate(captions,h,[[0,1.2],[c0-.5,.6],[(t1 or c0)+.5,1.0],[(t2 or c0+1)+.8,1.5]])
     data=dict(scene='pipeline-bottleneck',params={k:p[k] for k in ['before_rate','after_rate','gateway_capacity','application_capacity','database_capacity','change_time','horizon']},
       series=dict(t=S['t'],q=S['q'],srv=S['srv']),tokens=fluid_tokens(S,unit),unit=unit,speed=token_speed(after,unit),
       events=dict(t_change=c0,t_wait1=t1,t_wait2=t2,q_end=qend),captions=captions,rate=rate,
@@ -490,12 +535,11 @@ def bounded_live_data(p):
     before,after,cap,c0=p['before_rate'],p['after_rate'],p['capacity'],p['change_time'];unit=token_unit(after)
     t_full=first_reach(Bq['t'],Bq['q'],limit);t_wait=first_reach(U['t'],U['q'],cap)
     served=Bq['srv'][-1];rej=Bq['rej'][-1];over=Bq['inc'][-1]-interp(Bq['t'],Bq['inc'],c0);frac=rej/over*100 if over else 0
-    captions=[[0,'①',f'두 큐 모두 유입 {grp(before)}건/s, 처리 한도 {grp(cap)}건/s. 유입이 한도 안이라 대기가 없다.'],
-              [c0,'②',f'{c0:g}초, 유입이 {grp(after)}건/s로 늘었다. 처리는 {grp(cap)}건/s 그대로라 매초 {grp(after-cap)}건이 남는다.']]
-    if t_full is not None:captions.append([t_full,'③',f'아래 큐는 상한 {limit:g}건이 찼다. 이제 넘치는 요청을 바로 거부한다. 위 큐는 계속 쌓는다.'])
-    if t_wait is not None:captions.append([t_wait,'④',f'위 큐의 새 요청은 1초 넘게 기다린다. 아래 큐의 대기는 {limit/cap:.2f}초에 머문다.'])
-    captions.append([h,'⑤',f'두 큐가 처리한 양은 {grp(served)}건으로 같다. 상한은 처리량을 늘리지 않고 넘치는 대기를 거부로 바꾼다. 과부하 구간 거부율 {frac:.1f}%.'])
-    rate=live_rate_map([[0,1.2],[c0-.5,.6],[(t_wait or c0)+.4,1.0],[(t_wait or c0+1)+1.5,1.5]],h)
+    captions=[[0,'①',f'두 큐 모두 유입 {grp(before)}건/s, 처리 한도 {grp(cap)}건/s다.']]
+    if t_full is not None:captions.append([t_full,'②',f'{c0:g}초, 유입 {grp(after)}건/s. 상한 큐는 {limit:g}건을 넘는 요청을 거부한다.'])
+    if t_wait is not None:captions.append([t_wait,'③','상한 없는 큐는 계속 쌓여 새 요청이 1초 넘게 기다린다.'])
+    captions.append([h,'④',f'처리량은 둘 다 {grp(served)}건. 상한은 대기를 거부로 바꿀 뿐이다.'])
+    rate=paced_rate(captions,h,[[0,1.2],[c0-.5,.6],[(t_wait or c0)+.4,1.0],[(t_wait or c0+1)+1.5,1.5]])
     data=dict(scene='bounded-queue',params={k:p[k] for k in ['before_rate','after_rate','capacity','queue_limit','change_time','horizon']},
       series=dict(t=U['t'],qu=U['q'],qb=Bq['q'],srv=Bq['srv'],rej=Bq['rej'],inc=Bq['inc']),
       tokens_u=fluid_tokens(U,unit),tokens_b=fluid_tokens(Bq,unit),unit=unit,speed=token_speed(after,unit),
@@ -526,14 +570,14 @@ def cpu_live_data(p):
     services[1].update(pill=[[0,'②','info'],[E['p99_plateau'],'② CPU는 노는데 느리다','warn']],note=[[E['p99_plateau'],'I/O·락·풀 대기를 의심','warn']])
     services[2].update(pill=[[0,'③','info'],[E['cpu_saturated'],'③ CPU 100%에 붙었다','hot']],note=[[E['cpu_saturated'],'연산 병목 또는 무한 루프를 의심','hot']])
     summary=E['p99_plateau']+.15*H
-    captions=[[0,'①',f'세 서비스의 CPU(위)와 P99(아래)를 같은 시간축에 놓았다. 처음에는 셋 다 P99 {math.ceil(early/10)*10:g}ms 이하다.'],
-              [E['cpu_rise'],'②','C의 CPU가 오르기 시작하자 같은 시각에 P99도 따라 오른다.'],
-              [E['p99_rise'],'③',f'B는 CPU가 {b_cpu:.0f}% 근처 그대로인데 P99가 오르기 시작한다.'],
-              [E['cpu_saturated'],'④','C의 CPU가 100%에 닿았다. 연산이 코어를 넘어 요청이 CPU 차례를 기다린다 — 연산 포화 가설.'],
-              [E['p99_plateau'],'⑤',f'B의 P99는 {b_peak:g}ms인데 CPU는 여전히 {b_cpu:.0f}% 근처다. CPU가 아닌 무언가(I/O·락·커넥션 풀)를 기다리는 대기 가설이다.'],
-              [summary,'⑥','CPU만 보면 B는 A처럼 정상으로 보인다. P99와 짝지어야 B와 C가 갈린다. 원인은 프로파일·I/O·풀 지표로 확인한다.']]
+    captions=[[0,'①','세 서비스의 CPU(위)와 P99(아래)를 같은 시각에 읽는다.'],
+              [E['cpu_rise'],'②','세 번째 서비스는 CPU가 오르자 P99도 함께 오른다.'],
+              [E['p99_rise'],'③',f'두 번째 서비스는 CPU {b_cpu:.0f}%인데 P99가 오르기 시작한다.'],
+              [E['cpu_saturated'],'④','세 번째는 CPU 100%: 연산이 코어를 넘었다.'],
+              [E['p99_plateau'],'⑤','두 번째는 CPU가 한가한데 느리다. 무언가를 기다린다.'],
+              [summary,'⑥','CPU만 보면 두 번째는 정상처럼 보인다. P99와 함께 읽자.']]
     captions.sort(key=lambda x:x[0])
-    rate=live_rate_map([[0,3.0],[E['cpu_rise']-1,2.0],[E['p99_plateau']+2,2.6],[summary,4.0]],H)
+    rate=paced_rate(captions,H,[[0,3.0],[E['cpu_rise']-1,2.0],[E['p99_plateau']+2,2.6],[summary,4.0]])
     data=dict(scene='cpu-latency',services=services,series=dict(t=ts),events=E,captions=captions,rate=rate,
       axes=dict(end=H,p99_max=1000,x_ticks=[[0,'0'],[20,'20'],[40,'40'],[60,'60초']]),labels=dict(cpu='CPU 사용률',p99='P99 응답 시간'))
     aria=('세 서비스의 CPU 사용률과 P99 응답 시간을 같은 시간축에 위아래로 놓은 그림. A는 둘 다 평온하다. '

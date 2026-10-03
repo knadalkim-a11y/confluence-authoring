@@ -20,6 +20,12 @@ report={'confluence_verified':False,'tested_at_utc':datetime.datetime.now(dateti
 OVERLAP_JS="""(root)=>{const t=[...root.querySelectorAll('svg[data-ca-live] text')].map(e=>{const r=e.getBoundingClientRect();return {s:e.textContent,x:r.left,y:r.top,r:r.right,b:r.bottom}}).filter(a=>a.r>a.x);
  const bad=[];for(let i=0;i<t.length;i++)for(let j=i+1;j<t.length;j++){const a=t[i],b=t[j],w=Math.min(a.r,b.r)-Math.max(a.x,b.x),h=Math.min(a.b,b.b)-Math.max(a.y,b.y);if(w>1.5&&h>1.5)bad.push([a.s,b.s,Math.round(w),Math.round(h)])}
  const box=root.getBoundingClientRect();const out=t.filter(a=>a.x<box.left-1||a.r>box.right+1).map(a=>a.s);return {bad,out}}"""
+CONTRAST_JS="""(root)=>{const lum=c=>{const m=c.match(/\\d+(\\.\\d+)?/g).slice(0,3).map(Number).map(v=>v/255).map(v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4));return 0.2126*m[0]+0.7152*m[1]+0.0722*m[2]};
+ const cr=c=>{const l=lum(c);return (1.05)/(l+0.05)};const bad=[];
+ for(const e of root.querySelectorAll('svg[data-ca-live] text, svg[data-ca-live] tspan')){if(!e.textContent.trim())continue;const c=getComputedStyle(e).fill;if(/255, 255, 255/.test(c))continue;if(cr(c)<4.5)bad.push([e.textContent.slice(0,20),c])}
+ for(const e of root.querySelectorAll('[data-ca-stats] span, [data-ca-stats] b, [data-ca-caption], summary, [data-ca-controls] button')){const c=getComputedStyle(e).color;if(cr(c)<4.5)bad.push([e.textContent.slice(0,20),c])}
+ return bad}"""
+MINFONT_JS="""(sel)=>{let m=99;for(const s of document.querySelectorAll(sel)){const r=s.getBoundingClientRect();if(!r.width)continue;const k=r.width/s.viewBox.baseVal.width;for(const t of s.querySelectorAll('text')){if(!t.textContent.trim())continue;m=Math.min(m,parseFloat(t.getAttribute('font-size'))*k)}}return m}"""
 def wrap(fragment,width):
  return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0">'+(
   f'<div style="width:{width}px;margin:0 auto">' if width else '<div>')+fragment+'</div></body></html>'
@@ -59,12 +65,14 @@ with sync_playwright() as pw:
     want=[x for x in data['captions'] if t>=x[0]-1e-9][-1][2];assert want in root.locator('[data-ca-caption]').inner_text(),(t,want)
     root.screenshot(path=str(SHOTS/f"{c['id']}-{width}-{t:.2f}.png"))
    rec['checks'][f'no_text_overlap_or_clip_{width}']=len(samples);rec['checks'][f'state_matches_python_model_{width}']=len(samples)
+   bad=root.evaluate(CONTRAST_JS);assert not bad,('low contrast text',width,bad[:5]);rec['checks'][f'text_contrast_aa_{width}']=True
+   mf=page.evaluate(MINFONT_JS,'svg[data-ca-live]');assert mf>=9,(width,mf);rec['checks'][f'min_text_px_{width}']=round(mf,1)
   rec['checks']['captions_match_model_events']=True
   # Annotations must not appear before the event they describe.
   page.set_viewport_size({'width':800,'height':1000});page.set_content(wrap(frag,715));page.wait_for_timeout(200)
   for label,at in chk['annotations']:
-   seek(page,prefix,at-0.06);assert label not in root.locator('svg').inner_html(),('future leak',label)
-   seek(page,prefix,at+0.06);assert label in root.locator('svg').inner_html(),('missing',label)
+   seek(page,prefix,at-0.06);assert label not in root.locator('svg[data-ca-live]').inner_html(),('future leak',label)
+   seek(page,prefix,at+0.06);assert label in root.locator('svg[data-ca-live]').inner_html(),('missing',label)
   rec['checks']['no_future_annotation_leak']=True
   # Controls: end / restart / pause, keyboard.
   root.locator('[data-a="end"]').click();assert abs(live_state(page,prefix)['T']-end)<1e-6
@@ -97,6 +105,12 @@ with sync_playwright() as pw:
   assert page.locator('svg[data-ca-static] text').count()>=8;assert page.locator('[data-ca-controls]').evaluate('e=>getComputedStyle(e).visibility')=='hidden'
   assert data['captions'][-1][2] in page.locator('[data-ca-caption]').inner_text()
   page.locator('[data-ca-prefix]').screenshot(path=str(SHOTS/f"{c['id']}-nojs.png"));rec['checks']['nojs_static_final_scene']=True;ctx.close()
+  # No JavaScript on a phone: the 360 px static scene is shown instead of a shrunken wide one.
+  ctx=browser.new_context(viewport={'width':360,'height':900},java_script_enabled=False);page=ctx.new_page();page.set_content(wrap(frag,None))
+  assert page.locator('svg[data-ca-narrow]').is_visible() and page.locator('svg[data-ca-live]').is_hidden()
+  mf=page.evaluate(MINFONT_JS,'svg[data-ca-narrow]');assert mf>=9,('nojs narrow text too small',mf)
+  assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1')
+  page.locator('[data-ca-prefix]').screenshot(path=str(SHOTS/f"{c['id']}-nojs-360.png"));rec['checks']['nojs_phone_static_scene_min_text_px']=round(mf,1);ctx.close()
   # Gallery mounts and runs the exact macro.
   gallery=ROOT/'dist/monitoring-suite/gallery.html'
   if gallery.exists():

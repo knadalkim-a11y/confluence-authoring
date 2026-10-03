@@ -9,20 +9,20 @@ CA_SCENES['cpu-latency']=function(D,K,GR){
       c.note=c.p99.y+ph+(g.nw?0:34);g.cols.push(c);}
     var last=g.cols[2];g.H=last.p99.y+last.p99.h+(g.nw?22:46);return g;}
   function latest(list,T){var r=null;(list||[]).forEach(function(x){if(T>=x[0]-1e-9)r=x;});return r;}
-  function panel(p,ts,vs,T,color,soft,label,ticks,fmt){var o=K.rect(p.x0,p.y,p.x1-p.x0,p.h,{r:3,fill:C.paper2,st:C.rule});
-    ticks.forEach(function(t){o+=K.line(p.x0,p.Y(t[0]),p.x1,p.Y(t[0]),C.rule)+K.text(p.x0-5,p.Y(t[0])+3.5,t[1],{fs:10,c:C.faint,a:'end'});});
+  function panel(p,ts,vs,T,color,soft,label,ticks,fmt,textColor){var o=K.rect(p.x0,p.y,p.x1-p.x0,p.h,{r:3,fill:C.paper2,st:C.rule});
+    ticks.forEach(function(t){o+=K.line(p.x0,p.Y(t[0]),p.x1,p.Y(t[0]),C.rule)+K.text(p.x0-5,p.Y(t[0])+3.5,t[1],{fs:10,c:C.muted,a:'end'});});
     o+=K.text(p.x0,p.y-7,label,{fs:11,c:C.muted,w:700});
     var pts=TP.cut(K,p,ts,vs,T);if(pts.length<2)return o;var last=Math.min(T,ts[ts.length-1]),v=TP.at(ts,vs,last),x=p.X(last),y=p.Y(v);
     o+=K.path('M'+K.f(p.X(ts[0]))+' '+K.f(p.Y(0))+'L'+pts.join('L')+'L'+K.f(x)+' '+K.f(p.Y(0))+'Z',soft,'1');
     o+='<path d="M'+pts.join('L')+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round"/>';
     if(T<H-1e-6)o+=K.line(x,p.y,x,p.y+p.h,C.faint,{d:'2 3'});
-    var right=x>p.x1-52;o+=K.ring(x,y,3.5,'#fff',color,2)+K.text(right?x-7:x+7,Math.max(p.y+11,Math.min(p.y+p.h-3,y-5)),fmt(v),{fs:11,c:color,a:right?'end':'start',w:700});
+    var right=x>p.x1-52,ly=y-8>=p.y+11?y-8:y+16;o+=K.ring(x,y,3.5,'#fff',color,2)+K.text(right?x-6:x+6,Math.min(ly,p.y+p.h-3),fmt(v),{fs:11,c:textColor,a:right?'end':'start',w:700,halo:1});
     return o;}
   function draw(T,g){var o='';
     D.services.forEach(function(sv,i){var c=g.cols[i],pl=latest(sv.pill,T),nt=latest(sv.note,T);
       o+=K.pill(c.x0,c.top+11,pl[1],pl[2],{a:'start',fs:12});
-      o+=panel(c.cpu,S.t,sv.cpu,T,C.blue,'#e7f5ff',L.cpu,[[100,'100%'],[50,'50%'],[0,'0%']],function(v){return Math.round(v)+'%';});
-      o+=panel(c.p99,S.t,sv.p99,T,C.purple,C.purpleSoft,L.p99,[[PM,K.grp(PM)],[PM/2,K.grp(PM/2)],[0,'0']],function(v){return K.grp(v)+'ms';});
+      o+=panel(c.cpu,S.t,sv.cpu,T,C.blue,'#e7f5ff',L.cpu,[[100,'100%'],[50,'50%'],[0,'0%']],function(v){return Math.round(v)+'%';},C.blueText);
+      o+=panel(c.p99,S.t,sv.p99,T,C.purple,C.purpleSoft,L.p99,[[PM,K.grp(PM)],[PM/2,K.grp(PM/2)],[0,'0']],function(v){return K.grp(v)+'ms';},C.purpleText);
       if(!g.nw||i===2)o+=TP.ticksX(K,c.p99,D.axes.x_ticks);
       if(nt&&!g.nw)o+=K.text((c.x0+c.x1)/2+16,c.note,nt[1],{fs:12,c:nt[2]==='hot'?C.redText:nt[2]==='warn'?C.amberText:C.greenText,a:'middle',w:700});});
     return o;}

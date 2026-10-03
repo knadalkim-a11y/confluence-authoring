@@ -18,15 +18,15 @@ CA_SCENES['thread-pool']=function(D,K,GR){
     o+=FQ.draw(K,g,{T:T,inflowLabel:D.labels.inflow,poolLabel:D.labels.pool,used:st.n,slots:P.workers,cells:cells,flash:flash,queue:queue,
       queueCount:st.qd.length,queueLabel:'대기 '+st.qd.length+'건',transit:transit,depLabel:D.labels.dependency,depValue:K.num(svcAt(T))+'초',depSlow:slow});
     o+=TP.band(K,A,B,P.slow_start,P.recovery,D.labels.slow_band);
-    o+=TP.title(K,A,'스레드 사용과 대기',[['사용 중',C.blue],['대기',C.amber]])+TP.yTicks(K,A,[[0,'0'],[P.workers,String(P.workers),C.red],[D.axes.stack_max,String(D.axes.stack_max)]]);
+    o+=TP.title(K,A,'스레드 사용과 대기',[['사용 중',C.blue],['대기',C.amber]])+TP.yTicks(K,A,[[0,'0'],[P.workers,String(P.workers),C.redText],[D.axes.stack_max,String(D.axes.stack_max)]]);
     var n=Math.min(S.active.length-1,Math.floor(T/S.dt+1e-6));
     o+=TP.stacked(K,A,S.dt,n,S.active,S.queued_smooth,C.blue,C.amber)+TP.limit(K,A,P.workers,'풀 한도 '+P.workers);
-    if(E.q_max>0&&T>=E.t_queue_max)o+=K.text(A.X(E.t_queue_max),A.Y(P.workers+E.q_max)-6,'최대 대기 '+E.q_max+'건',{fs:11,c:C.amberText,a:'middle',w:700});
+    if(E.q_max>0&&T>=E.t_queue_max)o+=K.text(A.X(E.t_queue_max),A.Y(P.workers+E.q_max)-6,'최대 대기 '+E.q_max+'건',{fs:11,c:C.amberText,a:'middle',w:700,halo:1});
     o+=TP.title(K,B,'요청별 체감 응답 시간')+TP.yTicks(K,B,D.axes.response_ticks.map(function(t){return [t,t?t+'초':'0'];}),true);
     J.forEach(function(r){if(r.e<=T){var hot=r.e-r.a>=D.axes.hot_response;o+=K.dot(B.X(r.e),B.Y(r.e-r.a),hot?3:2.6,hot?C.red:C.blue,hot?.9:.75);}});
-    if(T>=J[0].e)o+=K.text(B.X(J[0].a),B.Y(P.normal_service)-8,'평소 '+K.num(P.normal_service)+'초',{fs:11,c:C.blueText});
+    if(T>=J[0].e)o+=K.text(B.X(J[0].a),B.Y(P.normal_service)-8,'평소 '+K.num(P.normal_service)+'초',{fs:11,c:C.blueText,halo:1});
     if(maxJ&&T>=maxJ.e){var wait=maxJ.s-maxJ.a,resp=maxJ.e-maxJ.a;
-      o+=K.text(B.X(maxJ.e)-9,B.Y(resp)+4,g.nw||wait<1e-9?'최대 '+K.num(resp)+'초':'최대 '+K.num(resp)+'초 = 대기 '+K.num(wait)+' + 처리 '+K.num(maxJ.svc),{fs:11,c:C.redText,a:'end',w:700});}
+      o+=K.text(B.X(maxJ.e)-9,B.Y(resp)+4,g.nw||wait<1e-9?'최대 '+K.num(resp)+'초':'최대 '+K.num(resp)+'초 = 대기 '+K.num(wait)+' + 처리 '+K.num(maxJ.svc),{fs:11,c:C.redText,a:'end',w:700,halo:1});}
     o+=TP.xAxis(K,B,D.axes.x_step,'초')+TP.cursor(K,A,B,T);
     return o;}
   function stats(T){var st=state(T),sv=svcAt(T),need=rate*sv,over=need>P.workers+1e-9;

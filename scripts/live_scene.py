@@ -6,8 +6,8 @@ Layers (see references/live-runtime.md):
   runtime (JS, browser clock/controls)  ->  one self-contained <section>
 
 The static fallback inside the macro is produced by running the *same* JS scene code
-in Node at the final model time, so print/export/no-JS output is not a second
-implementation. Node is a build-time requirement for live cases only.
+in Node at the final model time (at 720 px and, for phones, 360 px), so print/export/no-JS
+output is not a second implementation. Node is a build-time requirement for live cases only.
 """
 from __future__ import annotations
 import html, json, re, shutil, subprocess, tempfile
@@ -18,6 +18,7 @@ LIVE = ROOT / 'visuals/live'
 MARK = '/*ca-live-runtime v1*/'
 CORE_FILES = ['kit.js', 'grammars/flow-queue.js', 'grammars/time-panels.js']
 STATIC_WIDTH = 720
+NARROW_WIDTH = 360   # second static scene, shown without JavaScript on phone-width screens
 
 
 def core_js(scene: str) -> str:
@@ -68,6 +69,7 @@ def assemble_live(case_id: str, prefix: str, speed: float, data: dict, aria: str
     if not re.fullmatch(r'[A-Za-z][A-Za-z0-9-]{2,40}', prefix):
         raise ValueError('Invalid prefix')
     static = node_static(data)
+    narrow = node_static(data, NARROW_WIDTH)
     final_caption = data['captions'][-1]
     head, rows = table
     table_html = ('<table><thead><tr>' + ''.join('<th scope="col">' + html.escape(h) + '</th>' for h in head) +
@@ -81,6 +83,7 @@ def assemble_live(case_id: str, prefix: str, speed: float, data: dict, aria: str
     values = {
         'PREFIX': prefix, 'CASE': case_id, 'SPEED': f'{speed:g}', 'W': str(STATIC_WIDTH), 'H': f"{static['H']:g}",
         'STATIC_SVG': static['svg'], 'STATS': stats_html(static['stats']),
+        'WN': str(NARROW_WIDTH), 'HN': f"{narrow['H']:g}", 'STATIC_SVG_N': narrow['svg'],
         'CAPTION': '<span class="n">' + html.escape(final_caption[1]) + '</span>' + html.escape(final_caption[2]),
         'ARIA': html.escape(aria, quote=True), 'NOTES': html.escape(notes), 'TABLE': table_html,
     }

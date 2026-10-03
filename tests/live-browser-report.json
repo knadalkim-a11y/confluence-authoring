@@ -1,20 +1,24 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T12:56:46+00:00",
+  "tested_at_utc": "2026-10-03T14:51:17+00:00",
   "cases": [
     {
       "id": "cpu-latency",
       "checks": {
         "autoplay_from_start_and_advances": [
-          2.688,
+          2.75,
           4.25
         ],
         "height_715": 356,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
+        "text_contrast_aa_715": true,
+        "min_text_px_715": 10,
         "height_360": 548,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
+        "text_contrast_aa_360": true,
+        "min_text_px_360": 10,
         "captions_match_model_events": true,
         "no_future_annotation_leak": true,
         "controls_end_restart_pause_keyboard": true,
@@ -24,24 +28,29 @@
         "no_errors_no_external_requests": true,
         "reduced_motion_final_no_autoplay": true,
         "nojs_static_final_scene": true,
+        "nojs_phone_static_scene_min_text_px": 10,
         "gallery_executes_live_macro": true
       },
-      "sha256": "b0ca2450c6f5753a852a7a29cd6faf0674ce7f55cbaf0c02c27e1a2212deba55",
-      "bytes": 80592
+      "sha256": "4e4058913903d10773e06dfa41ebe3c300aeb65c636d50b714b15d29e9d2e243",
+      "bytes": 121621
     },
     {
       "id": "thread-pool",
       "checks": {
         "autoplay_from_start_and_advances": [
-          0.985,
-          1.558
+          0.86,
+          1.36
         ],
         "height_715": 472,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
+        "text_contrast_aa_715": true,
+        "min_text_px_715": 11,
         "height_360": 453,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
+        "text_contrast_aa_360": true,
+        "min_text_px_360": 11,
         "captions_match_model_events": true,
         "no_future_annotation_leak": true,
         "controls_end_restart_pause_keyboard": true,
@@ -51,24 +60,29 @@
         "no_errors_no_external_requests": true,
         "reduced_motion_final_no_autoplay": true,
         "nojs_static_final_scene": true,
+        "nojs_phone_static_scene_min_text_px": 11,
         "gallery_executes_live_macro": true
       },
-      "sha256": "871cac07e14e49e805542d1b2933bc1d90965516093cb2dde89fee995495dbd6",
-      "bytes": 59533
+      "sha256": "6c1ac2c8cae114b2fc1e12f1aecd402bc870f8010a76acf2a998d8ca19fd1ec1",
+      "bytes": 80167
     },
     {
       "id": "pipeline-bottleneck",
       "checks": {
         "autoplay_from_start_and_advances": [
-          1.1,
-          1.7
+          1.046,
+          1.654
         ],
         "height_715": 260,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
+        "text_contrast_aa_715": true,
+        "min_text_px_715": 11,
         "height_360": 254,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
+        "text_contrast_aa_360": true,
+        "min_text_px_360": 11,
         "captions_match_model_events": true,
         "no_future_annotation_leak": true,
         "controls_end_restart_pause_keyboard": true,
@@ -78,24 +92,29 @@
         "no_errors_no_external_requests": true,
         "reduced_motion_final_no_autoplay": true,
         "nojs_static_final_scene": true,
+        "nojs_phone_static_scene_min_text_px": 11,
         "gallery_executes_live_macro": true
       },
-      "sha256": "77b7cad400f195b6120ce87478fca5fb6f600363c1c7b0ea874f3d5d7c82d1d8",
-      "bytes": 40907
+      "sha256": "7ea8c650e2eef3f98c2be927551c98123ec11ec74c18f99d63ae0b5f3dc91ac8",
+      "bytes": 45923
     },
     {
       "id": "bounded-queue",
       "checks": {
         "autoplay_from_start_and_advances": [
-          1.075,
+          1.1,
           1.7
         ],
         "height_715": 340,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
+        "text_contrast_aa_715": true,
+        "min_text_px_715": 11,
         "height_360": 560,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
+        "text_contrast_aa_360": true,
+        "min_text_px_360": 11,
         "captions_match_model_events": true,
         "no_future_annotation_leak": true,
         "controls_end_restart_pause_keyboard": true,
@@ -105,13 +124,14 @@
         "no_errors_no_external_requests": true,
         "reduced_motion_final_no_autoplay": true,
         "nojs_static_final_scene": true,
+        "nojs_phone_static_scene_min_text_px": 11,
         "gallery_executes_live_macro": true
       },
-      "sha256": "09a9cb5b735e73d1f4647cf10c3804899c929eabe2b342ba40501bd55cca362e",
-      "bytes": 57717
+      "sha256": "501dea6c7f3ad10322a8ac72def8b88f75bb1ecf92e641aae47791596983b866",
+      "bytes": 74844
     }
   ],
   "browser": "141.0.7390.37",
   "result": "PASS",
-  "test_sha256": "f642f59239f9fe3d889ab9ecf5ae04a5cea453689f7bf881cbb169706b7e6919"
+  "test_sha256": "c69c0102745d51bd452391a77df7ad1819dcdd8862d2ad139e729ea585cdfe38"
 }

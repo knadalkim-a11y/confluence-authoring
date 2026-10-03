@@ -1,5 +1,21 @@
 # Changes
 
+## 0.6.1 — readability fixes found in review, with gates
+
+- Caption pacing: `paced_rate()` slows playback so every caption except the last stays on
+  screen max(2.5 s, chars / 12) at the default speed; captions rewritten to 25–45 chars;
+  build fails when two captions are too close to read (no-queue thread-pool variant merged).
+- Contrast: text colours >= 4.5:1 on white (muted 3.32 → 5.02), pill pairs >= 4.5:1; faint
+  grey only for non-text. Browser gate checks rendered SVG/HTML text.
+- Labels over plotted marks get a white halo; CPU value labels sit above the dot.
+- Final/static scene no longer freezes in-flight tokens; buffer occupancy drawn as filled
+  cells (1 cell = 1 request), distinct from token dots (1 dot = N requests); waiting is
+  always yellow; slot-mode pill moved below the buffer.
+- Phone-width static scene (360 px) shown without JavaScript instead of a shrunken 720 px
+  one (text was ~6 px); browser gate checks visibility and >= 9 px text.
+- Pill widths estimated conservatively; tests now render with Noto Sans CJK KR, which
+  exposed and fixed a title/tick collision in thread-pool.
+
 ## 0.6.0 — visual language for the live tier
 
 Goal: the look and finish of the kciter.so article demos, not their content. Their

@@ -61,7 +61,7 @@ CA_GRAMMARS.flowQueue.chainGeom=function(W,top,o){
   g.bottom=g.y0+g.nh+50;return g;};
 /* st: {T, q, unit, tokens:[[arrive, served|null, rejected]], tail(t)->q, v (px/s),
         stages:[{name, limit, frac, state:'hot'|'ok'|null, pill:[text,kind]|null}],
-        qLabel, qHot, boxAlways, centrePill:[text,kind]|null, limitLabel} */
+        qLabel, qHot, boxAlways, centrePill:[text,kind]|null, limitLabel, final (skip tokens)} */
 CA_GRAMMARS.flowQueue.chainDraw=function(K,g,st){
   var C=K.C,o='',T=st.T,my=g.my,i,qs=g.sx[g.o.queueAt],v=st.v,x0=0;
   /* rails + arrows */
@@ -71,13 +71,13 @@ CA_GRAMMARS.flowQueue.chainDraw=function(K,g,st){
   var busy=st.q>1e-6,showBox=st.boxAlways||busy,bx=g.qx0,bw=g.qx1-g.qx0,by=my-g.boxH/2;
   if(showBox)o+=K.rect(bx,by,bw,g.boxH,{r:6,fill:st.qHot?C.redSoft:C.paper2,st:st.qHot?C.red:C.edge,sw:st.qHot?1.2:1,d:st.qHot&&!g.o.slots?'4 3':null});
   if(g.o.slots){var n=Math.round(st.q);for(i=0;i<g.o.slots;i++){var cx=g.qx1-5-(i+1)*(g.cell+3)+3;
-      o+=K.rect(cx,my-g.cell/2,g.cell,g.cell,{r:4,fill:C.paper,st:C.edge});if(i<n)o+=K.dot(cx+g.cell/2,my,g.cell*0.3,C.amber);}}
+      o+=i<n?K.rect(cx,my-g.cell/2,g.cell,g.cell,{r:4,fill:C.amberCell,st:C.amber}):K.rect(cx,my-g.cell/2,g.cell,g.cell,{r:4,fill:C.paper,st:C.edge});}}
   else if(busy){var cap=g.rows*g.cols,dots=Math.min(cap,Math.ceil(st.q/st.unit-1e-6));
-    for(i=0;i<dots;i++){var col=Math.floor(i/g.rows),row=i%g.rows;o+=K.dot(g.qx1-4-g.pitch/2-col*g.pitch,by+4+g.pitch/2+row*g.pitch,g.c?3.6:4.2,st.qDot||C.amber);}}
-  if(busy&&st.qLabel)o+=K.text(bx+bw/2,by-7,st.qLabel,{fs:12,c:st.qHot?C.redText:C.amberText,a:'middle',w:700});
+    for(i=0;i<dots;i++){var col=Math.floor(i/g.rows),row=i%g.rows;o+=K.dot(g.qx1-4-g.pitch/2-col*g.pitch,by+4+g.pitch/2+row*g.pitch,g.c?3.6:4.2,C.amber);}}
+  if(busy&&st.qLabel)o+=K.text(bx+bw/2,by-7,st.qLabel,{fs:12,c:st.qHot?C.redText:C.amberText,a:'middle',w:700,halo:1});
   if(st.limitLabel)o+=K.line(bx,by-4,bx,by+g.boxH+4,C.red,{d:'3 3',sw:1.2})+K.text(bx+4,by-7,st.limitLabel,{fs:11,c:C.redText,w:700});
-  /* tokens */
-  st.tokens.forEach(function(k){var a=k[0],s=k[1],rej=k[2],tx=rej||st.tail(a)>1e-6?bx:qs,d=tx-x0,ta=a-d/v;
+  /* tokens (not in the final/static scene: a frozen token reads as a glitch in print) */
+  if(!st.final)st.tokens.forEach(function(k){var a=k[0],s=k[1],rej=k[2],tx=rej||st.tail(a)>1e-6?bx:qs,d=tx-x0,ta=a-d/v;
     if(T>=ta&&T<a)o+=K.dot(x0+(T-ta)*v,my,g.c?3.6:4.2,C.blue,K.clamp((T-ta)*v/14));
     if(rej&&T>=a&&T<a+0.35){var r=(T-a)/0.35;o+=K.dot(bx-2-r*8,my-6-r*20,3.6,C.red,1-r);}
     if(s!=null){var sx=g.sx[g.o.queueAt]+g.nodeW,ex=g.end-4;if(T>=s&&T<s+(ex-sx)/v)o+=K.dot(sx+(T-s)*v,my,g.c?3.4:4,C.blue,K.clamp((ex-sx-(T-s)*v)/12));}});
@@ -89,5 +89,7 @@ CA_GRAMMARS.flowQueue.chainDraw=function(K,g,st){
     o+=K.text(x+w/2,g.y0+g.nh+15,sg.limit,{fs:11,c:C.muted,a:'middle'});
     o+=K.gauge(x+4,g.y0+g.nh+22,w-8,sg.frac,sg.gaugeHot);
     if(sg.pill)o+=K.pill(x+w/2,g.top+10,sg.pill[0],sg.pill[1]);});
-  if(st.centrePill)o+=K.pill(bx+bw/2,my,st.centrePill[0],st.centrePill[1],{fs:12});
+  /* Over a dot grid the pill may cover dots (they are a mass); over buffer slots it goes below so the
+     reader can still count the occupied cells. */
+  if(st.centrePill)o+=K.pill(bx+bw/2,g.o.slots?by+g.boxH+14:my,st.centrePill[0],st.centrePill[1],{fs:12});
   return o;};
