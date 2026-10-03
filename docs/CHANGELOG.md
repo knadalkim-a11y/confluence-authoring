@@ -1,5 +1,27 @@
 # Changes
 
+## 0.4.0 — live runtime tier; thread-pool rebuilt on it
+
+Adds a second rendering tier for explanations that must show model state at time T.
+Python models stay the single numeric source; `scripts/live_scene.py` bundles a small
+JS kit, two reusable grammars (`flowQueue`, `timePanels`), a per-case scene and a runtime
+into one self-contained macro with one validated inline script. The static fallback is
+the same scene code run in Node at the final time, so export/no-JS show the final scene.
+
+`thread-pool` is the first and only migrated case. Same FIFO model and inputs as v0.3.2.
+The diagram now shows the queue, request tokens travel one drawn route into queue and
+slots, slow work is visually distinct, active+queued share one stacked panel with the
+pool limit, per-request response times share the time axis, and a live line shows
+arrival × service time against pool size. Captions and playback pacing bind to model
+events. Height at a 715 px container: 1,793 px → 487 px; macro 91 KB → about 50 KB.
+
+Validator accepts scripts only in live roots, only the marked runtime, without
+attributes, and without network/storage/dynamic-code/navigation APIs. Gallery re-creates
+scripts after mounting (innerHTML never executes them) and passes speed via
+`data-ca-speed`; thread-pool gains a before/after toggle. New unit and browser gates.
+Other 18 cases and 13 basic patterns are unchanged (CSS tier).
+
+
 ## 0.2.0 — motion expansion and reuse
 
 Added ten patterns: before-after, threshold-cross, recovery, parallel-flow, branch-flow,

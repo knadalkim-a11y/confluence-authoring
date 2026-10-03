@@ -52,7 +52,8 @@ class MechanismTests(unittest.TestCase):
                 for speed in (1.25,1.5):
                     html,m=build_case(c,'ca-quality-test',speed)
                     self.assertEqual(model,m);self.assertFalse(validate(html))
-                    self.assertIn(f'--duration:{18/speed}s',html)
+                    if c.get('runtime')=='live':self.assertIn(f'data-ca-speed="{speed:g}"',html)
+                    else:self.assertIn(f'--duration:{18/speed}s',html)
     def test_invalid_speed(self):
         for speed in (True,0,2,float('nan')):
             with self.assertRaises(ValueError):build_case(self.cases[0],'ca-test',speed)

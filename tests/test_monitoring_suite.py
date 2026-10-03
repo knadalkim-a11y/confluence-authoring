@@ -98,8 +98,11 @@ class MonitoringSuiteTests(unittest.TestCase):
    with self.assertRaises(ValueError):ReferenceScene().track(f)
  def test_bonus_separate(self):self.assertFalse(BY_ID['gc-pause']['in_article'])
  def test_no_remote_runtime(self):
-  for fragment,_ in self.rendered.values():
-   self.assertNotRegex(fragment,r'<(?:script|iframe|link|image)\b');self.assertNotRegex(fragment,r'(?:src|srcdoc)=')
+  for id,(fragment,_) in self.rendered.items():
+   with self.subTest(id=id):
+    self.assertNotRegex(fragment,r'<(?:iframe|link|image)\b');self.assertNotRegex(fragment,r'(?:src|srcdoc)=')
+    if BY_ID[id].get('runtime')=='live':self.assertEqual(fragment.count('<script>'),1)
+    else:self.assertNotIn('<script',fragment)
  def test_generator_determinism(self):
   a,_=build_case(BY_ID['pipeline-bottleneck'],'ca-stable');b,_=build_case(BY_ID['pipeline-bottleneck'],'ca-stable');self.assertEqual(a,b)
 

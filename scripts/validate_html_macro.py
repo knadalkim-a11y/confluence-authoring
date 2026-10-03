@@ -6,6 +6,10 @@ import re
 from html.parser import HTMLParser
 from pathlib import Path
 
+LIVE_MARK='/*ca-live-runtime v1*/'
+# Live fragments may carry exactly one inline runtime script per live root. These APIs
+# would add network, storage, dynamic code or cross-page effects and are never allowed.
+LIVE_FORBIDDEN=re.compile(r'\b(?:fetch|XMLHttpRequest|WebSocket|EventSource|importScripts|eval|Function|localStorage|sessionStorage|indexedDB|cookie|postMessage|sendBeacon|open)\s*\(|\bimport\s*\(|document\.write|\.src\s*=|innerHTML\s*=\s*[^;]*location|window\.location|top\.|parent\.')
 BAD_TAGS={'html','head','body','script','iframe','object','embed','link','base','meta','form','foreignobject','animate','animatetransform','set','image','audio','video','source'}
 TOKEN=re.compile(r'{{[A-Z][A-Z0-9_]*}}')
 
@@ -20,9 +24,23 @@ class Inspector(HTMLParser):
         self.errors=[]
         self.in_style=False
         self.inline_styles=[]
+        self.in_script=False
+        self.scripts=[]
+        self.live_roots=0
+        self.static_svgs=0
 
     def handle_starttag(self,tag,attrs):
         attrs=dict(attrs)
+        if attrs.get('data-ca-runtime')=='live':
+            self.live_roots+=1
+        if tag=='svg' and 'data-ca-static' in attrs:
+            self.static_svgs+=1
+        if tag=='script':
+            self.in_script=True
+            self.scripts.append('')
+            if attrs:
+                self.errors.append('Live script must not have attributes')
+            return
         if tag in BAD_TAGS:
             self.errors.append(f'Forbidden tag: {tag}')
         self.in_style=tag=='style' or self.in_style
@@ -56,8 +74,13 @@ class Inspector(HTMLParser):
     def handle_endtag(self,tag):
         if tag=='style':
             self.in_style=False
+        if tag=='script':
+            self.in_script=False
 
     def handle_data(self,data):
+        if self.in_script:
+            self.scripts[-1]+=data
+            return
         if self.in_style:
             self.styles.append(data)
 
@@ -97,6 +120,18 @@ def validate(fragment: str) -> list[str]:
     p=Inspector()
     p.feed(fragment)
     errors=list(p.errors)
+    if p.scripts:
+        if p.live_roots!=len(p.scripts):
+            errors.append('Forbidden tag: script')
+        for body in p.scripts:
+            if not body.startswith(LIVE_MARK):
+                errors.append('Script is not the bundled live runtime')
+            if LIVE_FORBIDDEN.search(body):
+                errors.append('Live script uses a forbidden API')
+        if p.static_svgs<p.live_roots:
+            errors.append('Live fragment lacks a static fallback SVG')
+    elif p.live_roots:
+        errors.append('Live root without runtime script')
     if TOKEN.search(fragment):
         errors.append('Unresolved template token')
     if not p.prefixes or any(not re.fullmatch(r'[A-Za-z][A-Za-z0-9-]{2,40}',x or '') for x in p.prefixes):

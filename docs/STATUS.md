@@ -1,40 +1,38 @@
-# Status — v0.3.2 layout revision
+# Status — v0.4.0 live runtime tier
 
 Review branch: `feat/initial-authoring-skill`, existing Draft PR #1.
-Remote starting point: `a4334ef6f0d9b063dd6b246765199bf4ada4a28f`.
-Local starting point: delivered v0.3.1 ZIP (previously not pushed).
+Starting point: `5783eb58d816863246dbc523e41cf34b1fda85a5` (v0.3.2), no later remote commits found.
 No main merge, Draft removal, release, permission change or Confluence publication.
 
 ## Changed
 
-- Preserved v0.3.1 mechanism models and the 1.25x default / three-speed gallery.
-- Cascade: equal peer nodes/gaps; centred LB/DB; straight desktop fan; two deliberate,
-  single-stroke mobile trunks with visible branch junctions.
-- Event loop: aligned primary flow; direct I/O delegation and orthogonal callback
-  return. External curves removed. Internal circular execution remains meaningful.
-- Pipeline: equal node sizes/gaps, explicit queue block, straight shared-axis ports;
-  equivalent top-down narrow layout. Existing fluid-accounting model preserved.
-- Visible rails and moving tokens use one Route point list; SVG port markers expose
-  endpoints. No stories hierarchy or dependency on an external layout library.
-- Before/after gallery toggle compares the previous v0.3.1 and current versions of
-  these three cases at the same selected speed.
+- New live tier: `scripts/live_scene.py`, `visuals/live/` (kit, grammars `flowQueue` and
+  `timePanels`, scene `thread-pool`, runtime, shell). Architecture, composition rules and
+  gates: `references/live-runtime.md`.
+- `thread-pool` migrated (`"runtime": "live"`). Same `pool_model` inputs and numbers as
+  v0.3.2; captions and pacing bound to model events (queue onset 4.2 s, peak 14 at 8.85 s,
+  drain 10.05 s). The v0.3.2 diagram matched the model at exact times but did not show
+  the queue; v0.4.0 shows queue, slow work and arrival × service time in the main figure.
+- Validator, gallery (script mounting, speed, before/after for thread-pool), suite tests,
+  CSS browser test (skips live cases; no hard-coded browser path), docs.
+- Other 18 monitoring macros: byte-identical to a v0.3.2 build at the same prefix/speed.
 
-## Actual validation
+## Actual validation (this environment: Linux, Python 3.12, Node 22, Playwright Chromium)
 
-54 available Python test methods pass (30 prior monitoring + 12 prior mechanism +
-12 new layout tests). All 19 reference macros pass static lint and local Chromium
-regression. Additional geometry checks cover the three revised cases at 1160/390/320px,
-intermediate token positions, label overlap, clock preservation on resize, and exact
-old/current preview/code/export at 1x, 1.25x and 1.5x. See tests/layout-verification.json.
-
-The other 16 generated macros are byte-identical to the delivered v0.3.1 at the same
-prefix/speed. The three original numerical models are identical after excluding the
-new layout metadata. Their input assumptions have not been changed by this revision.
+- Unit: 85 tests pass (74 prior + 11 live).
+- `tests/browser_live.py`: thread-pool passes all gates — height 487 px at 715 px and
+  504 px at 360 px, no text overlap/clipping at 6 model times × 2 widths, browser state and
+  status numbers equal Python `pool_state`, captions on events, no future annotations,
+  controls/keyboard, resize, print, reduced motion, no-JS static scene, two instances,
+  gallery execution, no errors or external requests. Report: `tests/live-browser-report.json`.
+- `tests/browser_monitoring.py` (18 CSS cases + gallery incl. live mount), `browser_smoke.py`
+  (13 basic patterns) and `browser_diagram_layout.py`: pass. Their committed reports were
+  not regenerated in this change.
+- Before/after at identical model times and width was reviewed by screenshot.
 
 ## Boundaries
 
-Original-site live A/B, target Confluence rendering, other browser engines and real
-frame-rate measurements: not verified. This is a rendering-source snapshot test,
-not a fresh git clone or GitHub Actions run. The 13 basic pattern suite and 8 document
-recipes remain outside this change and were not re-tested here. Historical reports
-retain their original scope; tests passing is not a visual-equivalence rating.
+Target Confluence: inline-script execution, CSP, editor view, mobile apps and PDF export
+are NOT verified; run the smoke check in `references/confluence-rules.md` first. Aesthetic
+quality is a human judgement; gates only catch mechanical defects. Only thread-pool uses
+the live tier; the grammar mapping for other cases in live-runtime.md is a plan.

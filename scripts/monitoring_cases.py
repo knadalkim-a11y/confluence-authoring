@@ -341,6 +341,58 @@ def gc_pause(s,p):
     charts=s.grid(s.chart('P99 스파이크',[('P99',samples(latency,301),P)],'ms',600,[(e,'GC',R) for e in events]),s.chart('GC 사건과 힙',[('힙',sorted(samples(heap,301)+[[e-0.00001,heap(e-0.00001)] for e in events]+[[e,heap(e)] for e in events if all(abs(e-i/300)>1e-9 for i in range(301))]),B)],'%',100,[(e,'정지',R) for e in events]))
     return charts,phase((0,'보너스 케이스','배포 코드에는 있지만 현재 본문에 삽입되지 않은 데모를 별도로 다룬다.'),(.45,'시각을 맞춘다','지연 스파이크와 GC 이벤트가 같은 시간에 놓이도록 한다.'),(.85,'추가 로그로 검증한다','시간 정렬은 가설을 돕는다. 실제 정지 로그를 확인해야 한다.'))
 
+# ---- live runtime cases (inline JS + SVG; see references/live-runtime.md) ----
+def nice_ceiling(v,step):return max(step,math.ceil(v/step-1e-9)*step)
+
+def pool_live_data(p):
+    """Model -> data for the live thread-pool scene. Captions and playback pacing are
+    bound to model events (queue onset, drain), never to fixed fractions of the clip."""
+    jobs=pool_model(p);w=p['workers'];h=p['horizon'];dt=0.05;n=int(round(h/dt))
+    states=[pool_state(jobs,i*dt) for i in range(n+1)]
+    active=[s['active'] for s in states];queued=[s['queued'] for s in states]
+    win=max(1,round(p['arrival_interval']/dt))
+    smooth=[round(sum(queued[max(0,i-win+1):i+1])/len(queued[max(0,i-win+1):i+1]),3) for i in range(n+1)]
+    waits=[j for j in jobs if j['wait']>1e-9]
+    q_max=max(queued);t_qmax=queued.index(q_max)*dt if q_max else None
+    t_queue=min(j['arrive'] for j in waits) if waits else None
+    t_drain=max(j['start'] for j in waits) if waits else None
+    resp=[j['end']-j['arrive'] for j in jobs];max_job=max(range(len(jobs)),key=lambda i:(round(resp[i],9),-i))
+    ns,ss,s0,s1=p['normal_service'],p['slow_service'],p['slow_start'],p['recovery']
+    rate=1/p['arrival_interval'];need_n=ns*rate;need_s=ss*rate
+    f1=lambda v:f'{v:.1f}';fg=lambda v:f'{v:g}';fn=lambda v:f'{round(v,1):g}'
+    captions=[[0,'①',f'평소: 요청 하나가 {fg(ns)}초면 끝나므로, {w}칸 중 {fn(need_n)}칸 정도만 돌아도 충분하다.'],
+              [s0,'②',f'{fg(s0)}초, DB가 느려진다. 처리 시간이 {fg(ss)}초가 되자 스레드가 반납되지 않고 빈칸이 빠르게 줄어든다.']]
+    if t_queue is not None:
+        captions.append([t_queue,'③',f'{w}칸이 다 차면 새 요청은 줄을 선다. 체감 응답은 앞사람 대기 + 자기 처리라서 수직으로 뛴다.'])
+    captions.append([s1,'④',f'{fg(s1)}초, DB가 회복됐다. 하지만 이미 시작한 {fg(ss)}초짜리 작업이 끝나야 칸이 비고 줄이 빠진다.' if t_queue is not None
+                     else f'{fg(s1)}초, DB가 회복됐다. 필요한 칸 수({fn(need_s)})가 풀({w}) 안이라 대기는 생기지 않았다.'])
+    end_at=max(s1,(t_drain or s1))+0.3
+    captions.append([min(end_at,h),'⑤',f'트래픽은 처음부터 끝까지 그대로였다. 처리 시간이 늘어 필요한 칸 수({fn(need_s)})가 풀({w})을 넘은 만큼이 대기가 됐다.'
+                     if need_s>w else f'트래픽은 그대로였고, 필요한 칸 수({fn(need_s)})가 풀({w}) 안이라 응답 시간만 처리 시간만큼 늘었다.'])
+    captions.sort(key=lambda c:c[0])
+    # Pacing: slow down from the incident until the queue is visible, speed past the tail.
+    rate_map=[[0,1.1],[s0,0.5],[min(s1,(t_queue if t_queue is not None else s0+1.2)+0.4),1.0],[s1,0.8],[min(h,end_at),1.5]]
+    stack_max=nice_ceiling((w+q_max)*1.2,4);rmax=nice_ceiling(max(resp)*1.05,2)
+    data=dict(scene='thread-pool',
+      params={k:p[k] for k in ['workers','arrival_interval','normal_service','slow_service','slow_start','recovery','horizon']},
+      jobs=[[round(j['arrive'],6),round(j['start'],6),round(j['end'],6),j['slot'],j['service']] for j in jobs],
+      series=dict(dt=dt,active=active,queued_smooth=smooth),
+      events=dict(t_queue=t_queue,t_queue_max=t_qmax,q_max=q_max,t_drain=t_drain,max_job=max_job),
+      captions=captions,rate=rate_map,
+      axes=dict(stack_max=stack_max,response_max=rmax,response_ticks=[0,rmax/2,rmax],hot_response=max(1.0,ns*3),x_step=2 if h<=16 else 5),
+      labels=dict(inflow=f'유입 {f1(rate)}건/s',pool='스레드 풀',dependency='DB',slow_band=f'DB 지연 {fg(s0)}–{fg(s1)}초'))
+    aria=(f'스레드 {w}칸 풀에 초당 {f1(rate)}건이 들어온다. {fg(s0)}초에 처리 시간이 {fg(ns)}초에서 {fg(ss)}초로 늘자 '
+          +(f'풀이 모두 차고 대기열이 최대 {q_max}건까지 쌓이며 체감 응답 시간이 최대 {f1(resp[max_job])}초로 뛴다. '
+            f'{fg(s1)}초에 회복해도 이미 시작한 작업이 끝난 뒤에야 대기열이 빠진다.' if waits else '대기열은 생기지 않는다.'))
+    notes=(f'결정론적 FIFO 모델입니다. 스레드 {w}개, {fg(p["arrival_interval"])}초 간격 도착({len(jobs)}건), 처리 시간은 시작 시각 기준 '
+           f'평소 {fg(ns)}초, {fg(s0)}~{fg(s1)}초 시작분 {fg(ss)}초. 처리 시간은 DB 응답 시간으로 단순화했고 가로축은 모델 시간입니다. '
+           '재생은 장애 전환 구간을 느리게, 회복 이후를 빠르게 보여줍니다.'+(' 대기 영역은 도착 간격 이동평균이며, 최대 대기 수치는 이동평균 전 원값입니다.' if waits else ''))
+    table=(['요청','도착','시작','완료','슬롯','대기','응답'],[[j['id'],f"{j['arrive']:.2f}",f"{j['start']:.2f}",f"{j['end']:.2f}",j['slot']+1,f"{j['wait']:.2f}",f"{j['end']-j['arrive']:.2f}"] for j in jobs])
+    numeric=dict(jobs=jobs,states=[(i*dt,s) for i,s in enumerate(states) if i%4==0],max_queue=q_max,live=dict(t_queue=t_queue,t_drain=t_drain,max_response=resp[max_job]))
+    return data,aria,notes,table,numeric
+
+LIVE_BUILDERS={'thread-pool':pool_live_data}
+
 BUILDERS={'traffic-patterns':traffic,'percentile-comparison':distributions,'survivorship-bias':survivorship,'cpu-latency':cpu,'cpu-throttling':throttling,'memory-leak':memory,'memory-spike':spike,'thread-pool':pool,'cluster-cascade':cascade,'event-loop':event_loop,'pipeline-bottleneck':pipeline,'utilization-wait':utilization,'bounded-queue':bounded,'cache-stampede':cache,'timeout-mismatch':timeout,'slow-degradation':slow,'deploy-comparison':deploy,'postmortem-timeline':postmortem,'gc-pause':gc_pause}
 
 def build_case(meta,prefix=None,speed=1.25):
@@ -355,7 +407,15 @@ def build_case(meta,prefix=None,speed=1.25):
     defaults=json.loads((__import__('reference_scene').ROOT/'examples/monitoring-cases.json').read_text())['cases']
     allowed=next(x['params'] for x in defaults if x['id']==meta['id'])
     if set(meta['params'])!=set(allowed):raise ValueError('Missing or unknown case parameters')
-    s=ReferenceScene(prefix);content,phases=BUILDERS[meta['id']](s,meta['params'])
     if isinstance(speed,bool) or speed not in (1,1.25,1.5):raise ValueError('speed must be 1, 1.25 or 1.5')
+    runtime=meta.get('runtime','css')
+    if runtime not in ('css','live'):raise ValueError('runtime must be css or live')
+    if runtime=='live':
+        if meta['id'] not in LIVE_BUILDERS:raise ValueError('No live scene for this case')
+        from live_scene import assemble_live
+        prefix=prefix or 'ca-'+__import__('uuid').uuid4().hex[:12]
+        data,aria,notes,table,numeric=LIVE_BUILDERS[meta['id']](meta['params'])
+        return assemble_live(meta['id'],prefix,speed,data,meta['title']+'. '+aria,notes,table),numeric
+    s=ReferenceScene(prefix);content,phases=BUILDERS[meta['id']](s,meta['params'])
     fragment=assemble(s,meta,content,phases,duration=18/speed)
     return fragment,s.numeric

@@ -21,7 +21,7 @@ animation implementation, article text dump or fonts are redistributed.
 | `cpu-throttling` | 할당량 사용과 강제 대기를 시간 구간으로 구분한다. | `ThrottlingDemo` | yes |
 | `memory-leak` | 정상 수거와 GC 후 잔존량 증가를 나란히 비교한다. | `MemoryLeakDemo` | yes |
 | `memory-spike` | 메모리 급증 지점과 이벤트 로그를 같은 시간에 겹쳐 본다. | `MemorySpikeDemo` | yes |
-| `thread-pool` | 동일한 요청 유입에서 처리 시간 변화가 점유와 대기에 미치는 영향을 보여준다. | `ThreadPoolDemo` | yes |
+| `thread-pool` | 동일한 요청 유입에서 처리 시간 변화가 점유와 대기에 미치는 영향을 보여준다. (live runtime) | `ThreadPoolDemo` | yes |
 | `cluster-cascade` | 3개 서버의 분배율이 1/3, 1/2, 1로 바뀌는 과정을 본다. | `CascadeDemo` | yes |
 | `event-loop` | 회전·위임 I/O·CPU 정지·대기 처리 재개를 구분한다. | `EventLoopDemo` | yes |
 | `pipeline-bottleneck` | 유입 변화·단계별 한도·대기 증가를 하나의 파이프라인으로 본다. | `BottleneckDemo` | yes |

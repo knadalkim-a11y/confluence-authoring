@@ -6,7 +6,15 @@ Run from repository root:
 python -m unittest discover -s tests -v
 python scripts/build_gallery.py
 python tests/browser_smoke.py --browser /path/to/chromium
+python scripts/build_monitoring_suite.py && python tests/browser_monitoring.py
+python tests/browser_live.py [--browser /path/to/chromium]
 ```
+
+`browser_live.py` runs live-runtime cases with JavaScript enabled: autoplay, height
+budget, text overlap at fixed model times and widths, browser state equal to the Python
+model, event-bound captions, no future annotations, controls, resize, print, reduced
+motion, no-JS static scene, two instances and gallery execution. `browser_monitoring.py`
+keeps JavaScript disabled and skips live cases.
 
 The first two commands use only Python's standard library. Browser smoke tests need
 Playwright and an installed Chromium executable. The `--browser` argument avoids

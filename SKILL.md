@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
 metadata:
-  version: "0.3.2"
+  version: "0.4.0"
 ---
 
 # Confluence Authoring
@@ -96,6 +96,10 @@ limits. Generate with `scripts/build_monitoring_suite.py --case <id> --input <fi
 new numeric sources; do not relabel their illustrative geometry as measured data.
 The existing player is reused; no `stories/` hierarchy is required.
 
+Cases with `"runtime": "live"` (currently only `thread-pool`) are built by the live
+runtime; read `references/live-runtime.md` for its layers, composition rules and gates.
+Building them requires Node.js for the static fallback.
+
 Read `references/monitoring-quality-review.md` for case-by-case decisions and
 `references/monitoring-tests.md` for reproducible tests. Original text and published
 code were inspected, but original live browser A/B and Confluence rendering were
@@ -116,6 +120,9 @@ Preserve the 1.25x default and the numerical model when adjusting layout or play
 
 Read `references/confluence-rules.md`. The default rendered macro is self-contained
 HTML + CSS + inline SVG; no JavaScript, iframe, remote font, CDN or external request.
+The live tier is the one exception: a single validated, bundled inline script per block
+with a static final-scene SVG, used only after the target Confluence is checked to run
+inline scripts (smoke check in confluence-rules.md).
 Shared source files are bundled into each output; Confluence does not fetch them.
 The gallery may use JavaScript for search/selection, but macro code does not.
 The default animation plays once and retains the final state; replay is user controlled.

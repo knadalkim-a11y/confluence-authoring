@@ -23,7 +23,7 @@ def build_all(output:Path,speed=1.25,baseline:Path|None=None):
         (folder/'input.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
         (folder/'model.json').write_text(json.dumps(model,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
         item=copy.deepcopy(meta);item['reference_duration']=18;item['default_speed']=speed;item['macro']=fragment;
-        if baseline and meta['id'] in ('cluster-cascade','event-loop','pipeline-bottleneck'):
+        if baseline and meta['id'] in ('cluster-cascade','event-loop','pipeline-bottleneck','thread-pool'):
             old=baseline/meta['id']/'macro.html'
             if old.is_file():item['baseline_macro']=old.read_text(encoding='utf8')
         item['bytes']=len(fragment.encode());item['sha256']=hashlib.sha256(fragment.encode()).hexdigest();items.append(item)

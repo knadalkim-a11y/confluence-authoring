@@ -24,10 +24,12 @@ def seek(page,t):page.evaluate('(t)=>document.getAnimations().forEach(a=>{a.paus
 def morph(page):
  return page.locator('svg .ca-anim').evaluate_all('(els)=>els.map(e=>{let s=getComputedStyle(e);return [s.transform,s.opacity,s.fill,s.width]})')
 with sync_playwright() as p:
- browser=p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+ exe='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None  # else Playwright's bundled Chromium
+ browser=p.chromium.launch(executable_path=exe,headless=True,args=['--no-sandbox'])
  report['browser']=browser.version;context=browser.new_context(viewport={'width':1180,'height':980},java_script_enabled=False);page=context.new_page();requests=[];errors=[]
  page.on('request',lambda r:requests.append(r.url));page.on('pageerror',lambda e:errors.append(str(e)))
- for c in ([] if options.extra_only else cases[options.start:options.start+options.count]):
+ # Live-runtime cases need JavaScript; tests/browser_live.py covers them.
+ for c in ([] if options.extra_only else [x for x in cases[options.start:options.start+options.count] if x.get('runtime')!='live']):
   record={'id':c['id'],'sha256':c['sha256'],'checks':{}}
   content=(OUT/c['id']/'preview.html').read_text();page.set_content(content);page.wait_for_timeout(80)
   before=clocks(page);page.wait_for_timeout(90);after=clocks(page);assert len(before)>0 and max(after)>max(before)
@@ -73,8 +75,7 @@ with sync_playwright() as p:
   page.set_content((OUT/'event-loop'/'preview.html').read_text());seek(page,14.4*(.06+.8*.4));a=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');seek(page,14.4*(.06+.8*.55));b=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');assert a==b,(a,b)
   report['checks']['event_loop_actual_rotation_holds']=True
   # Exact worker state at a model time, not merely an animation presence test.
-  page.set_content((OUT/'thread-pool'/'preview.html').read_text());seek(page,14.4*(.06+.8*5/14));colors=page.locator('[data-mr-slot]').evaluate_all('(els)=>els.map(e=>getComputedStyle(e).fill)');assert colors.count('rgb(169, 198, 239)')==8,colors
-  report['checks']['eight_worker_slots_at_model_5s']=True
+  # thread-pool now uses the live runtime; its exact model-state checks are in tests/browser_live.py.
   report['checks']['macro_external_requests']=[u for u in requests if u.startswith(('http:','https:'))];assert not report['checks']['macro_external_requests'];assert not errors
   # Gallery JavaScript is used only for UI and mounts the exact pre-rendered fragment.
   gc=browser.new_context(viewport={'width':1450,'height':1050},java_script_enabled=True);gp=gc.new_page();gr=[];ge=[];gp.on('request',lambda r:gr.append(r.url));gp.on('pageerror',lambda e:ge.append(str(e)))

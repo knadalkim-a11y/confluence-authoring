@@ -44,3 +44,19 @@ Show units, label the axis or explain it in the title, do not animate a fabricat
 ## Workflows
 
 Clearly distinguish user action, automated execution, automated validation, human judgment/approval, and blocked/waiting state. Do not animate human approval as automatically completed unless that is factually true.
+
+## Composition (explanatory figures)
+
+These rules come from the v0.4.0 thread-pool rebuild and apply to both tiers:
+
+- The main figure carries the core state; supporting charts must not be the only place
+  a key quantity (queue length, which work is slow) is visible.
+- One claim per scene. The caption states it and appears when the model event that makes
+  it true has happened, not at a fixed fraction of the clip.
+- Show a number once, where the eye already is. Prefer one live causal line over KPI
+  cards that repeat the chart.
+- Never show future values (peaks, maxima) before the clock reaches them.
+- Keep assumptions, provenance and raw tables in one collapsed section below the figure.
+- Height budget: about 520 px at a 715 px container and 600 px at 360 px.
+- Stack metrics that must be read together on one shared time axis, not side by side.
+- Moving tokens stand for real units in the model and travel on drawn routes.

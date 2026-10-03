@@ -170,8 +170,8 @@
       "conclusion": "슬롯 점유와 큐는 도착·실행·완료 사건에서 계산한다. 회복 이후에도 기존 대기가 처리될 시간이 필요하다.",
       "assumptions": "원본의 8칸 시각 예시를 참고한 별도 결정론적 모델. 도착 간격·서비스 시간·관찰 시간은 아래 입력값에 명시. λ×W−슬롯 수를 실제 큐 길이로 취급하지 않는다.",
       "source_behavior": "8칸 점유/반납, DB 지연, 큐 누적 후 회복",
-      "implemented_behavior": "FIFO 다중 서버 사건 모델; 슬롯별 가동과 큐·완료 수를 함께 계산",
-      "improvement": "과거 샘플의 1,800 고정 대기 추정을 제거",
+      "implemented_behavior": "FIFO 다중 서버 사건 모델 → 라이브 런타임(인라인 JS+SVG). 요청 점이 유입·대기열·칸을 일관되게 이동하고, 사용+대기 누적 차트와 요청별 응답 점이 같은 모델 시간축을 공유",
+      "improvement": "다이어그램이 대기열과 칸 점유를 직접 표현; 리틀의 법칙(유입×처리 시간)을 실시간 표시; 자막·재생 속도를 모델 사건 시각에 결합; 높이 약 1,790px→약 490px(715px 폭)",
       "params": {
         "workers": 8,
         "arrival_interval": 0.15,
@@ -184,7 +184,8 @@
       },
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#비둘기집의-원리",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "cluster-cascade",

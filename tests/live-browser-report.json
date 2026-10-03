@@ -1,0 +1,36 @@
+{
+  "confluence_verified": false,
+  "tested_at_utc": "2026-10-03T11:24:20+00:00",
+  "cases": [
+    {
+      "id": "thread-pool",
+      "checks": {
+        "autoplay_from_start_and_advances": [
+          0.985,
+          1.558
+        ],
+        "height_715": 487,
+        "no_text_overlap_or_clip_715": 6,
+        "state_matches_python_model_715": 6,
+        "height_360": 504,
+        "no_text_overlap_or_clip_360": 6,
+        "state_matches_python_model_360": 6,
+        "captions_match_model_events": true,
+        "no_future_annotation_leak": true,
+        "controls_end_restart_pause_keyboard": true,
+        "resize_relayout_keeps_clock": true,
+        "print_final_scene_controls_hidden": true,
+        "independent_instances": true,
+        "no_errors_no_external_requests": true,
+        "reduced_motion_final_no_autoplay": true,
+        "nojs_static_final_scene": true,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "4b11f9f965d25a1ebaaa702f18e96a974d1aa0eeb6b24bf36a9dcb87e533d908",
+      "bytes": 49657
+    }
+  ],
+  "browser": "141.0.7390.37",
+  "result": "PASS",
+  "test_sha256": "6e782e0abe75b292f304c168fe92cf9649a3a944b34fe726c541e18dfcf4bd6a"
+}

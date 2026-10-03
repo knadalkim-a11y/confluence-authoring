@@ -19,6 +19,11 @@ text-template helper for ordinary templates. v0.2 scene sources require typed in
 render_motion.py; the legacy command fails with migration guidance rather than silently
 relabeling fixed numerical geometry. Do not use --allow-unresolved output for publishing.
 
-Generation requires Python 3.10+ and no third-party packages. Catalog is serialized as
+`live_scene.py` (library, used by `build_monitoring_suite.py`) assembles live-runtime
+cases: model data from `monitoring_cases.py`, JS kit/grammars/scene/runtime from
+`visuals/live/`, and a static final-scene SVG rendered by running the same scene code
+in Node. Only cases marked `"runtime": "live"` use it. See references/live-runtime.md.
+
+Generation requires Python 3.10+ and no third-party packages (live cases also need Node.js). Catalog is serialized as
 JSON-compatible YAML (YAML 1.2 subset), so standard-library json.load can read it.
 No generation command logs into GitHub or Confluence or performs a remote write.
