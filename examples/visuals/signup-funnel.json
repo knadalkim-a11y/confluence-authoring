@@ -1,0 +1,28 @@
+{
+  "kind": "bars",
+  "mode": "funnel",
+  "title": "신규 가입 퍼널",
+  "claim": "전환율은 가입 완료→첫 결제(22%)가 가장 낮고, 인원은 방문→가입 시작에서 가장 많이(8,900명) 빠진다.",
+  "source": "예시: 분기 가입 퍼널 집계",
+  "data_kind": "example",
+  "unit": "명",
+  "items": [
+    {
+      "label": "방문",
+      "value": 12000
+    },
+    {
+      "label": "가입 시작",
+      "value": 3100
+    },
+    {
+      "label": "가입 완료",
+      "value": 1900
+    },
+    {
+      "label": "첫 결제",
+      "value": 420
+    }
+  ],
+  "drop": "rate"
+}

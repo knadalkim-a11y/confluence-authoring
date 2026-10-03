@@ -1,0 +1,134 @@
+{
+  "kind": "diagram",
+  "source": "예시: 사내 AI 도입 절차 초안",
+  "data_kind": "example",
+  "title": "AI 기능 도입 승인 절차",
+  "claim": "보안과 법무 검토가 모두 끝나야 위원회 승인으로 넘어간다.",
+  "layers": [
+    {
+      "label": "요청",
+      "nodes": [
+        {
+          "id": "req",
+          "name": "요청 부서",
+          "sub": "도입 신청서"
+        }
+      ]
+    },
+    {
+      "label": "검토",
+      "nodes": [
+        {
+          "id": "sec",
+          "name": "보안 검토",
+          "sub": "데이터 반출 점검"
+        },
+        {
+          "id": "law",
+          "name": "법무 검토",
+          "sub": "약관·저작권"
+        }
+      ]
+    },
+    {
+      "label": "승인",
+      "nodes": [
+        {
+          "id": "cmt",
+          "name": "AI 위원회",
+          "sub": "월 1회"
+        }
+      ]
+    },
+    {
+      "label": "적용",
+      "nodes": [
+        {
+          "id": "dep",
+          "name": "시범 적용",
+          "sub": "1개 팀"
+        }
+      ]
+    },
+    {
+      "label": "운영",
+      "nodes": [
+        {
+          "id": "mon",
+          "name": "사용 모니터링",
+          "sub": "월간 보고"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "req",
+      "to": "sec",
+      "label": "신청"
+    },
+    {
+      "from": "req",
+      "to": "law",
+      "label": "신청"
+    },
+    {
+      "from": "sec",
+      "to": "cmt",
+      "label": "의견"
+    },
+    {
+      "from": "law",
+      "to": "cmt",
+      "label": "의견"
+    },
+    {
+      "from": "cmt",
+      "to": "dep",
+      "label": "승인"
+    },
+    {
+      "from": "dep",
+      "to": "mon"
+    },
+    {
+      "from": "mon",
+      "to": "req",
+      "label": "개선 요청",
+      "style": "dashed"
+    }
+  ],
+  "steps": [
+    {
+      "paths": [
+        [
+          "req",
+          "sec",
+          "cmt"
+        ],
+        [
+          "req",
+          "law",
+          "cmt"
+        ]
+      ],
+      "text": "신청서는 보안과 법무가 동시에 검토한다"
+    },
+    {
+      "path": [
+        "cmt",
+        "dep",
+        "mon"
+      ],
+      "text": "위원회 승인 뒤 한 팀에서 먼저 써 본다"
+    },
+    {
+      "path": [
+        "mon",
+        "req"
+      ],
+      "text": "운영 결과는 다음 요청에 반영된다"
+    }
+  ],
+  "dashed_means": "피드백"
+}

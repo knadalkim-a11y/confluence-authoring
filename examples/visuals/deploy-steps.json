@@ -1,0 +1,18 @@
+{
+  "kind": "bars",
+  "title": "CI 개선 전후 배포 단계별 소요 시간",
+  "claim": "자동화한 빌드와 테스트는 크게 줄었고, 사람이 기다리는 승인 대기는 그대로다.",
+  "source": "예시 데이터: 개선 전후 2주 평균",
+  "data_kind": "example",
+  "unit": "분",
+  "better": "lower",
+  "flat_pct": 10,
+  "pair_labels": ["개선 전", "개선 후"],
+  "items": [
+    {"label": "빌드", "before": 18, "after": 6},
+    {"label": "테스트", "before": 25, "after": 12},
+    {"label": "배포", "before": 9, "after": 8},
+    {"label": "승인 대기", "before": 40, "after": 38}
+  ],
+  "highlight": ["승인 대기"]
+}

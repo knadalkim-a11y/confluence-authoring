@@ -1,0 +1,17 @@
+{
+  "kind": "timeline",
+  "title": "신규 결제 모듈 일정",
+  "claim": "개발이 1주 늦어져 QA 시작이 베타 오픈 직전까지 밀릴 위험이 있다.",
+  "source": "예시: 3월 2일 기준 계획과 진행 상황",
+  "data_kind": "example",
+  "time": {"start": "2026-01-05", "end": "2026-04-03"},
+  "tracks": [
+    {"label": "요구사항 정리", "start": "2026-01-05", "end": "2026-01-23", "status": "done"},
+    {"label": "설계", "start": "2026-01-19", "end": "2026-02-13", "status": "done"},
+    {"label": "개발", "start": "2026-02-09", "end": "2026-03-20", "status": "late", "note": "+1주"},
+    {"label": "QA", "start": "2026-03-09", "end": "2026-03-27", "status": "risk"},
+    {"label": "베타 운영", "start": "2026-03-23", "end": "2026-04-03", "status": "planned"}
+  ],
+  "milestones": [{"at": "2026-02-13", "label": "설계 리뷰"}, {"at": "2026-03-23", "label": "베타 오픈"}],
+  "today": "2026-03-02"
+}

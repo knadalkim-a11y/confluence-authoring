@@ -1,0 +1,157 @@
+# Changes
+
+## 0.9.0 — architecture and process diagrams
+
+- New kind `diagram`: components in layers (left to right; top to bottom on phones), typed
+  boxes (`person`, `ai`, `data`, `external`), groups over layers, connections with labels,
+  two-way pairs as parallel lines, dashed lines with a stated meaning, lanes outside every box
+  for connections that skip layers. `data_kind` is `current`, `proposed` or `example` and is
+  printed in the picture. Optional `steps` (`path` or parallel `paths`) animate the route a
+  request takes; the numbered step list stays in the picture for print, export and no-JS.
+- New gate: text that belongs to a box stays inside it; connection labels stay off boxes.
+- Recipes now name the kinds that fit them.
+- Examples: AI agent request path, RAG indexing, AI adoption approval (15 in total).
+- Verification: unit 108; examples 15/15 and live 4/4 under Noto Sans CJK KR and NanumGothic;
+  CSS suites pass. Not verified: target Confluence, macOS/Windows fonts, real user content.
+
+## 0.8.0 — more report situations, portable output, second-font gates
+
+- New kind `share` (100% bars: composition and how it changed, highlighted category with its
+  %p change; replaces pie charts). `bars` gains `"mode": "funnel"` (conversion and people lost
+  per step, overall conversion, `drop: rate|count` because "most drop-off" is ambiguous).
+  `timeline` accepts `HH:MM` clock times, `durations`, `legend: false`, `status_labels`,
+  `today_label` for incidents.
+- Output for places without HTML macros: `figure.svg` (final scene + source line) and
+  `figure.png` (2x). Without Playwright/Chromium the build still writes the HTML/SVG and exits
+  2 ("BUILT (unchecked)"); exit 1 is reserved for real failures.
+- `--font` repeats the gates under another installed font (NanumGothic tested); the font
+  stack includes Noto Sans CJK KR. Static kinds print "예시 데이터"/"추정값" in the picture.
+- Fixes found by a six-request self-run from the docs and by the final gate runs: milestone
+  label rows, x-tick thinning, trend value labels placed in free slots in dot order, node
+  name vs capacity label spacing, history strip vs legend spacing, JS/Python rounding
+  mismatch (half-up `r1`), a needless "29/29일" counter removed, and the exported SVG's
+  source line wrapping instead of running off the figure.
+- 12 example specs (added: signup funnel, incident timeline, infra cost share).
+- `--check` also gates the exported `figure.svg` (text inside the figure, overlap, painted-over
+  text, contrast).
+- Verification: unit 107; live 4/4 and examples 12/12 under both fonts (figure gate included);
+  CSS suites pass.
+  Not verified: target Confluence, macOS/Windows fonts, SVG/PNG in office apps; the
+  self-run was not independent.
+
+## 0.7.0 — spec-driven document visuals
+
+The default way to make a visual is now a JSON spec (`references/visual-specs.md`):
+`flow`, `trend`, `bars`, `timeline`, built by `scripts/build_visual.py` into a validated
+macro (animated or static by situation) and checked by shared browser gates
+(`scripts/visual_gates.py`). Three monitoring cases became plain specs of these kinds
+(bespoke scenes removed, identical model numbers). Nine report-style examples ship in
+`examples/visuals/`; `build_visual_gallery.py` builds a review page. Gates now also catch
+transient overlaps (24 moments), text painted over by later shapes, and always check the
+final state. Fixes found by review and by an unprepared-spec test: decimals rounded away,
+unfilled Hangul placeholders, threshold label under area fill, percent decimals ignored,
+event-label collisions, flat changes coloured as wins, timeline note placement, empty
+status band, thread-pool overflow counter under dots, stale screenshots, and a drained
+backlog invisible in the final picture (single-lane history strip).
+
+## 0.6.1 — readability fixes found in review, with gates
+
+- Caption pacing: `paced_rate()` slows playback so every caption except the last stays on
+  screen max(2.5 s, chars / 12) at the default speed; captions rewritten to 25–45 chars;
+  build fails when two captions are too close to read (no-queue thread-pool variant merged).
+- Contrast: text colours >= 4.5:1 on white (muted 3.32 → 5.02), pill pairs >= 4.5:1; faint
+  grey only for non-text. Browser gate checks rendered SVG/HTML text.
+- Labels over plotted marks get a white halo; CPU value labels sit above the dot.
+- Final/static scene no longer freezes in-flight tokens; buffer occupancy drawn as filled
+  cells (1 cell = 1 request), distinct from token dots (1 dot = N requests); waiting is
+  always yellow; slot-mode pill moved below the buffer.
+- Phone-width static scene (360 px) shown without JavaScript instead of a shrunken 720 px
+  one (text was ~6 px); browser gate checks visibility and >= 9 px text.
+- Pill widths estimated conservatively; tests now render with Noto Sans CJK KR, which
+  exposed and fixed a title/tick collision in thread-pool.
+
+## 0.6.0 — visual language for the live tier
+
+Goal: the look and finish of the kciter.so article demos, not their content. Their
+traits were measured from local recordings and applied once in the kit, shell and
+grammars: Open Color palette, quiet chrome (no card border, centred status and caption,
+text-only controls), waiting requests as dots or buffer cells, stages with a thick gauge
+and %, plain-language pills that appear only when true, and charts only where the
+article text reads them. `flowQueue` gains a stage-chain variant; `timePanels` gains
+sparklines. pipeline-bottleneck drops its queue panel (397 → 260 px at 715 px);
+bounded-queue puts the two queues side by side (498 → 340 px); cpu-latency gets
+event-timed ①②③ pills; thread-pool keeps its structure and is restyled. Fixed the
+browser resize gate, which had passed only because of the old card padding.
+
+## 0.5.0 — pipeline-bottleneck, bounded-queue and cpu-latency on the live tier
+
+`flowQueue` gains a fluid-lane variant for rate models: a queue bar on a request-count
+scale, a limit gauge per stage, optional source, dependency and reject branch. Tokens
+stand for a fixed number of requests; their arrival, rejection and FIFO departure times
+come from the model's cumulative curves, so dots and numbers cannot disagree.
+`timePanels` gains column panels and time-array series cut at T.
+
+- pipeline-bottleneck: Gateway → queue → Application → DB in one lane; the main figure
+  shows the queue in front of Application and DB's unused capacity. Live line
+  "유입 − 처리 = 600 − 300 = 300건/s씩 쌓임". 1,760 → 397 px at 715 px.
+- bounded-queue: two lanes on one count scale; the bounded lane diverts rejected tokens.
+  Both lanes serve 920 requests, so the scene shows that the cap trades waiting for
+  rejection without adding throughput. The old metric cards, which showed final values
+  from the start, are gone. 2,283 → 498 px.
+- cpu-latency: CPU over P99 per service on one time axis; "연산 포화 의심" and "대기 의심" appear
+  only after their events. 3,193 → 347 px.
+
+The runtime test hook is generic (`probe(T)`) and the browser gate runs every live case
+against a Python probe. New `tests/compare_baseline.py` makes before/after sheets at
+identical model times. Other 15 cases are byte-identical; thread-pool's static scene is
+unchanged.
+
+## 0.4.0 — live runtime tier; thread-pool rebuilt on it
+
+Adds a second rendering tier for explanations that must show model state at time T.
+Python models stay the single numeric source; `scripts/live_scene.py` bundles a small
+JS kit, two reusable grammars (`flowQueue`, `timePanels`), a per-case scene and a runtime
+into one self-contained macro with one validated inline script. The static fallback is
+the same scene code run in Node at the final time, so export/no-JS show the final scene.
+
+`thread-pool` is the first and only migrated case. Same FIFO model and inputs as v0.3.2.
+The diagram now shows the queue, request tokens travel one drawn route into queue and
+slots, slow work is visually distinct, active+queued share one stacked panel with the
+pool limit, per-request response times share the time axis, and a live line shows
+arrival × service time against pool size. Captions and playback pacing bind to model
+events. Height at a 715 px container: 1,793 px → 487 px; macro 91 KB → about 50 KB.
+
+Validator accepts scripts only in live roots, only the marked runtime, without
+attributes, and without network/storage/dynamic-code/navigation APIs. Gallery re-creates
+scripts after mounting (innerHTML never executes them) and passes speed via
+`data-ca-speed`; thread-pool gains a before/after toggle. New unit and browser gates.
+Other 18 cases and 13 basic patterns are unchanged (CSS tier).
+
+
+## 0.2.0 — motion expansion and reuse
+
+Added ten patterns: before-after, threshold-cross, recovery, parallel-flow, branch-flow,
+approval-gate, retry-loop, request-response, queue-buildup, failure-propagation.
+The original three pattern IDs remain, for 13 implemented and 13 planned entries.
+
+A single shared player replaces duplicated controls, styles, reduced-motion and print
+handling. Scene sources contain only pattern-specific structure. The generated macro
+is still self-contained; source deduplication does not require external CSS in Confluence.
+Final macro bytes are larger than the old minimal examples because data tables and
+validation-aware labels have been added; no size-reduction claim is made for outputs.
+
+Introduced structured numerical input: line geometry, weighted mean, nearest-rank P95
+and queue conservation are computed rather than independently editable labels. Normal
+strings are HTML-escaped; invalid/unknown inputs fail. Added stricter CSS/HTML lint and
+actual unit/browser tests. Default playback is once, then the final state is retained.
+
+Gallery data is generated by the production renderer, not hand-copied demo markup.
+Search and categories select a single rendered preview. The gallery source is
+`gallery/index.html`; run the builder to produce standalone `dist/gallery.html`.
+
+Compatibility: legacy text-template helper remains, but old `--set` motion commands
+now fail with explicit guidance to structured inputs. Existing generated v0.1 HTML
+fragments are not remotely modified. Source scenes must be assembled before publishing.
+
+Original eight document recipes and general authoring scope are preserved. Weekly
+reporting remains one optional recipe, not the library's default document format.

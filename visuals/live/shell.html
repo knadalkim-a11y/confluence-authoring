@@ -1,0 +1,46 @@
+<section class="%%PREFIX%%" data-ca-prefix="%%PREFIX%%" data-ca-pattern="reference-%%CASE%%" data-ca-runtime="live" data-ca-speed="%%SPEED%%">
+<style>
+.%%PREFIX%%{--ink:#343a40;--text:#495057;--muted:#697077;--faint:#adb5bd;--rule:#e9ecef;--blue:#1971c2;--red:#c92a2a;display:block;max-width:760px;margin:16px auto;padding:6px 0 4px;box-sizing:border-box;background:#fff;color:var(--text);font:13px/1.5 Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;text-align:left}
+.%%PREFIX%% *{box-sizing:border-box}
+.%%PREFIX%% .ca-live-stats{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 0;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums;min-height:22px;text-align:center}
+.%%PREFIX%% .ca-live-stats:empty{display:none}
+.%%PREFIX%% .ca-live-stats span{white-space:nowrap}
+.%%PREFIX%% .ca-live-stats .grp{display:contents}
+.%%PREFIX%% .ca-live-stats .grp>span+span::before,.%%PREFIX%% .ca-live-stats .grp+span::before{content:"·";margin:0 9px;color:var(--faint)}
+.%%PREFIX%% .ca-live-stats b{color:var(--blue);font-weight:700}
+.%%PREFIX%% .ca-live-stats b.hot{color:var(--red)}
+.%%PREFIX%% svg{display:block;width:100%;height:auto;margin-top:10px;overflow:visible}
+.%%PREFIX%% svg text{font-family:inherit;font-variant-numeric:tabular-nums}
+.%%PREFIX%% svg[data-ca-narrow]{display:none}
+@media (max-width:540px){.%%PREFIX%%:not([data-ca-live-bound]) svg[data-ca-live]{display:none}.%%PREFIX%%:not([data-ca-live-bound]) svg[data-ca-narrow]{display:block}}
+.%%PREFIX%% .ca-live-foot{margin-top:8px}
+.%%PREFIX%% .ca-live-cap{min-height:40px;font-size:13px;line-height:1.55;margin:0 auto;max-width:620px;text-align:center;color:var(--muted)}
+.%%PREFIX%% .ca-live-cap .n{margin-right:5px}
+.%%PREFIX%% .ca-live-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
+.%%PREFIX%% .ca-live-ctl{display:flex;gap:2px;flex:none;visibility:hidden}
+.%%PREFIX%%[data-ca-live-bound] .ca-live-ctl{visibility:visible}
+.%%PREFIX%% .ca-live-ctl button{font:inherit;font-size:12px;color:var(--muted);background:none;border:0;border-radius:6px;padding:4px 8px;min-height:28px;cursor:pointer}
+.%%PREFIX%% .ca-live-ctl button:hover{color:var(--ink);background:#f1f3f5}
+.%%PREFIX%% .ca-live-ctl button:focus-visible,.%%PREFIX%% summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.%%PREFIX%% details{font-size:12px;color:var(--muted);min-width:0}
+.%%PREFIX%% details p{margin:6px 0}
+.%%PREFIX%% summary{cursor:pointer;padding:2px 0;width:max-content;max-width:100%}
+.%%PREFIX%% details[open]{flex-basis:100%}
+.%%PREFIX%% .ca-live-tbl{max-height:220px;overflow:auto;margin-top:6px}
+.%%PREFIX%% table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
+.%%PREFIX%% th,.%%PREFIX%% td{border-bottom:1px solid var(--rule);padding:2px 8px;text-align:right}
+.%%PREFIX%% th{position:sticky;top:0;background:#fff;color:var(--ink)}
+@media (max-width:540px){.%%PREFIX%% .ca-live-stats{font-size:13px}.%%PREFIX%% .ca-live-row{flex-wrap:wrap}}
+@media (prefers-reduced-motion:reduce){.%%PREFIX%% .ca-live-cap{transition:none}}
+@media print{.%%PREFIX%% .ca-live-ctl{display:none}.%%PREFIX%%{break-inside:avoid}.%%PREFIX%% .ca-live-tbl{max-height:none}}
+</style>
+<div class="ca-live-stats" data-ca-stats aria-hidden="true">%%STATS%%</div>
+<svg data-ca-live data-ca-static viewBox="0 0 %%W%% %%H%%" role="img" aria-label="%%ARIA%%">%%STATIC_SVG%%</svg>
+<svg data-ca-static data-ca-narrow viewBox="0 0 %%WN%% %%HN%%" role="img" aria-label="%%ARIA%%">%%STATIC_SVG_N%%</svg>
+<div class="ca-live-foot">
+<p class="ca-live-cap" data-ca-caption aria-live="polite">%%CAPTION%%</p>
+<div class="ca-live-row"><details><summary>데이터와 출처</summary><p>%%NOTES%%</p><div class="ca-live-tbl">%%TABLE%%</div></details>
+<div class="ca-live-ctl" data-ca-controls><button type="button" data-a="play">재생</button><button type="button" data-a="restart">처음부터</button><button type="button" data-a="end">최종 장면</button></div></div>
+</div>
+<script>%%SCRIPT%%</script>
+</section>
