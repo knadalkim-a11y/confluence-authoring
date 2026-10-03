@@ -83,7 +83,8 @@ class LayoutTests(unittest.TestCase):
         cases=json.loads((ROOT/'examples/monitoring-cases.json').read_text())['cases']
         for c in cases:
             if c['id'] not in ('cluster-cascade','event-loop','pipeline-bottleneck'):continue
-            frag,m=build_case(c,'ca-layout-unit');parser=Collector();parser.feed(frag)
+            # pipeline-bottleneck now ships on the live tier; its CSS builder stays until removal.
+            frag,m=build_case(dict(c,runtime='css'),'ca-layout-unit');parser=Collector();parser.feed(frag)
             expected={(r['d'],k) for layout in m['diagram_layouts'] for k,r in layout['routes'].items()}
             self.assertTrue(parser.paths);self.assertTrue(parser.particles);self.assertFalse(validate(frag))
             for token in parser.particles:self.assertIn((token['data-motion-path'],token['data-motion-edge']),expected)

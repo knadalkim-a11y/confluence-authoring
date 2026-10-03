@@ -23,7 +23,8 @@ def build_all(output:Path,speed=1.25,baseline:Path|None=None):
         (folder/'input.json').write_text(json.dumps(meta,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
         (folder/'model.json').write_text(json.dumps(model,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
         item=copy.deepcopy(meta);item['reference_duration']=18;item['default_speed']=speed;item['macro']=fragment;
-        if baseline and meta['id'] in ('cluster-cascade','event-loop','pipeline-bottleneck','thread-pool'):
+        # Before/after toggle for reworked cases: the layout revisions and every live-tier case.
+        if baseline and (meta.get('runtime')=='live' or meta['id'] in ('cluster-cascade','event-loop')):
             old=baseline/meta['id']/'macro.html'
             if old.is_file():item['baseline_macro']=old.read_text(encoding='utf8')
         item['bytes']=len(fragment.encode());item['sha256']=hashlib.sha256(fragment.encode()).hexdigest();items.append(item)
@@ -38,7 +39,7 @@ def build_all(output:Path,speed=1.25,baseline:Path|None=None):
     return manifest
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'dist/monitoring-suite');p.add_argument('--case');p.add_argument('--input',type=Path);p.add_argument('--prefix');p.add_argument('--speed',type=float,choices=[1,1.25,1.5],default=1.25);p.add_argument('--baseline',type=Path,help='Optional previous output for visual comparison of the three layout cases')
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'dist/monitoring-suite');p.add_argument('--case');p.add_argument('--input',type=Path);p.add_argument('--prefix');p.add_argument('--speed',type=float,choices=[1,1.25,1.5],default=1.25);p.add_argument('--baseline',type=Path,help='Optional previous build output; layout-revised and live cases get an "이전 버전 보기" toggle')
     args=p.parse_args()
     try:
         if args.case:

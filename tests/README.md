@@ -8,12 +8,16 @@ python scripts/build_gallery.py
 python tests/browser_smoke.py --browser /path/to/chromium
 python scripts/build_monitoring_suite.py && python tests/browser_monitoring.py
 python tests/browser_live.py [--browser /path/to/chromium]
+python tests/compare_baseline.py --baseline <previous build dir>   # before/after sheets
 ```
 
 `browser_live.py` runs live-runtime cases with JavaScript enabled: autoplay, height
 budget, text overlap at fixed model times and widths, browser state equal to the Python
-model, event-bound captions, no future annotations, controls, resize, print, reduced
-motion, no-JS static scene, two instances and gallery execution. `browser_monitoring.py`
+model (per-case probes from `monitoring_cases.live_checks`), event-bound captions, no
+future annotations, controls, resize, print, reduced motion, no-JS static scene, two
+instances and gallery execution. `compare_baseline.py` captures a previous build and the
+current one at the same model times and widths (CSS tier via its 6–86% wall mapping) into
+side-by-side sheets for human review; it judges nothing. `browser_monitoring.py`
 keeps JavaScript disabled and skips live cases.
 
 The first two commands use only Python's standard library. Browser smoke tests need

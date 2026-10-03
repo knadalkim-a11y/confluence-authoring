@@ -17,3 +17,15 @@ CA_GRAMMARS.timePanels={
   xAxis:function(K,p,step,unit){var o='',t;for(t=0;t<=p.end+1e-9;t+=step)o+=K.text(p.X(t),p.y+p.h+15,K.f(t)+(t+step>p.end+1e-9?unit:''),{fs:11,c:K.C.faint,a:'middle'});return o;},
   cursor:function(K,a,b,T){return T<a.end-1e-6?K.line(a.X(T),a.y-2,a.X(T),b.y+b.h,K.C.ink,{op:.28}):'';}
 };
+/* Panel inside a horizontal box (columns); series on explicit time arrays, cut at T. */
+CA_GRAMMARS.timePanels.panelIn=function(x0,x1,y,h,end,ymax){var p={x0:x0,x1:x1,y:y,h:h,end:end,ymax:ymax};
+  p.X=function(t){return p.x0+(p.x1-p.x0)*t/p.end;};p.Y=function(v){return p.y+p.h-p.h*Math.min(v,p.ymax)/p.ymax;};return p;};
+CA_GRAMMARS.timePanels.at=function(ts,vs,T){if(T<=ts[0])return vs[0];for(var i=1;i<ts.length;i++)if(T<=ts[i]){var r=(T-ts[i-1])/(ts[i]-ts[i-1]||1);return vs[i-1]+(vs[i]-vs[i-1])*r;}return vs[vs.length-1];};
+CA_GRAMMARS.timePanels.cut=function(K,p,ts,vs,T){var pts=[],i;for(i=0;i<ts.length&&ts[i]<=T+1e-9;i++)pts.push(K.f(p.X(ts[i]))+' '+K.f(p.Y(vs[i])));
+  if(i<ts.length&&i>0)pts.push(K.f(p.X(T))+' '+K.f(p.Y(CA_GRAMMARS.timePanels.at(ts,vs,T))));return pts;};
+CA_GRAMMARS.timePanels.area=function(K,p,ts,vs,T,color){var pts=this.cut(K,p,ts,vs,T);if(pts.length<2)return '';
+  var last=Math.min(T,ts[ts.length-1]);return K.path('M'+K.f(p.X(ts[0]))+' '+K.f(p.Y(0))+'L'+pts.join('L')+'L'+K.f(p.X(last))+' '+K.f(p.Y(0))+'Z',color,'.72');};
+CA_GRAMMARS.timePanels.series=function(K,p,ts,vs,T,color,sw){var pts=this.cut(K,p,ts,vs,T);if(pts.length<2)return '';
+  return '<path d="M'+pts.join('L')+'" fill="none" stroke="'+color+'" stroke-width="'+(sw||2)+'" stroke-linejoin="round"/>';};
+CA_GRAMMARS.timePanels.mark=function(K,a,b,t,label,c){return K.line(a.X(t),a.y,a.X(t),b.y+b.h,c||K.C.red,{d:'4 3',op:.7})+(label?K.text(a.X(t)+4,a.y+12,label,{fs:11,c:c||K.C.red}):'');};
+CA_GRAMMARS.timePanels.ticksX=function(K,p,ticks){return ticks.map(function(t){return K.text(p.X(t[0]),p.y+p.h+15,t[1],{fs:11,c:K.C.faint,a:t[0]<=0?'start':t[0]>=p.end?'end':'middle'});}).join('');};

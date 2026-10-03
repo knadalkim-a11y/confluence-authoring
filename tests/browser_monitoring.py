@@ -64,10 +64,11 @@ with sync_playwright() as p:
   page.emulate_media(media='screen',reduced_motion='no-preference');report['cases'].append(record);print('PASS',c['id'],flush=True)
  if not options.skip_extra:
   # Independent instances + keyboard operation.
-  text=(OUT/'pipeline-bottleneck'/'macro.html').read_text();second=text.replace('ca-monitor-10','ca-independent')
+  css_index,css_case=next((i,x['id']) for i,x in enumerate(cases) if x['id']=='memory-leak');own=f'ca-monitor-{css_index:02d}'
+  text=(OUT/css_case/'macro.html').read_text();second=text.replace(own,'ca-independent')
   page.set_content('<html><body>'+text+second+'</body></html>');page.wait_for_timeout(80)
   page.locator('.ca-pause-label').first.click();page.wait_for_timeout(50);a=page.evaluate('document.getAnimations().map(a=>[a.effect.target.closest("section").dataset.caPrefix,a.currentTime])');page.wait_for_timeout(100);b=page.evaluate('document.getAnimations().map(a=>[a.effect.target.closest("section").dataset.caPrefix,a.currentTime])')
-  assert all(abs(x[1]-y[1])<2 for x,y in zip(a,b) if x[0]=='ca-monitor-10');assert any(y[1]>x[1] for x,y in zip(a,b) if x[0]=='ca-independent')
+  assert all(abs(x[1]-y[1])<2 for x,y in zip(a,b) if x[0]==own);assert any(y[1]>x[1] for x,y in zip(a,b) if x[0]=='ca-independent')
   report['checks']['independent_instances']=True
   page.set_content((OUT/'traffic-patterns'/'preview.html').read_text());page.keyboard.press('Tab');assert page.locator('.ca-pause').evaluate('(e)=>e===document.activeElement');page.keyboard.press('Space');assert page.locator('.ca-pause').is_checked();assert page.locator('.ca-pause-label').evaluate('(e)=>getComputedStyle(e).outlineStyle')!='none'
   report['checks']['keyboard_visible_focus']=True

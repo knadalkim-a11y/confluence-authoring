@@ -9,7 +9,7 @@ from pathlib import Path
 import argparse,datetime,hashlib,json,sys
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
 from playwright.sync_api import sync_playwright
-from monitoring_cases import build_case,pool_model,pool_state,LIVE_BUILDERS
+from monitoring_cases import build_case,live_checks,LIVE_BUILDERS
 from reference_scene import document
 ap=argparse.ArgumentParser();ap.add_argument('--browser');ap.add_argument('--output',type=Path,default=ROOT/'dist/live')
 opt=ap.parse_args();OUT=opt.output;SHOTS=OUT/'screenshots';SHOTS.mkdir(parents=True,exist_ok=True)
@@ -25,6 +25,9 @@ def wrap(fragment,width):
   f'<div style="width:{width}px;margin:0 auto">' if width else '<div>')+fragment+'</div></body></html>'
 def seek(page,prefix,t):page.evaluate('([p,t])=>document.querySelector(`[data-ca-prefix="${p}"]`).__caLive.seek(t)',[prefix,t])
 def live_state(page,prefix):return page.evaluate('(p)=>document.querySelector(`[data-ca-prefix="${p}"]`).__caLive.state()',prefix)
+def close(a,b):
+ return all(close(x,y) for x,y in zip(a,b)) and len(a)==len(b) if isinstance(a,list) else abs(a-b)<=0.051
+def model_matches(st,want):return all(close(st[k],v) for k,v in want.items())
 def stats_numbers(page,prefix):return page.locator(f'[data-ca-prefix="{prefix}"] [data-ca-stats] b').all_inner_texts()
 
 with sync_playwright() as pw:
@@ -32,7 +35,7 @@ with sync_playwright() as pw:
  report['browser']=browser.version
  for c in CASES:
   rec={'id':c['id'],'checks':{}};prefix='ca-live-b';frag,model=build_case(c,prefix,speed=1.25)
-  data=LIVE_BUILDERS[c['id']](c['params'])[0];end=data['params']['horizon'];jobs=pool_model(c['params'])
+  data=LIVE_BUILDERS[c['id']](c['params'])[0];chk=live_checks(c['id'],c['params']);end=chk['end'];probe=chk['probe']
   rec['sha256']=hashlib.sha256(frag.encode()).hexdigest();rec['bytes']=len(frag.encode())
   (OUT/c['id']).mkdir(parents=True,exist_ok=True);(OUT/c['id']/'macro.html').write_text(frag,encoding='utf8');(OUT/c['id']/'preview.html').write_text(document(frag,c['title']),encoding='utf8')
   ctx=browser.new_context(viewport={'width':800,'height':1000});page=ctx.new_page();errors=[];reqs=[]
@@ -43,25 +46,23 @@ with sync_playwright() as pw:
   assert 0<t1<t2<end,(t1,t2);rec['checks']['autoplay_from_start_and_advances']=[t1,t2]
   root=page.locator('[data-ca-prefix]')
   # Height budget and per-time checks at two widths.
-  samples=[0.5,data['params']['slow_start']+0.6,(data['events']['t_queue'] or 5)+0.5,data['events']['t_queue_max'] or 9,data['params']['recovery']+1.5,end]
+  samples=chk['samples']
   for width in (715,360):
    page.set_viewport_size({'width':800 if width==715 else 360,'height':1000});page.set_content(wrap(frag,715 if width==715 else None));page.wait_for_timeout(250)
    h=root.bounding_box()['height'];assert h<=BUDGET[width],(width,h);rec['checks'][f'height_{width}']=round(h)
    assert not page.evaluate('document.documentElement.scrollWidth>innerWidth+1'),width
    for t in samples:
     seek(page,prefix,t);page.wait_for_timeout(40);o=root.evaluate(OVERLAP_JS);assert not o['bad'] and not o['out'],(width,t,o)
-    st=live_state(page,prefix);ps=pool_state(jobs,t)
-    assert st['used']==ps['active'] and st['queued']==ps['queued'],(t,st,ps)
-    nums=stats_numbers(page,prefix);assert nums[0]==str(ps['active']) and nums[1]==str(ps['queued']),(t,nums,ps)
+    st=live_state(page,prefix);want=probe(t)
+    assert model_matches(st,want['state']),(t,st,want)
+    nums=stats_numbers(page,prefix);assert nums[:len(want['stats'])]==want['stats'],(t,nums,want)
     want=[x for x in data['captions'] if t>=x[0]-1e-9][-1][2];assert want in root.locator('[data-ca-caption]').inner_text(),(t,want)
     root.screenshot(path=str(SHOTS/f"{c['id']}-{width}-{t:.2f}.png"))
    rec['checks'][f'no_text_overlap_or_clip_{width}']=len(samples);rec['checks'][f'state_matches_python_model_{width}']=len(samples)
   rec['checks']['captions_match_model_events']=True
   # Annotations must not appear before the event they describe.
   page.set_viewport_size({'width':800,'height':1000});page.set_content(wrap(frag,715));page.wait_for_timeout(200)
-  ev=data['events'];maxj=jobs[ev['max_job']]
-  for label,at in [('최대 대기',ev['t_queue_max']),('최대 '+f"{maxj['end']-maxj['arrive']:.1f}초",maxj['end'])]:
-   if at is None:continue
+  for label,at in chk['annotations']:
    seek(page,prefix,at-0.06);assert label not in root.locator('svg').inner_html(),('future leak',label)
    seek(page,prefix,at+0.06);assert label in root.locator('svg').inner_html(),('missing',label)
   rec['checks']['no_future_annotation_leak']=True
@@ -72,8 +73,8 @@ with sync_playwright() as pw:
   root.locator('[data-a="play"]').focus();page.keyboard.press('Enter');page.wait_for_timeout(250);assert live_state(page,prefix)['T']>a
   rec['checks']['controls_end_restart_pause_keyboard']=True
   # Resize keeps the model clock.
-  seek(page,prefix,6.0);page.set_viewport_size({'width':420,'height':1000});page.wait_for_timeout(200)
-  assert abs(live_state(page,prefix)['T']-6.0)<1e-6;assert page.locator('svg[data-ca-live]').get_attribute('viewBox').split()[2]!='715'
+  ra=chk['resize_at'];seek(page,prefix,ra);page.set_viewport_size({'width':420,'height':1000});page.wait_for_timeout(200)
+  assert abs(live_state(page,prefix)['T']-ra)<1e-6;assert page.locator('svg[data-ca-live]').get_attribute('viewBox').split()[2]!='715'
   rec['checks']['resize_relayout_keeps_clock']=True
   # Print: final scene, controls hidden.
   page.set_viewport_size({'width':800,'height':1000});page.set_content(wrap(frag,715));page.wait_for_timeout(500)

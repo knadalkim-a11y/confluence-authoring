@@ -77,8 +77,11 @@ class MonitoringSuiteTests(unittest.TestCase):
   vals=self.rendered['utilization-wait'][1]['normalized_wait'];self.assertAlmostEqual(vals[-1][1],19);self.assertAlmostEqual(vals[2][1],4)
  def test_slow_burn(self):self.assertAlmostEqual(self.rendered['slow-degradation'][1]['growth_percent'],72.2222222222)
  def test_escape_untrusted_text(self):
-  meta=copy.deepcopy(BY_ID['pipeline-bottleneck']);meta['title']='</h3><script>alert(1)</script>';fragment,_=build_case(meta,'ca-escape')
+  meta=copy.deepcopy(BY_ID['traffic-patterns']);meta['title']='</h3><script>alert(1)</script>';fragment,_=build_case(meta,'ca-escape')
   self.assertNotIn('<script',fragment);self.assertIn('&lt;script&gt;',fragment);self.assertEqual(validate(fragment),[])
+  # Live tier: the only script element is the bundled runtime; the title stays escaped text.
+  meta=copy.deepcopy(BY_ID['pipeline-bottleneck']);meta['title']='</h3><script>alert(1)</script>';fragment,_=build_case(meta,'ca-escape-live')
+  self.assertEqual(fragment.count('<script'),1);self.assertIn('&lt;script&gt;',fragment);self.assertEqual(validate(fragment),[])
  def test_unknown_and_invalid_inputs(self):
   for key,value in [('after_rate',float('nan')),('before_rate',-1),('application_capacity',0)]:
    meta=copy.deepcopy(BY_ID['pipeline-bottleneck']);meta['params'][key]=value

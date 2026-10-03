@@ -1,5 +1,28 @@
 # Changes
 
+## 0.5.0 — pipeline-bottleneck, bounded-queue and cpu-latency on the live tier
+
+`flowQueue` gains a fluid-lane variant for rate models: a queue bar on a request-count
+scale, a limit gauge per stage, optional source, dependency and reject branch. Tokens
+stand for a fixed number of requests; their arrival, rejection and FIFO departure times
+come from the model's cumulative curves, so dots and numbers cannot disagree.
+`timePanels` gains column panels and time-array series cut at T.
+
+- pipeline-bottleneck: Gateway → queue → Application → DB in one lane; the main figure
+  shows the queue in front of Application and DB's unused capacity. Live line
+  "유입 − 처리 = 600 − 300 = 300건/s씩 쌓임". 1,760 → 397 px at 715 px.
+- bounded-queue: two lanes on one count scale; the bounded lane diverts rejected tokens.
+  Both lanes serve 920 requests, so the scene shows that the cap trades waiting for
+  rejection without adding throughput. The old metric cards, which showed final values
+  from the start, are gone. 2,283 → 498 px.
+- cpu-latency: CPU over P99 per service on one time axis; "연산 포화 의심" and "대기 의심" appear
+  only after their events. 3,193 → 347 px.
+
+The runtime test hook is generic (`probe(T)`) and the browser gate runs every live case
+against a Python probe. New `tests/compare_baseline.py` makes before/after sheets at
+identical model times. Other 15 cases are byte-identical; thread-pool's static scene is
+unchanged.
+
 ## 0.4.0 — live runtime tier; thread-pool rebuilt on it
 
 Adds a second rendering tier for explanations that must show model state at time T.

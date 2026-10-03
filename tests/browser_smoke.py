@@ -20,7 +20,7 @@ SEEK='''fraction=>document.getAnimations().forEach(a=>{a.pause();a.currentTime=a
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--browser',default='/usr/bin/chromium')
+    parser.add_argument('--browser',default='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None)
     parser.add_argument('--output',type=Path,default=ROOT/'tests/browser-report.json')
     parser.add_argument('--screenshots',type=Path,default=ROOT/'dist/screenshots')
     args=parser.parse_args()

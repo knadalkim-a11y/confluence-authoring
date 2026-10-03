@@ -4,7 +4,8 @@ import hashlib,json,sys
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'dist/monitoring-suite'
 SHOTS=OUT/'layout-screens';SHOTS.mkdir(exist_ok=True)
-CASES=('cluster-cascade','event-loop','pipeline-bottleneck')
+# pipeline-bottleneck moved to the live tier (tests/browser_live.py).
+CASES=('cluster-cascade','event-loop')
 report={'result':'RUNNING','cases':[],'original_live_ab':False,'confluence_rendering':False}
 
 def seek(page,t,speed=1.25):
@@ -36,7 +37,7 @@ TRACK_CHECK=r'''svg=>{
  return {count,max_deviation_px:maximum,visible_labels:texts.length};
 }'''
 with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+    browser=p.chromium.launch(executable_path='/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None,args=['--no-sandbox'])
     report['browser']=browser.version
     pg=browser.new_page(java_script_enabled=False,viewport={'width':1160,'height':1040})
     requests=[];pg.on('request',lambda r:requests.append(r.url))

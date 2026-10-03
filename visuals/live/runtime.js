@@ -11,7 +11,7 @@
   function b(v,hot){return '<b'+(hot?' class="hot"':'')+'>'+K.esc(v)+'</b>';}
   function render(){svg.innerHTML=sc.draw(T,g);var s=sc.stats(T),h='<span class="grp">';
     s.left.forEach(function(x){h+='<span>'+K.esc(x[0])+b(x[1],x[3])+K.esc(x[2])+'</span>';});
-    h+='</span><span>'+K.esc(s.right[0])+b(s.right[1],s.right[4])+K.esc(s.right[2])+b(s.right[3],s.right[4])+'</span>';statsEl.innerHTML=h;
+    h+='</span>';if(s.right)h+='<span>'+K.esc(s.right[0])+b(s.right[1],s.right[4])+K.esc(s.right[2])+b(s.right[3],s.right[4])+'</span>';statsEl.innerHTML=h;
     var c=capAt(T);if(c!==lastCap){lastCap=c;cap.innerHTML='<span class="n">'+K.esc(D.captions[c][1])+'</span>'+K.esc(D.captions[c][2]);}
     root.setAttribute('data-ca-t',T.toFixed(3));}
   function layout(){var W=Math.max(300,Math.round(svg.getBoundingClientRect().width||root.clientWidth));if(g&&g.W===W)return;
@@ -28,7 +28,7 @@
   var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   window.addEventListener('beforeprint',function(){setPlaying(false);T=sc.end;render();});
   if('ResizeObserver' in window)new ResizeObserver(layout).observe(root);
-  root.__caLive={seek:function(t){setPlaying(false);T=Math.max(0,Math.min(sc.end,t));render();},state:function(){var s=sc.state(T);return {T:T,used:s.n,queued:s.qd.length,playing:playing};},end:sc.end};
+  root.__caLive={seek:function(t){setPlaying(false);T=Math.max(0,Math.min(sc.end,t));render();},state:function(){var s=sc.probe(T),k,r={T:T,playing:playing};for(k in s)r[k]=s[k];return r;},end:sc.end};
   layout();setPlaying(false);
   if(reduce)return;
   function start(){if(!started){started=true;play(0);}}

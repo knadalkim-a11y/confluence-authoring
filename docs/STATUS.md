@@ -1,38 +1,53 @@
-# Status — v0.4.0 live runtime tier
+# Status — v0.5.0 three more cases on the live tier
 
-Review branch: `feat/initial-authoring-skill`, existing Draft PR #1.
-Starting point: `5783eb58d816863246dbc523e41cf34b1fda85a5` (v0.3.2), no later remote commits found.
+Review branch: `feat/initial-authoring-skill`, existing Draft PR #1 (pushed v0.4.0 `771f480` first).
 No main merge, Draft removal, release, permission change or Confluence publication.
 
 ## Changed
 
-- New live tier: `scripts/live_scene.py`, `visuals/live/` (kit, grammars `flowQueue` and
-  `timePanels`, scene `thread-pool`, runtime, shell). Architecture, composition rules and
-  gates: `references/live-runtime.md`.
-- `thread-pool` migrated (`"runtime": "live"`). Same `pool_model` inputs and numbers as
-  v0.3.2; captions and pacing bound to model events (queue onset 4.2 s, peak 14 at 8.85 s,
-  drain 10.05 s). The v0.3.2 diagram matched the model at exact times but did not show
-  the queue; v0.4.0 shows queue, slow work and arrival × service time in the main figure.
-- Validator, gallery (script mounting, speed, before/after for thread-pool), suite tests,
-  CSS browser test (skips live cases; no hard-coded browser path), docs.
-- Other 18 monitoring macros: byte-identical to a v0.3.2 build at the same prefix/speed.
+- `pipeline-bottleneck`, `bounded-queue` → `flowQueue` fluid lane (new variant of the same
+  grammar: queue bar on a request-count scale, stage limit gauges, optional source,
+  dependency and reject branch, tokens = `unit` requests from the model's cumulative
+  curves). Same `fluid_queue` model and inputs as before.
+- `cpu-latency` → `timePanels` (`panelIn`, `series`): per service, CPU above P99 on one
+  time axis; verdicts appear only after the knot event that justifies them. Scenario
+  curves moved to `cpu_scenarios()`, shared by the CSS builder and the live scene.
+- Runtime: `stats.right` optional; test hook `state()` now returns the scene's `probe(T)`.
+  Thread-pool static scene and status line are byte-identical to v0.4.0 (its macro bytes
+  differ only because the bundled kit/grammars grew).
+- `tests/browser_live.py` is case-generic via `monitoring_cases.live_checks()` (Python
+  probe, sample times, event-bound annotations). New `tests/compare_baseline.py` makes
+  before/after sheets at identical model times and widths. `--baseline` now gives the
+  gallery toggle to every live case plus the two layout revisions.
+- CSS builders for the three cases are kept (still unit-tested via `runtime: "css"`);
+  `browser_diagram_layout.py` no longer covers pipeline-bottleneck. Browser tests fall back
+  to Playwright's Chromium when `/usr/bin/chromium` is absent.
+- Other 15 monitoring macros: byte-identical to the v0.4.0 build.
 
-## Actual validation (this environment: Linux, Python 3.12, Node 22, Playwright Chromium)
+## Actual validation (this environment: Linux, Python 3.11, Node 22, Playwright 1.56 + Chromium 141)
 
-- Unit: 85 tests pass (74 prior + 11 live).
-- `tests/browser_live.py`: thread-pool passes all gates — height 487 px at 715 px and
-  504 px at 360 px, no text overlap/clipping at 6 model times × 2 widths, browser state and
-  status numbers equal Python `pool_state`, captions on events, no future annotations,
-  controls/keyboard, resize, print, reduced motion, no-JS static scene, two instances,
-  gallery execution, no errors or external requests. Report: `tests/live-browser-report.json`.
-- `tests/browser_monitoring.py` (18 CSS cases + gallery incl. live mount), `browser_smoke.py`
-  (13 basic patterns) and `browser_diagram_layout.py`: pass. Their committed reports were
-  not regenerated in this change.
-- Before/after at identical model times and width was reviewed by screenshot.
+- Unit: 90 tests pass (85 prior + 5 new; 3 prior tests re-pointed to CSS cases).
+- `tests/browser_live.py`: all 4 live cases pass every gate. Heights (715 / 360 px):
+  thread-pool 487 / 504, pipeline-bottleneck 397 / 409, bounded-queue 498 / 533,
+  cpu-latency 347 / 587. Report: `tests/live-browser-report.json`.
+- `tests/browser_monitoring.py` (15 CSS cases + gallery), `tests/browser_smoke.py`
+  (13 basic patterns), `tests/browser_diagram_layout.py` (2 layout cases): pass. Their
+  committed reports were not regenerated.
+- Before/after sheets (`tests/compare_baseline.py --baseline <v0.4.0 build>`) were looked
+  at by the agent, not by a person. Heights at 715 px: pipeline 1,760 → 397,
+  bounded 2,283 → 498, cpu 3,193 → 347.
+
+## Known limits (stated, not hidden)
+
+- The fluid model integrates in 0.05 s steps; the bounded queue fills at 4.10 s in the
+  model vs 4.08 s in closed form. Captions use the model value.
+- cpu-latency's 60 s axis is a synthetic reading aid (the source has no time unit).
+- bounded-queue at 715 px is 498 px of a 520 px budget; little room for more content.
+- In pipeline-bottleneck the outgoing token stream to DB is short (one or two dots on a
+  52 px connector); readable but not reviewed by a person.
 
 ## Boundaries
 
 Target Confluence: inline-script execution, CSP, editor view, mobile apps and PDF export
 are NOT verified; run the smoke check in `references/confluence-rules.md` first. Aesthetic
-quality is a human judgement; gates only catch mechanical defects. Only thread-pool uses
-the live tier; the grammar mapping for other cases in live-runtime.md is a plan.
+quality is a human judgement; gates only catch mechanical defects.

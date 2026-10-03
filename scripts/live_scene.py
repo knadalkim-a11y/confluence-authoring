@@ -57,7 +57,9 @@ def stats_html(stats: dict) -> str:
         return '<b' + (' class="hot"' if hot else '') + '>' + html.escape(str(value)) + '</b>'
     out = '<span class="grp">' + ''.join('<span>' + html.escape(a) + b(v, hot) + html.escape(u) + '</span>'
                                          for a, v, u, hot in stats['left']) + '</span>'
-    r = stats['right']
+    r = stats.get('right')
+    if not r:
+        return out
     return out + '<span>' + html.escape(r[0]) + b(r[1], r[4]) + html.escape(r[2]) + b(r[3], r[4]) + '</span>'
 
 

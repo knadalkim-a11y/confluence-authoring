@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
 metadata:
-  version: "0.4.0"
+  version: "0.5.0"
 ---
 
 # Confluence Authoring
@@ -96,7 +96,7 @@ limits. Generate with `scripts/build_monitoring_suite.py --case <id> --input <fi
 new numeric sources; do not relabel their illustrative geometry as measured data.
 The existing player is reused; no `stories/` hierarchy is required.
 
-Cases with `"runtime": "live"` (currently only `thread-pool`) are built by the live
+Cases with `"runtime": "live"` (thread-pool, pipeline-bottleneck, bounded-queue, cpu-latency) are built by the live
 runtime; read `references/live-runtime.md` for its layers, composition rules and gates.
 Building them requires Node.js for the static fallback.
 

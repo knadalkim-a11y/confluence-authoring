@@ -33,5 +33,6 @@ CA_SCENES['thread-pool']=function(D,K,GR){
     return {left:[['사용 중 스레드 ',st.n,'/'+P.workers,st.n===P.workers],['대기 ',st.qd.length,'건',st.qd.length>0],
       ['체감 응답 ',st.last?K.num(st.last.e-st.last.a,2):'-',st.last?'초':'',st.last&&st.last.e-st.last.a>=D.axes.hot_response]],
       right:['필요한 동시 처리 '+K.num(rate)+'건/s × ',K.num(sv)+'초',' = ',K.num(need)+'칸'+(over?' > '+P.workers:''),over]};}
-  return {end:P.horizon,geom:geom,draw:draw,stats:stats,state:state};
+  function probe(T){var st=state(T);return {used:st.n,queued:st.qd.length};}
+  return {end:P.horizon,geom:geom,draw:draw,stats:stats,probe:probe};
 };

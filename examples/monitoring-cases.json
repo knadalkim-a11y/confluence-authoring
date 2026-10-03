@@ -100,12 +100,13 @@
       "conclusion": "CPU가 낮다고 정상은 아니다. 지연과 함께 읽고 다른 증거로 가설을 확인한다.",
       "assumptions": "CPU와 P99 모두 설명용 합성값. CPU-P99 조합은 단서이지 원인 판정기가 아니다.",
       "source_behavior": "세 상황별 CPU/P99 짝지은 그래프",
-      "implemented_behavior": "3개 상황 × 2지표; 통일된 시간·지표별 범위",
-      "improvement": "낮은 CPU인데 느린 경우를 정상과 구분",
+      "implemented_behavior": "라이브 런타임(timePanels). 세 서비스마다 CPU를 위, P99를 아래에 같은 시간축으로 쌓고 커서까지 그린다. 현재 값은 패널 제목 옆에 한 번만 표시. 판정 문구(연산 포화 의심·대기 의심)는 해당 꺾임 사건 이후에만 나타난다.",
+      "improvement": "CPU와 P99를 같은 시각에 위아래로 읽게 정렬; 판정을 사건 시각에 결합; 높이 약 3,190px→약 350px(715px 폭)",
       "params": {},
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#CPU-사용률이라는-말의-함정",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "cpu-throttling",
@@ -232,8 +233,8 @@
       "conclusion": "유입이 Application 한도를 넘으면 앞쪽 큐가 증가한다. 뒤 단계는 넘겨받은 양만 처리하므로 여유가 남을 수 있다.",
       "assumptions": "원문의 600/300 req/s와 배포 예시의 1000/800 한도를 사용. 정상 200, 증가 시각 4초, 관찰 10초는 합성 가정. 큐는 구간별 수지로 적분.",
       "source_behavior": "3단 파이프라인, 유입 밀도, 병목 큐, 단계 게이지",
-      "implemented_behavior": "Gateway·대기 공간·Application·DB의 크기와 간격 통일. 같은 축의 직선 경로를 점이 그대로 이동. 좁은 화면은 같은 순서의 세로 배치.",
-      "improvement": "흩어진 대기 블록을 명확한 공간 안에 정리. 유입·처리·대기 모델을 보존하면서 연결선과 이동 경로를 하나의 좌표열로 통일.",
+      "implemented_behavior": "라이브 런타임(flowQueue 유체 레인). Gateway→대기→Application→DB. 대기는 건수 눈금의 막대, 단계마다 한도 대비 사용 게이지, 점 1개=요청 20건(누적 유입·처리 곡선에서 도착·출발 시각 계산). 아래 패널은 Application 앞 대기 누적.",
+      "improvement": "병목 앞 대기와 병목 뒤 여유(DB 여유 500건/s)를 주 그림에서 직접 표시; 유입−처리 인과식을 실시간 표시; 자막을 사건(유입 변화·대기 1초·2초 분량)에 결합; 높이 약 1,760px→약 400px(715px 폭)",
       "params": {
         "before_rate": 200,
         "after_rate": 600,
@@ -245,7 +246,8 @@
       },
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#대기가-쌓이는-곳",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "utilization-wait",
@@ -272,8 +274,8 @@
       "conclusion": "상한을 두면 일부 요청을 거부하지만 수용한 대기의 크기를 제한한다. 거부율은 입력·관찰 구간과 함께 읽는다.",
       "assumptions": "결정론적 유체 모델, 서비스 100/s, 과부하 200/s, 버퍼 8. 원본의 30% 거부 문구를 재사용하지 않고 실제 수지로 계산.",
       "source_behavior": "좌우 대기/거부 경로/상한 비교",
-      "implemented_behavior": "두 큐의 길이·누적 처리·거부 수를 한 모델로 산출",
-      "improvement": "입력 200 대 처리 100에서 거부 비율의 보존 관계 보완",
+      "implemented_behavior": "라이브 런타임(flowQueue 유체 레인 2개). 같은 건수 눈금의 상한 없음/상한 8건 레인, 상한 레인의 거부 분기와 누적 거부, 양쪽 누적 처리. 아래 패널은 두 큐의 새 요청 대기 시간(대기÷처리 한도).",
+      "improvement": "상한이 처리량을 늘리지 않고 대기를 거부로 바꾼다는 점(처리 920건 동일)을 직접 비교; 최종값을 미리 보여주던 지표 카드 제거; 높이 약 2,280px→약 500px(715px 폭)",
       "params": {
         "before_rate": 80,
         "after_rate": 200,
@@ -284,7 +286,8 @@
       },
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#큐는-공짜가-아니다",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "cache-stampede",

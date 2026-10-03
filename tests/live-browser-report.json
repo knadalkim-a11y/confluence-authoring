@@ -1,7 +1,34 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T11:24:20+00:00",
+  "tested_at_utc": "2026-10-03T11:58:45+00:00",
   "cases": [
+    {
+      "id": "cpu-latency",
+      "checks": {
+        "autoplay_from_start_and_advances": [
+          2.687,
+          4.25
+        ],
+        "height_715": 347,
+        "no_text_overlap_or_clip_715": 6,
+        "state_matches_python_model_715": 6,
+        "height_360": 587,
+        "no_text_overlap_or_clip_360": 6,
+        "state_matches_python_model_360": 6,
+        "captions_match_model_events": true,
+        "no_future_annotation_leak": true,
+        "controls_end_restart_pause_keyboard": true,
+        "resize_relayout_keeps_clock": true,
+        "print_final_scene_controls_hidden": true,
+        "independent_instances": true,
+        "no_errors_no_external_requests": true,
+        "reduced_motion_final_no_autoplay": true,
+        "nojs_static_final_scene": true,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "26357b00083a52539eac02c7bf82a0d1795c6d036f42d05df1ea504050bf20d8",
+      "bytes": 56356
+    },
     {
       "id": "thread-pool",
       "checks": {
@@ -26,11 +53,65 @@
         "nojs_static_final_scene": true,
         "gallery_executes_live_macro": true
       },
-      "sha256": "4b11f9f965d25a1ebaaa702f18e96a974d1aa0eeb6b24bf36a9dcb87e533d908",
-      "bytes": 49657
+      "sha256": "93b61a53b2970d8e62487e97666faf7da714265fc6fd19d07874401378e52abf",
+      "bytes": 55614
+    },
+    {
+      "id": "pipeline-bottleneck",
+      "checks": {
+        "autoplay_from_start_and_advances": [
+          1.1,
+          1.7
+        ],
+        "height_715": 397,
+        "no_text_overlap_or_clip_715": 6,
+        "state_matches_python_model_715": 6,
+        "height_360": 409,
+        "no_text_overlap_or_clip_360": 6,
+        "state_matches_python_model_360": 6,
+        "captions_match_model_events": true,
+        "no_future_annotation_leak": true,
+        "controls_end_restart_pause_keyboard": true,
+        "resize_relayout_keeps_clock": true,
+        "print_final_scene_controls_hidden": true,
+        "independent_instances": true,
+        "no_errors_no_external_requests": true,
+        "reduced_motion_final_no_autoplay": true,
+        "nojs_static_final_scene": true,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "9b8b50f9aef8e1bd643b22e7e90cbcc700634a1fa383de41ec16374857894124",
+      "bytes": 37678
+    },
+    {
+      "id": "bounded-queue",
+      "checks": {
+        "autoplay_from_start_and_advances": [
+          1.1,
+          1.7
+        ],
+        "height_715": 498,
+        "no_text_overlap_or_clip_715": 6,
+        "state_matches_python_model_715": 6,
+        "height_360": 533,
+        "no_text_overlap_or_clip_360": 6,
+        "state_matches_python_model_360": 6,
+        "captions_match_model_events": true,
+        "no_future_annotation_leak": true,
+        "controls_end_restart_pause_keyboard": true,
+        "resize_relayout_keeps_clock": true,
+        "print_final_scene_controls_hidden": true,
+        "independent_instances": true,
+        "no_errors_no_external_requests": true,
+        "reduced_motion_final_no_autoplay": true,
+        "nojs_static_final_scene": true,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "1c731ed9fa675f02d3241177f1ec1fe2060d3bca561993f769422311d90e28fa",
+      "bytes": 45306
     }
   ],
   "browser": "141.0.7390.37",
   "result": "PASS",
-  "test_sha256": "6e782e0abe75b292f304c168fe92cf9649a3a944b34fe726c541e18dfcf4bd6a"
+  "test_sha256": "9aa9c883df1ac01cd5da0a1dd9e74926b366b38fae63c0fde206f16578bf38cc"
 }

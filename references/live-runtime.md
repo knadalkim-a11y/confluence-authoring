@@ -1,4 +1,4 @@
-# Live runtime — architecture, contract and quality gates (v0.4.0)
+# Live runtime — architecture, contract and quality gates (v0.5.0)
 
 The CSS-keyframe renderer (`reference_scene.py`) bakes every movement into keyframes.
 That made state-driven pictures hard: decorative token streams needed disclaimers,
@@ -7,7 +7,7 @@ fixed `0.9`-style caption times could run ahead of the model, and one generic sh
 alike. The live runtime renders the model state at time T instead.
 
 Use it only where the target Confluence executes inline scripts in HTML macros
-(see confluence-rules.md). The CSS tier remains for the other 18 cases and the 13
+(see confluence-rules.md). The CSS tier remains for the other 15 cases and the 13
 basic patterns until each is migrated; a case uses exactly one tier at a time.
 
 ## Layers
@@ -17,18 +17,33 @@ basic patterns until each is migrated; a case uses exactly one tier at a time.
 | Model | `scripts/monitoring_cases.py` (Python) | Deterministic numbers, event table, derived events (queue onset, peak, drain). Unit-tested. |
 | Scene data | `*_live_data()` in the same module | Captions and playback pacing bound to model events; axes; labels. Text numbers are computed, never typed. |
 | Grammar | `visuals/live/grammars/*.js` | Reusable pure `draw` functions returning SVG strings for one visual idea, with wide and narrow geometry. No DOM. |
-| Scene | `visuals/live/scenes/<case>.js` | Maps model state at T to grammar inputs; status-line numbers. No numbers of its own. |
+| Scene | `visuals/live/scenes/<case>.js` | Maps model state at T to grammar inputs; status-line numbers; `probe(T)` for the browser gate. No numbers of its own. |
 | Kit | `visuals/live/kit.js` | SVG string helpers and palette. |
 | Runtime | `visuals/live/runtime.js` | Clock, rate map, controls, reduced motion, visibility, resize, print, test hooks. |
 | Assembler | `scripts/live_scene.py` | Bundles kit+grammars+scene+runtime+data into one `<section>`; renders the static fallback by running the same scene code in Node at the final time. |
 
-Implemented grammars: `flowQueue` (inflow → FIFO queue → worker pool → dependency) and
-`timePanels` (panels sharing one model-time axis: band, stacked area, limit line,
-points, cursor). Implemented scenes: `thread-pool`.
+Implemented grammars:
+
+- `flowQueue`: inflow → queue → server → dependency. Two server kinds share the idea:
+  `geom/draw` for a discrete worker pool (slots, request dots; thread-pool) and
+  `laneGeom/laneDraw` for rate (fluid) models. In the fluid variant the queue is a bar on
+  a request-count scale and each stage shows a gauge of its limit. A source stage,
+  dependency and reject branch (bounded queue) are optional. One token = `unit` requests,
+  chosen so the busiest stream draws ≤ 30 tokens/s. Token arrival, rejection and FIFO
+  departure times are computed in Python from the model's cumulative inflow, rejected
+  and served curves (`fluid_tokens`). All token routes share one speed; travel time
+  shortens when tokens would sit closer than 12 px.
+- `timePanels`: panels sharing one model-time axis (band, stacked area, limit line,
+  points, cursor). `panelIn` places a panel inside a column box, `area`/`series` draw
+  explicit time arrays cut at T, `mark` draws an event line, `ticksX` custom tick labels.
+
+Implemented scenes: `thread-pool` (pool), `pipeline-bottleneck` (one fluid lane with
+source and dependency, plus a queue panel), `bounded-queue` (two fluid lanes on one
+count scale, plus a wait-time panel), `cpu-latency` (three columns, CPU over P99 on one
+time axis; three stacked groups below 560 px).
 
 Candidate grammar mapping for the remaining cases (planning, not implemented):
-flow+queue — pipeline-bottleneck, bounded-queue; shared-time panels — cpu-latency,
-memory-leak, memory-spike, slow-degradation, deploy-comparison, gc-pause, traffic,
+shared-time panels — memory-leak, memory-spike, slow-degradation, deploy-comparison, gc-pause, traffic,
 survivorship; distribution dots — percentile; topology fan-out — cluster-cascade;
 cycle — event-loop; time-budget bars — cpu-throttling, timeout-mismatch, postmortem;
 function curve with moving point — utilization-wait; flow+panels — cache-stampede.
@@ -69,13 +84,16 @@ function curve with moving point — utilization-wait; flow+panels — cache-sta
 
 ## Quality gates
 
-`tests/test_live_runtime.py` (unit): model binding to `pool_model`, captions on events,
+`tests/test_live_runtime.py` (unit): model binding (`pool_model`; fluid queue balance,
+FIFO token departures, token rejections within one unit of the fluid balance; CPU series
+equal the shared scenario functions, verdicts absent before their event), captions on events,
 no-queue variant, static fallback equals the Node render of the same code, inert data,
 validator rejects foreign/modified scripts, determinism, two-instance isolation.
 
-`tests/browser_live.py` (Chromium, JS on): autoplay, height budget at 715/360 px, no
-horizontal overflow, no SVG text overlap or clipping at six model times and two widths,
-browser state and status numbers equal Python `pool_state(T)`, caption equals the
+`tests/browser_live.py` (Chromium, JS on), for every live case: autoplay, height budget
+at 715/360 px, no horizontal overflow, no SVG text overlap or clipping at six model times
+and two widths, browser `probe(T)` and status numbers equal the Python probe from
+`live_checks()` (e.g. `pool_state(T)`, fluid queue at T), caption equals the
 event-bound caption, no future annotation leak, controls and keyboard, resize keeps the
 clock, print/reduced-motion final scene, independent instances, no errors or external
 requests, no-JS static scene, gallery executes the macro. Writes screenshots at fixed
@@ -92,8 +110,10 @@ widths still needs a human look.
    `draw` with wide and narrow geometry.
 3. Add `visuals/live/scenes/<case>.js`; register in `LIVE_BUILDERS`; add
    `"runtime": "live"` to the case in `examples/monitoring-cases.json`.
-4. Extend the unit and browser gates for the case's own invariants; build the suite with
-   `--baseline` and compare screenshots at the same model times and widths.
+4. Add the case to `live_checks()` in `monitoring_cases.py` (sample times, a Python probe
+   matching the scene's `probe(T)`, annotations bound to event times); extend unit tests
+   for the case's own invariants; build the suite with `--baseline <previous build>` and run
+   `tests/compare_baseline.py` to compare at the same model times and widths.
 5. Remove nothing from the CSS builder until the live case passes; then the CSS
    builder for that case may be deleted in a later change.
 
