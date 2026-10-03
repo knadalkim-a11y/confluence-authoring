@@ -1,14 +1,14 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T16:19:10+00:00",
+  "tested_at_utc": "2026-10-03T16:52:46+00:00",
   "cases": [
     {
       "id": "cpu-latency",
       "live": true,
       "checks": {
         "autoplay": [
-          3.017,
-          4.731
+          2.948,
+          4.662
         ],
         "height_715": 378,
         "samples_715": 6,
@@ -51,7 +51,7 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.896,
+          0.917,
           1.417
         ],
         "height_715": 330,

@@ -11,5 +11,6 @@ Use when the reader needs to learn a concept or procedure.
 6. Common mistakes
 7. Summary / next step
 
-## Visual guidance
-Progressive reveal can help when later concepts depend on earlier ones. Keep the final state visible so the page remains useful as reference material.
+## Visual guidance (spec kinds: `references/visual-specs.md`)
+`diagram` with `steps` walks through a mechanism in order; its step list stays in the picture,
+so the final state remains useful as reference material. `flow` for anything that queues.

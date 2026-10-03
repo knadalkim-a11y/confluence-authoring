@@ -116,6 +116,29 @@ class VisualSpecTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn('예시 데이터', node_static(build(load(name))['data'])['svg'])
 
+    def test_diagram(self):
+        r = build(load('ai-agent-request.json'))
+        self.assertTrue(r['live'])                                   # steps -> a walkthrough
+        self.assertFalse(build(load('rag-indexing.json'))['live'])   # structure only -> static
+        self.assertEqual([r['checks']['expect'](t)['state']['step'] for t in (0, 1.5, 3.99, 4)], [0, 1, 3, 4])
+        self.assertEqual(r['data']['captions'][-1][2], load('ai-agent-request.json')['claim'])
+        par = build(load('ai-adoption-approval.json'))['data']['steps'][0]
+        self.assertEqual(len(par['paths']), 2)                       # parallel routes in one step
+        base = load('rag-indexing.json')
+        cases = {
+            'data_kind': (lambda s: s.update(data_kind='measured'), 'current'),
+            'skip layer': (lambda s: s['layers'][0]['nodes'].append({'id': 'x', 'name': 'X'}) or s['edges'].append({'from': 'drive', 'to': 'agent'}), 'skips a layer'),
+            'neighbours': (lambda s: s['layers'][0]['nodes'].append({'id': 'x', 'name': 'X'}) or s['edges'].append({'from': 'wiki', 'to': 'x'}), 'neighbours'),
+            'path edge': (lambda s: s.update(steps=[{'path': ['wiki', 'vdb'], 'text': '없는 연결을 따라간다'}]), 'no connection'),
+            'duplicate id': (lambda s: s['layers'][1]['nodes'].append({'id': 'wiki', 'name': 'W'}), 'used twice'),
+            'too many': (lambda s: s['layers'][2]['nodes'].extend({'id': f'n{i}', 'name': 'N'} for i in range(4)), '1-4 components'),
+        }
+        for name, (mutate, msg) in cases.items():
+            with self.subTest(name=name):
+                spec = copy.deepcopy(base); mutate(spec)
+                with self.assertRaisesRegex(SpecError, msg):
+                    build(spec)
+
     def test_figure_footer_fits(self):
         # the exported SVG's source line wraps inside the figure (a 90-char source used to overflow)
         from live_scene import wrap_text, text_width

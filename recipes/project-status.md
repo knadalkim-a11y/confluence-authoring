@@ -11,10 +11,11 @@ Use when the primary question is "Where are we now?"
 6. Decisions needed
 7. Next actions
 
-## Good visuals
-- milestone timeline
-- status table
-- workflow motion only when progress through stages matters
+## Good visuals (spec kinds: `references/visual-specs.md`)
+- `timeline` for milestones, status and today (late/risk tracks are coloured)
+- status table for owners and next actions
+- `bars` with `pair_labels: ["계획", "실적"]` only where a real measure exists
+- `diagram` with `steps` for an approval or delivery process when the stages matter
 
 ## Avoid
 - pretending every activity has a numeric percent;

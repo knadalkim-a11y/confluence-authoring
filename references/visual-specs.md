@@ -1,4 +1,4 @@
-# Document visuals from a spec (v0.8.0)
+# Document visuals from a spec (v0.9.0)
 
 Purpose: when someone wants a visual for a report or document, write a short JSON spec that
 states the claim, the data and its provenance; `scripts/build_visual.py` computes the model,
@@ -24,8 +24,9 @@ specs it cannot render well.
 | where people drop out of a sequence of steps (sign-up, hiring, conversion) | `bars` with `"mode": "funnel"` | static |
 | how a whole splits into parts, and how that split changed (cost mix, cause mix) | `share` | static |
 | a schedule: phases, status, milestones, today; or an incident's minutes (detection, response, recovery) | `timeline` (dates, numbers, or `HH:MM` clock times; `"durations": true`) | static |
+| what the parts of a system are and how they connect (architecture, data pipeline, ownership, current vs proposed) | `diagram` | static |
+| the path a request, document or approval takes through those parts (AI agent call, RAG, approval process, failure propagation) | `diagram` with `steps` | animated, one step at a time; the step list stays in the picture |
 | a mechanism none of these express (discrete workers, retries, routing, cycles) | custom live scene, see `live-runtime.md` (thread-pool is the example) | animated |
-| structure without change over time (architecture, components) | static diagram, see `diagram-layout.md` | — |
 
 Deliberately not offered: pie/donut, 3D, dual y-axes, KPI gauge tiles, decorative motion.
 `motion: "none"` forces a static figure (use it when the target Confluence does not run inline
@@ -35,11 +36,11 @@ scripts); `"play"` animates a kind that is static by default (bars grow once).
 
 | Field | Rule |
 |---|---|
-| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` |
+| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` · `diagram` |
 | `title` | Accessible name (≤ 120 chars). The page heading usually says it too. |
 | `claim` | The one-sentence takeaway (≤ 120). Shown under a static figure; use it as the last caption of an animated one. |
 | `source` | Where the numbers come from. Required. |
-| `data_kind` | `measured` · `estimate` · `example`. Required; shown in the legend/notes so illustrative numbers are never mistaken for measurements. |
+| `data_kind` | `measured` · `estimate` · `example`; for `diagram`: `current` (현재 구조) · `proposed` (제안안) · `example`. Required; shown in the picture or notes so illustrative numbers or a proposal are never mistaken for the real thing. |
 | `motion` | `auto` (default) · `play` · `none` |
 | `captions` | `[{"at": time or event, "text": "…"}]`. One claim each, 25–45 chars (hard limit 50 after placeholders). Bind to model events, not guessed times. The build fails if two captions are too close to be read at the default speed. |
 
@@ -147,10 +148,44 @@ unknown events are build errors that list what is available. Never type a comput
   already name the phases) or rename with `"status_labels": {"late": "감지 공백"}`.
 - Static kinds print "예시 데이터" / "추정값" in the picture when `data_kind` is not `measured`.
 
+### `diagram` — components, connections, and the path through them
+
+```json
+{"kind": "diagram", "data_kind": "proposed",
+ "layers": [{"label": "사용자", "nodes": [{"id": "user", "name": "직원", "sub": "Slack", "type": "person"}]},
+            {"label": "에이전트", "nodes": [{"id": "agent", "name": "사내 에이전트", "type": "ai"}]},
+            {"label": "도구", "nodes": [{"id": "rag", "name": "문서 검색", "type": "data"}, {"id": "llm", "name": "LLM", "type": "external"}]}],
+ "groups": [{"label": "사내망", "layers": [0, 1]}],
+ "edges": [{"from": "user", "to": "agent", "label": "질문"}, {"from": "agent", "to": "rag", "label": "검색"},
+           {"from": "rag", "to": "agent", "label": "문서"}, {"from": "agent", "to": "llm", "style": "dashed"}],
+ "steps": [{"path": ["user", "agent", "rag", "agent"], "text": "에이전트가 사내 문서를 먼저 찾는다"},
+           {"paths": [["agent", "llm"], ["agent", "rag"]], "text": "두 요청이 동시에 나간다"}]}
+```
+
+- Layers run left to right on wide screens and top to bottom on phones (same picture, rotated).
+  1–5 layers, 1–4 components per layer, ≤ 14 components, ≤ 24 connections. Order components
+  inside a layer to keep lines short. `name` ≤ 14 chars (wraps to two lines), `sub` ≤ 18
+  (dropped on phones when it does not fit; the table keeps it). `type`: `system` (default),
+  `person` (rounded), `ai` (purple: models, agents), `data` (green: stores, indexes),
+  `external` (dashed: outside services); the legend lists the types used.
+- Connections join adjacent layers or neighbours in one layer. A connection that skips layers
+  runs in a lane outside every box, so both ends must be first (lane above / left) or both last
+  (lane below / right) in their layers; the build says which to move. Two-way pairs are drawn
+  as parallel lines. `style: "dashed"` with `dashed_means` (default "비동기·선택") for the legend.
+- `groups` draw a boundary around consecutive layers (network, team, "야간 배치").
+- `steps` (≤ 6, text ≤ 40 chars): each is a `path` along existing connections (direction
+  matters) or `paths` for routes at the same time. The step number rides on the first
+  connection's label; the numbered step list sits under the diagram in every mode, so print,
+  export and no-JS keep the story. Playback highlights one step at a time with a moving token
+  and ends on the whole sequence; the caption is the `claim`. No steps → static.
+- Do not draw a diagram of everything: one claim, the components it needs. Put inventories in
+  a table.
+
 ## 5. Workflow
 
 1. Start from the closest file in `examples/visuals/` (backlog, pipeline, nightly batch, incident,
-   lead time, revenue, before/after steps, cloud cost, schedule) and replace claim, data and captions.
+   lead time, revenue, before/after steps, cloud cost, schedule, funnel, cost share, incident
+   timeline, AI agent request path, RAG indexing, approval process) and replace claim, data and captions.
 2. `python scripts/build_visual.py spec.json --out dist/visuals/<name> --check`
    (exit 0 = built and checked; 1 = spec, lint or gate failure; 2 = built but the browser
    gates could not run, e.g. no Playwright: say so in your report). `--font NanumGothic`
@@ -177,6 +212,7 @@ widths, no text painted over by a later shape, text contrast ≥ 4.5:1, text ≥
 ≤ 520 px at 715 px and ≤ 600 px at 360 px, captions readable at the default speed, labels
 not shown before their event, browser state equal to the model at sample times, working
 controls, reduced motion, print, two independent blocks, readable no-JS figure on phones,
-no external requests; the exported `figure.svg` has all text inside the figure, no overlap,
-nothing painted over and readable contrast. Not judged: whether the visual is the right one, whether the claim is
+no external requests; text that belongs to a box stays inside it and connection labels stay
+off boxes; the exported `figure.svg` has all text inside the figure, no overlap, nothing
+painted over and readable contrast. Not judged: whether the visual is the right one, whether the claim is
 true, whether the picture is beautiful. Step 4 is where that happens.

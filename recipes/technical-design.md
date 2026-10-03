@@ -14,8 +14,10 @@ Use for behavior, contracts, architecture decisions, runtime rules, or implement
 9. Migration or rollout considerations
 10. Open questions
 
-## Visual guidance
-Use static architecture for stable structure. Use sequential-flow or a future data-flow pattern when the timing/order of interactions is the core concept.
+## Visual guidance (spec kinds: `references/visual-specs.md`)
+`diagram` with `data_kind: "proposed"` for the target design; a second `diagram` with
+`"current"` when the change is the point. Add `steps` when the order of interactions is the
+core concept. Expected gains go in `bars` (before/after) with `data_kind: "estimate"`.
 
 ## Rule
 Clearly label target design versus already implemented behavior.

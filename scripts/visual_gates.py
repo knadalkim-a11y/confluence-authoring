@@ -26,6 +26,12 @@ COVER_JS = """(root)=>{const bad=[];for(const s of """ + VISIBLE + """){const al
    if(c.fill==='none'||Number(c.opacity)<0.2||Number(c.fillOpacity)<0.2)continue;const b=e.getBoundingClientRect();
    const w=Math.min(a.right,b.right)-Math.max(a.left,b.left),h=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
    if(w>0&&h>0&&w*h>0.3*area){bad.push([t.textContent.slice(0,20),e.tagName]);break}}});}return bad}"""
+BOX_JS = """(root)=>{const bad=[];for(const s of """ + VISIBLE + """){const solid=[...s.querySelectorAll('[data-solid]')];
+ for(const t of s.querySelectorAll('text[data-in], text[data-free]')){const a=t.getBoundingClientRect();if(!a.width)continue;
+  if(t.dataset.in){const e=solid.find(x=>x.dataset.solid===t.dataset.in);if(!e)continue;const b=e.getBoundingClientRect();
+   if(a.left<b.left-0.5||a.right>b.right+0.5||a.top<b.top-0.5||a.bottom>b.bottom+0.5)bad.push([t.textContent.slice(0,20),'sticks out of its box'])}
+  else for(const e of solid){const b=e.getBoundingClientRect(),w=Math.min(a.right,b.right)-Math.max(a.left,b.left),h=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
+   if(w>1&&h>1){bad.push([t.textContent.slice(0,20),'sits on box '+e.dataset.solid]);break}}}}return bad}"""
 MINFONT_JS = """(sel)=>{let m=99;for(const s of document.querySelectorAll(sel)){const r=s.getBoundingClientRect();if(!r.width)continue;const k=r.width/s.viewBox.baseVal.width;for(const t of s.querySelectorAll('text')){if(!t.textContent.trim())continue;m=Math.min(m,parseFloat(t.getAttribute('font-size'))*k)}}return m}"""
 FIGURE_BOX_JS = """(s)=>{const r=s.getBoundingClientRect();return [...s.querySelectorAll('text')].filter(e=>e.textContent.trim()).filter(e=>{const b=e.getBoundingClientRect();
  return b.left<r.left-1||b.right>r.right+1||b.top<r.top-1||b.bottom>r.bottom+1}).map(e=>e.textContent.slice(0,30))}"""
@@ -37,7 +43,7 @@ def figure_problems(page) -> list[str]:
     body = page.locator('body')
     found = [('text outside the figure', page.locator('svg').first.evaluate(FIGURE_BOX_JS)),
              ('overlapping text', body.evaluate(OVERLAP_JS)['bad']), ('text painted over', body.evaluate(COVER_JS)),
-             ('low contrast', body.evaluate(CONTRAST_JS))]
+             ('low contrast', body.evaluate(CONTRAST_JS)), ('box text', body.evaluate(BOX_JS))]
     return [f'figure.svg: {what} {v}' for what, v in found if v]
 
 
@@ -97,6 +103,8 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
                 if o['out']: fail(f'{width}px T={t:g}: text outside the block {o["out"][:3]}')
                 cov = root.evaluate(COVER_JS)
                 if cov: fail(f'{width}px T={t:g}: text painted over by a later shape {cov[:3]}')
+                box = root.evaluate(BOX_JS)   # text belonging to a box stays inside it; free labels stay off boxes
+                if box: fail(f'{width}px T={t:g}: {box[:3]}')
                 bad = root.evaluate(CONTRAST_JS)
                 if bad: fail(f'{width}px T={t:g}: text below 4.5:1 contrast {bad[:3]}')
                 mf = page.evaluate(MINFONT_JS, 'svg[data-ca-static]')

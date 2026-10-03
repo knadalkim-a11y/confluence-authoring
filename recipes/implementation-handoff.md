@@ -16,3 +16,6 @@ Use when another developer or agent must execute the work.
 
 ## Rule
 Write executable instructions, not only design commentary. Explicitly distinguish required implementation from future ideas.
+
+## Visual guidance (spec kinds: `references/visual-specs.md`)
+`diagram` (`data_kind: "current"`) for components and ownership; `timeline` for remaining work.

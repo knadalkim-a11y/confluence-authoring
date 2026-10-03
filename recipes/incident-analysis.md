@@ -18,3 +18,9 @@ Use for outage, degradation, error investigation, or recovery record.
 - Separate "restored service" from "root cause fixed".
 - Timestamp facts where timing matters.
 - Motion is useful for symptom progression, queue buildup, propagation, and recovery.
+
+## Visual guidance (spec kinds: `references/visual-specs.md`)
+- `timeline` with `HH:MM` times, `"durations": true`, `"legend": false` for detection,
+  response and recovery
+- `trend` for the affected metric with the incident and fix as events
+- `diagram` with `steps` for how the failure propagated

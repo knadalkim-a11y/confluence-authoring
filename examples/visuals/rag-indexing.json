@@ -1,0 +1,27 @@
+{
+  "kind": "diagram",
+  "title": "사내 문서가 에이전트 답변에 쓰이기까지 (RAG 색인)",
+  "claim": "문서는 매일 밤 색인되므로, 답변은 최대 하루 전 내용을 기준으로 한다.",
+  "source": "예시: 사내 에이전트 색인 설계안",
+  "data_kind": "example",
+  "layers": [
+    {"label": "원천", "nodes": [
+      {"id": "wiki", "name": "Confluence", "sub": "사내 위키"},
+      {"id": "drive", "name": "공유 드라이브", "sub": "PDF·PPT"}]},
+    {"label": "수집·가공", "nodes": [
+      {"id": "collect", "name": "수집기", "sub": "매일 02:00"},
+      {"id": "embed", "name": "청크·임베딩", "sub": "임베딩 모델", "type": "ai"}]},
+    {"label": "저장", "nodes": [{"id": "vdb", "name": "벡터 DB", "type": "data"}]},
+    {"label": "활용", "nodes": [{"id": "agent", "name": "사내 에이전트", "type": "ai"}]}
+  ],
+  "groups": [{"label": "색인 파이프라인 (야간)", "layers": [1, 2]}],
+  "edges": [
+    {"from": "wiki", "to": "collect", "label": "변경분"},
+    {"from": "drive", "to": "collect", "label": "변경분"},
+    {"from": "collect", "to": "embed", "label": "본문"},
+    {"from": "embed", "to": "vdb", "label": "벡터"},
+    {"from": "agent", "to": "vdb", "label": "검색"},
+    {"from": "vdb", "to": "agent", "label": "관련 문서"},
+    {"from": "agent", "to": "wiki", "label": "원문 링크", "style": "dashed"}
+  ]
+}

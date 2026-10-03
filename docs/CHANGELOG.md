@@ -1,5 +1,19 @@
 # Changes
 
+## 0.9.0 — architecture and process diagrams
+
+- New kind `diagram`: components in layers (left to right; top to bottom on phones), typed
+  boxes (`person`, `ai`, `data`, `external`), groups over layers, connections with labels,
+  two-way pairs as parallel lines, dashed lines with a stated meaning, lanes outside every box
+  for connections that skip layers. `data_kind` is `current`, `proposed` or `example` and is
+  printed in the picture. Optional `steps` (`path` or parallel `paths`) animate the route a
+  request takes; the numbered step list stays in the picture for print, export and no-JS.
+- New gate: text that belongs to a box stays inside it; connection labels stay off boxes.
+- Recipes now name the kinds that fit them.
+- Examples: AI agent request path, RAG indexing, AI adoption approval (15 in total).
+- Verification: unit 108; examples 15/15 and live 4/4 under Noto Sans CJK KR and NanumGothic;
+  CSS suites pass. Not verified: target Confluence, macOS/Windows fonts, real user content.
+
 ## 0.8.0 — more report situations, portable output, second-font gates
 
 - New kind `share` (100% bars: composition and how it changed, highlighted category with its

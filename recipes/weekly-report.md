@@ -17,3 +17,8 @@ Let a reader understand what changed during the period without turning the page 
 - Prefer a small status table when several items share the same dimensions.
 - Use motion only for a change/process that is hard to explain statically.
 - When adding to an existing weekly page, match its current week naming convention and hierarchy.
+
+## Visual guidance (spec kinds: `references/visual-specs.md`)
+Usually none: a short table carries a week. At most one visual for the one change that
+matters: `trend` for a metric around an event, `timeline` for a schedule change, `bars` for a
+comparison.
