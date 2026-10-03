@@ -46,6 +46,8 @@ def main():
         print('FAIL lint:', '; '.join(errors), file=sys.stderr)
     if a.check and not errors:
         from visual_gates import run
+        import shutil
+        shutil.rmtree(a.out / 'shots', ignore_errors=True)   # never review a stale screenshot
         rec = run(frag, info['checks'], info['data'], a.out / 'shots', a.spec.stem, a.browser)
         report['gates'] = rec
         for f in rec['failures']:

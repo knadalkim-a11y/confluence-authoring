@@ -1,6 +1,6 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T15:13:03+00:00",
+  "tested_at_utc": "2026-10-03T15:19:47+00:00",
   "cases": [
     {
       "id": "cpu-latency",
@@ -18,8 +18,8 @@
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "98451108ac2d7951eaf20fe008f87aec95f2d8057372978c3364764a9e94c769",
-      "bytes": 131888,
+      "sha256": "d743459c0567889c754847d133621a523510d186f7e443ef8bd9dadc633d8b36",
+      "bytes": 131936,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -29,7 +29,7 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.86,
+          0.88,
           1.36
         ],
         "height_715": 472,
@@ -54,16 +54,16 @@
           0.896,
           1.417
         ],
-        "height_715": 260,
+        "height_715": 312,
         "samples_715": 6,
         "dense_overlap_715": 24,
-        "height_360": 254,
+        "height_360": 306,
         "samples_360": 6,
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "18beb1c5a83bf76bf23774f345df7cce9f70ac7be1d2b19d30ddd3650d8652d9",
-      "bytes": 49372,
+      "sha256": "782eb020ac8416922a73da22ddcea2a497c6d4c0e932480b6e132104d982fcd9",
+      "bytes": 59492,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -74,7 +74,7 @@
       "checks": {
         "autoplay": [
           0.896,
-          1.396
+          1.417
         ],
         "height_715": 342,
         "samples_715": 6,
@@ -84,8 +84,8 @@
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "ff15e58b6fbb1577da1bb6a14ef79902c4290a195258072837ec7ffef50c638b",
-      "bytes": 80556,
+      "sha256": "452d7fddf920ad8c2acc958584b23342cde9a5889360f80a0a539ff685141ccb",
+      "bytes": 81221,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"

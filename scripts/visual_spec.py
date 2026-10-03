@@ -229,6 +229,7 @@ def flow_data(spec):
         tone = v.get('tone', 'neutral'); need(tone in TONES, f'variants[{li}].tone: {TONES}')
         lanes.append(dict(name=name, tone=tone, stages=stages, b=b, limit=lim, rows=rows, S=S))
     peak = max(r for _, r in sched)
+    values.update({f't_{k}': fmt(v, 1) for k, v in events.items() if v is not None})   # event times, e.g. {t_drain}
     values.update(inflow_start=fmt(sched[0][1]), inflow_peak=fmt(peak), inflow_end=fmt(sched[-1][1]), end=fmt(end), time_unit=tu,
                   rate_unit=rate_u, count_unit=count_u, change=fmt(sched[1][0]) if len(sched) > 1 else '-')
     captions = captions_from(spec, events, values, end)
@@ -237,8 +238,8 @@ def flow_data(spec):
         unit = u
         if peak / u * end / 10 <= 25:
             break
-    lb = only(spec.get('labels') or {}, ('inflow', 'served', 'wait', 'spare', 'limit_pill', 'limit_tag'), 'labels')
-    labels = dict(inflow=lb.get('inflow', '유입'), served=lb.get('served', '처리'), wait=lb.get('wait', '새 요청 대기'),
+    lb = only(spec.get('labels') or {}, ('inflow', 'served', 'wait', 'spare', 'limit_pill', 'limit_tag', 'history'), 'labels')
+    labels = dict(history=lb.get('history', '대기 추이'), inflow=lb.get('inflow', '유입'), served=lb.get('served', '처리'), wait=lb.get('wait', '새 요청 대기'),
                   spare=lb.get('spare', '여유'), limit_pill=lb.get('limit_pill', '한도 도달'), limit_tag=lb.get('limit_tag', '상한 {limit}'),
                   rate_unit=rate_u, count_unit=count_u, time_unit=tu, data_kind=DATA_KINDS[data_kind])
     legend = [f'점 1개 = {grp(unit)}{count_u}']
@@ -263,7 +264,8 @@ def flow_data(spec):
     data = dict(scene='flow', time=dict(unit=tu, end=end), inflow=sched, unit=unit, speed=token_speed(peak, unit), labels=labels,
                 captions=captions, rate=rate, callouts=callouts, t=t,
                 axes=dict(wait_max=nice_max(max(max(l['S']['q']) / l['stages'][l['b']]['capacity'] for l in lanes) or 1)),
-                lanes=[dict(name=l['name'], tone=l['tone'], b=l['b'], limit=l['limit'],
+                lanes=[dict(name=l['name'], tone=l['tone'], b=l['b'], limit=l['limit'], peak_q=max(l['S']['q']),
+                            peak_t=l['S']['t'][l['S']['q'].index(max(l['S']['q']))],
                             stages=[dict(name=s['name'], short=s['short'], cap=s['capacity']) for s in l['stages']],
                             q=l['S']['q'], srv=l['S']['srv'], rej=l['S']['rej'], inc=l['S']['inc'], tokens=fluid_tokens(l['S'], unit)) for l in lanes])
     aria = f'{title}. {claim}'
@@ -280,16 +282,19 @@ def flow_data(spec):
         if len(lanes) == 1:
             l = lanes[0]; cap = l['stages'][l['b']]['capacity']; i = next((k for k in range(1, len(t)) if t[k] > T + 1e-9), len(t) - 1)
             served = (l['S']['srv'][i] - l['S']['srv'][i - 1]) / (t[i] - t[i - 1])
-            stats = [fmt(schedule_rate(sched, T)), fmt(served), fmt(max(0, interp(t, l['S']['q'], T)) / cap, 1)]
+            stats = [grp(schedule_rate(sched, T)), grp(served), f'{max(0, interp(t, l["S"]["q"], T)) / cap:.1f}']   # same formatting as the scene
         return dict(state=st, stats=stats)
     ann = [[c[2], c[1]] for c in callouts]
+    if len(lanes) == 1 and max(lanes[0]['S']['q']) > 1e-6:   # history strip peak label appears at the peak
+        qq = lanes[0]['S']['q']; ann.append([f'최대 {grp(max(qq))}{count_u}', lanes[0]['S']['t'][qq.index(max(qq))]])
     for li, l in enumerate(lanes):
         if len(l['stages']) > 1 and events.get('queue' if li == 0 else f'queue@{li}') is not None:
             ann.append([labels['limit_pill'], events['queue' if li == 0 else f'queue@{li}']])   # pill appears as soon as the queue does
     samples = sorted({round(x, 4) for x in [0.05 * end] + [c[0] + 0.03 * end for c in captions if c[0] + 0.03 * end < end] + [end]})[:6]
     while len(samples) < 6:
         samples = sorted(set(samples + [round(end * (len(samples) + 1) / 7, 4)]))
-    checks = dict(end=end, samples=samples[:6], annotations=[[a, round(b, 6)] for a, b in ann if 0 < b < end], expect=expect, resize_at=round(end / 2, 4))
+    samples = samples[:5] + [end] if end not in samples[:6] else samples[:6]   # the final state is always gated
+    checks = dict(end=end, samples=samples, annotations=[[a, round(b, 6)] for a, b in ann if 0 < b < end], expect=expect, resize_at=round(end / 2, 4))
     table = (head, rows)
     numeric = dict(lanes=[dict(name=l['name'], queue_end=l['S']['q'][-1], served_end=l['S']['srv'][-1], rejected_end=l['S']['rej'][-1]) for l in lanes],
                    events={k: v for k, v in events.items() if v is not None}, unit=unit)
@@ -348,9 +353,11 @@ def trend_data(spec):
         thresholds.append([text(th.get('panel'), 'thresholds.panel', 1, 24), num(th.get('value'), 'thresholds.value'), text(th.get('label'), 'thresholds.label', 1, 20)])
     ev_marks = [[events[e.get('name') or e.get('label')], text(e.get('label'), 'event label', 1, 16)] for e in spec.get('events') or []]
     captions = captions_from(spec, events, values, end)
+    auto = not tm.get('ticks')
     ticks = tm.get('ticks') or [[x, fmt(x)] for x in (0, end / 2, end)]
     ticks = [[num(a, 'tick'), text(str(b), 'tick label', 1, 10)] for a, b in ticks]
-    ticks[-1][1] = ticks[-1][1] if ticks[-1][1].endswith(tu) else ticks[-1][1] + tu
+    if auto:   # only generated numeric ticks get the unit; author labels stay as written
+        ticks[-1][1] += tu
     live = motion == 'play' or (motion == 'auto' and len(captions) >= 2)
     if not captions:
         captions = [[end, '', claim]]

@@ -19,7 +19,14 @@ text-template helper for ordinary templates. v0.2 scene sources require typed in
 render_motion.py; the legacy command fails with migration guidance rather than silently
 relabeling fixed numerical geometry. Do not use --allow-unresolved output for publishing.
 
-`live_scene.py` (library, used by `build_monitoring_suite.py`) assembles live-runtime
+`build_visual.py SPEC.json --out DIR [--check]` builds one document visual from a JSON spec
+(`visual_spec.py`: validation, models, events, placeholders, pacing) into `DIR/macro.html`,
+`preview.html` and `report.json`; `--check` runs the shared browser gates (`visual_gates.py`)
+and writes screenshots to `DIR/shots/`. See references/visual-specs.md.
+`build_visual_gallery.py SPEC_DIR --out DIR [--check]` builds every spec in a folder into one
+review page (`DIR/index.html`) that embeds each macro.
+
+`live_scene.py` (library, used by `build_visual.py` and `build_monitoring_suite.py`) assembles live-runtime
 cases: model data from `monitoring_cases.py`, JS kit/grammars/scene/runtime from
 `visuals/live/`, and a static final-scene SVG rendered by running the same scene code
 in Node. Only cases marked `"runtime": "live"` use it. See references/live-runtime.md.

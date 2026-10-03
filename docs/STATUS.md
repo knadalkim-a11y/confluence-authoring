@@ -1,48 +1,52 @@
-# Status — v0.6.0 visual language for the live tier
+# Status — v0.7.0 spec-driven document visuals
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
 
-## Goal of this change
+## Goal
 
-Reach the look, feel and finish of the kciter.so article demos (not their content). The
-originals were recorded locally (canvas pixels, ~45 s per demo, 673 px column) and their
-traits measured; the result is a shared visual language in
-`references/visual-guidelines.md` → "Visual language (live tier, v0.6.0)".
+When someone wants a visual for a report or document, the AI produces one that fits the
+situation at the quality of the live tier. Monitoring cases are validation material.
 
-## Changed
+## What exists now
 
-- `kit.js`: Open Color palette with legible text variants; `rich`, `pill`, `gauge`, `ring`,
-  `arrow`, `tw` helpers.
-- `shell.html`: no card border; centred status line joined by " · "; centred grey caption;
-  notes and text-only controls on one low row.
-- `flowQueue`: stage-chain variant (`chainGeom/chainDraw`) replaces the v0.5.0 bar lane:
-  stage limit + thick gauge + %, pills, dot-grid queue or buffer slots, reject tokens.
-  Pool variant (thread-pool): waiting requests yellow, busy slots solid blue, DB green/red.
-- `timePanels`: `spark`; lighter cursor; last x tick right-aligned; slow band red family.
-- pipeline-bottleneck: queue panel removed (the article text never reads it); 397 → 260 px.
-- bounded-queue: lanes side by side (stacked < 560 px), buffer of 8 cells, per-lane
-  readouts (대기, 대기 시간, 처리, 거부) and wait-time sparkline; 498 → 340 px.
-- cpu-latency: ①②③ pills whose names appear at their events, light panels, value at the
-  cursor dot, per-column reading at its event; 347 → 356 px.
-- thread-pool: same structure and charts (the article text refers to both), restyled.
-- Tests: browser resize gate fixed (it compared a fixed-width container and only passed
-  by accident of padding); static-scene text threshold made case-generic (≥ 8).
+- Spec path (default in SKILL.md): `references/visual-specs.md` → JSON spec →
+  `scripts/build_visual.py --check` → `macro.html` + screenshots. Kinds: `flow` (backlog,
+  queue, capacity, bottleneck, 1 lane or 2 variants), `trend` (metrics over time, events,
+  thresholds, columns), `bars` (comparison, before/after), `timeline` (schedule). Static or
+  animated is chosen by situation; `motion: "none"` gives a no-script figure.
+- The spec layer validates honesty (`source`, `data_kind`), unknown keys/events/placeholders,
+  bottleneck rules, caption readability; numbers in text come from the model.
+- Shared browser gates (`scripts/visual_gates.py`): overlap/clipping at 24 moments × 2 widths,
+  painted-over text, contrast ≥ 4.5:1, text ≥ 9 px, height budgets, captions on events,
+  future-label leaks, model equality, controls, reduced motion, print, two blocks, no-JS on
+  phones, no external requests.
+- 9 report-style examples in `examples/visuals/` (all gates pass); pipeline-bottleneck,
+  bounded-queue and cpu-latency are specs of the same kinds (same model numbers as before);
+  thread-pool is the custom-scene example.
 
-## Actual validation (Linux, Python 3.11, Node 22, Playwright 1.56 + Chromium 141)
+## Actual validation (Linux, Python 3.11, Node 22, Playwright 1.56 + Chromium 141, Noto Sans CJK KR)
 
-- Unit: 90 pass. `tests/browser_live.py`: 4/4 live cases pass all gates. Heights
-  (715 / 360 px): thread-pool 472 / 453, pipeline 260 / 254, bounded 340 / 560, cpu 356 / 548.
+- Unit: 102 tests pass (incl. `tests/test_visual_spec.py`).
+- `tests/browser_live.py`: 4/4 live monitoring cases pass all gates.
+- `scripts/build_visual_gallery.py examples/visuals --check`: 9/9 specs pass all gates.
 - `browser_monitoring.py` (15 CSS cases), `browser_smoke.py`, `browser_diagram_layout.py`: pass.
-- Other 15 monitoring macros byte-identical to v0.5.0.
-- Before/after: `tests/compare_baseline.py --baseline <v0.5.0 build>`. Original vs ours:
-  local page `dist/compare-original/index.html` (article text and recordings are
-  third-party content; kept out of Git). Both were reviewed by the agent, not by a person.
+- Generality test: three report requests not prepared in advance (API incident, nightly
+  batch, cloud cost), specced from the docs. First try: 1/3 passed. Failures were library
+  defects (percent decimals ignored, label collision, a gate formatting mismatch, final state
+  not gated, stale screenshots kept) and one authoring error only visible in screenshots (a
+  caption claiming a backlog remained after the model drained it). All fixed; added to examples.
 
-## Known limits
+## Known limits (not hidden)
 
-- "Feel" is a human judgement; the gates only catch mechanical defects.
-- bounded-queue at 360 px is 560 px (budget 600); it grew from 533.
-- pipeline's outgoing token stream between Application and DB shows 1–2 dots.
-- The status line can wrap at 360 px and then begins its second line with "·".
-- Target Confluence: inline scripts, CSP, editor, mobile, PDF export NOT verified.
+- The generality test was done by the same AI that wrote the library and docs; it is not an
+  independent test. A fresh session following only SKILL.md is the stronger check.
+- Kinds cover queues/flows, time series, bar comparisons and schedules. Not covered: maps,
+  networks/graphs, distributions beyond the monitoring percentile case, funnels as a kind,
+  >2 variants, mixed units in one bar chart.
+- Semantic correctness of captions (does the sentence match the picture) is checked only by
+  the screenshot review step, not by gates.
+- Fonts verified with Noto Sans CJK KR only; Apple SD Gothic Neo / Malgun Gothic not tested.
+- Target Confluence: inline scripts, CSP, editor, mobile, PDF export NOT verified. Static
+  output (`motion: "none"`, bars, timeline) needs no script.
+- The 15 CSS-tier monitoring cases and the 13 legacy CSS patterns keep the older look.

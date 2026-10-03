@@ -9,7 +9,13 @@ python tests/browser_smoke.py --browser /path/to/chromium
 python scripts/build_monitoring_suite.py && python tests/browser_monitoring.py
 python tests/browser_live.py [--browser /path/to/chromium]
 python tests/compare_baseline.py --baseline <previous build dir>   # before/after sheets
+for f in examples/visuals/*.json; do python scripts/build_visual.py "$f" --out dist/visuals/$(basename "$f" .json) --check; done
 ```
+
+`test_visual_spec.py` covers the spec layer: honesty fields, unknown keys/events/placeholders,
+unreadable captions, bottleneck rules, model equality with the reference fluid queue, author
+precision. `scripts/visual_gates.py` is the shared browser gate used by `build_visual.py --check`
+and `browser_live.py`.
 
 `browser_live.py` runs live-runtime cases with JavaScript enabled: autoplay, height
 budget, text overlap at fixed model times and widths, browser state equal to the Python

@@ -5,7 +5,7 @@ CA_SCENES['trend']=function(D,K,GR){
   var C=K.C,TP=GR.timePanels,end=D.time.end,G=D.groups;
   var PAL={blue:[C.blue,C.blueText,'#e7f5ff'],purple:[C.purple,C.purpleText,C.purpleSoft],green:[C.green,C.greenText,C.greenSoft],
            red:[C.red,C.redText,C.redSoft],amber:[C.amber,C.amberText,C.amberSoft],gray:['#868e96',C.muted,'#f1f3f5']};
-  function fmt(v,p){if(p.unit==='%')return Math.round(v)+'%';var s=Number(Math.abs(v)).toFixed(p.decimals||0).split('.');
+  function fmt(v,p){var s=Number(Math.abs(v)).toFixed(p.decimals||0).split('.');
     return (v<0?'−':'')+K.grp(+s[0])+(s[1]?'.'+s[1]:'')+p.unit;}
   function tick(v,p){return p.unit==='%'?Math.round(v)+'%':(Math.abs(v)<10&&Math.round(v)!==v?Number(v).toFixed(1):K.grp(v));}
   function latest(list,T){var r=null;(list||[]).forEach(function(x){if(T>=x[0]-1e-9)r=x;});return r;}
@@ -23,7 +23,8 @@ CA_SCENES['trend']=function(D,K,GR){
     if(items.length&&items[0].y<lo){var d=lo-items[0].y;items.forEach(function(it){it.y+=d;});}
     /* a label that would sit on a fixed label (event names) flips to the other side of its dot */
     items.forEach(function(it){var w=K.tw(it.s,11),x0=it.a==='end'?it.x-w:it.x;
-      (fixed||[]).forEach(function(f){if(x0<f.x1&&x0+w>f.x0&&it.y-11<f.y1&&it.y>f.y0){var alt=it.dy<it.y?it.dy-8:it.dy+16;if(alt>=lo&&alt<=hi)it.y=alt;}});});
+      (fixed||[]).forEach(function(f){if(x0-4<f.x1&&x0+w+4>f.x0&&it.y-13<f.y1&&it.y+2>f.y0){var alt=it.dy<it.y?it.dy-8:it.dy+16;
+        if(alt>=lo&&alt<=hi)it.y=alt;else if(f.y1+14<=hi)it.y=f.y1+14;}});});   /* else: just under the fixed label */
     return items.map(function(it){return K.text(it.x,it.y,it.s,{fs:11,c:it.c,a:it.a,w:700,halo:1});}).join('');}
   function panel(p,pd,T,first){var o=K.rect(p.x0,p.y,p.x1-p.x0,p.h,{r:3,fill:C.paper2,st:C.rule}),multi=pd.series.length>1;
     pd.ticks.forEach(function(v){o+=K.line(p.x0,p.Y(v),p.x1,p.Y(v),C.rule)+K.text(p.x0-5,p.Y(v)+3.5,tick(v,pd),{fs:10,c:C.muted,a:'end'});});

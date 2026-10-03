@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
 metadata:
-  version: "0.6.0"
+  version: "0.7.0"
 ---
 
 # Confluence Authoring
@@ -57,26 +57,35 @@ layout onto a technical explanation, tutorial, comparison or discussion record.
 
 ## Visual selection
 
-Use text for nuance; tables for repeated comparable dimensions; static diagrams for
-stable structure. Motion is optional: select it only for progression, accumulation,
-transfer, branching, propagation or staged interpretation that benefits from movement.
-Keep ordinary updates static. Read `references/visual-guidelines.md` for visual tone.
+Use text for nuance and decisions; tables for exact values or many dimensions; a visual only
+when the reader must see a shape, a comparison or a mechanism. Each visual makes one claim.
+Read `references/visual-guidelines.md` for the visual language.
 
-When motion helps:
+To make a visual for a report or document, use the spec path (default):
 
-1. Read the compact `references/motion-index.md`, not all HTML files.
-2. Consult the selected entry in `references/motion-catalog.yaml` for fit and limits.
-   Entries marked `planned` are not implemented patterns.
-3. Read `references/motion-inputs.md`, the selected scene in `visuals/motion/`, and
-   the matching object in `examples/motion-inputs.json` only as an illustrative example.
-4. Supply a structured input with provenance. Use `scripts/render_motion.py` to
-   compute geometry and assemble the shared player. Never change only chart labels.
-5. Generate a unique prefix per block. The same output must not be pasted twice on
-   one page. The renderer generates a random prefix by default.
-6. Run `scripts/validate_html_macro.py` on the rendered fragment and on the combined
-   macros where possible. A standalone preview uses a different wrapper from a macro.
-7. Verify a readable static final state, controls, narrow layout and reduced motion.
-8. Distinguish local browser results from actual target Confluence rendering.
+1. Read `references/visual-specs.md`. Pick the kind by the reader's question: `flow`
+   (backlog, queue, capacity, bottleneck), `trend` (metrics over time, around an event,
+   against a target), `bars` (comparison, before/after), `timeline` (schedule).
+2. Copy the closest spec from `examples/visuals/` and replace claim, data, source and
+   `data_kind` (`measured` / `estimate` / `example`). Bind captions to model events; put
+   computed numbers in text through placeholders, never by typing them.
+3. Build and gate: `python scripts/build_visual.py spec.json --out <dir> --check`.
+   Fix what a `FAIL` names; then look at the screenshots in `<dir>/shots/` at both widths
+   and revise until the picture shows the claim at a glance.
+4. Paste `<dir>/macro.html` into one HTML macro per visual. Animated output needs inline
+   scripts in the target Confluence (smoke check in `confluence-rules.md`); otherwise
+   rebuild with `"motion": "none"` for a static figure of the same quality.
+5. Report the spec, mode, gate result and what was not verified.
+
+For a mechanism no kind expresses, write a custom live scene (`references/live-runtime.md`;
+thread-pool is the worked example) and run the same gates.
+
+Legacy: the 13 CSS motion patterns (`references/motion-index.md`, `scripts/render_motion.py`)
+predate the spec path and its visual language. Use them only when an animated explanation
+is required and the target Confluence cannot run inline scripts. Entries marked `planned`
+in `references/motion-catalog.yaml` are not implemented. Validate any fragment with
+`scripts/validate_html_macro.py`, verify the static final state, narrow layout and reduced
+motion, and distinguish local browser results from target Confluence rendering.
 
 If execution is unavailable, use a sourced static representation or clearly state
 which generation/validation steps were not run. Never paste an unassembled scene
@@ -97,8 +106,8 @@ new numeric sources; do not relabel their illustrative geometry as measured data
 The existing player is reused; no `stories/` hierarchy is required.
 
 Cases with `"runtime": "live"` (thread-pool, pipeline-bottleneck, bounded-queue, cpu-latency) are built by the live
-runtime; read `references/live-runtime.md` for its layers, composition rules and gates.
-Building them requires Node.js for the static fallback.
+runtime; three of them are plain specs of the generic kinds (see `visual-specs.md`), thread-pool is a
+custom scene. Read `references/live-runtime.md` for layers and gates. Building needs Node.js.
 
 Read `references/monitoring-quality-review.md` for case-by-case decisions and
 `references/monitoring-tests.md` for reproducible tests. Original text and published
@@ -118,13 +127,13 @@ Preserve the 1.25x default and the numerical model when adjusting layout or play
 
 ## Runtime and publishing
 
-Read `references/confluence-rules.md`. The default rendered macro is self-contained
-HTML + CSS + inline SVG; no JavaScript, iframe, remote font, CDN or external request.
-The live tier is the one exception: a single validated, bundled inline script per block
-with a static final-scene SVG, used only after the target Confluence is checked to run
-inline scripts (smoke check in confluence-rules.md).
+Read `references/confluence-rules.md`. Static output (spec `motion: "none"`, and
+static kinds) is self-contained HTML + CSS + inline SVG: no JavaScript, iframe, remote font, CDN
+or external request. Animated spec output and live scenes carry one validated, bundled inline
+script per block plus static final-scene SVGs (wide and phone), used only after the target
+Confluence is checked to run inline scripts (smoke check in confluence-rules.md).
 Shared source files are bundled into each output; Confluence does not fetch them.
-The gallery may use JavaScript for search/selection, but macro code does not.
+The gallery may use JavaScript for search/selection; static macros do not.
 The default animation plays once and retains the final state; replay is user controlled.
 
 HTML macro availability is environment-specific. An enabled macro does not prove

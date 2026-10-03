@@ -1,5 +1,20 @@
 # Changes
 
+## 0.7.0 — spec-driven document visuals
+
+The default way to make a visual is now a JSON spec (`references/visual-specs.md`):
+`flow`, `trend`, `bars`, `timeline`, built by `scripts/build_visual.py` into a validated
+macro (animated or static by situation) and checked by shared browser gates
+(`scripts/visual_gates.py`). Three monitoring cases became plain specs of these kinds
+(bespoke scenes removed, identical model numbers). Nine report-style examples ship in
+`examples/visuals/`; `build_visual_gallery.py` builds a review page. Gates now also catch
+transient overlaps (24 moments), text painted over by later shapes, and always check the
+final state. Fixes found by review and by an unprepared-spec test: decimals rounded away,
+unfilled Hangul placeholders, threshold label under area fill, percent decimals ignored,
+event-label collisions, flat changes coloured as wins, timeline note placement, empty
+status band, thread-pool overflow counter under dots, stale screenshots, and a drained
+backlog invisible in the final picture (single-lane history strip).
+
 ## 0.6.1 — readability fixes found in review, with gates
 
 - Caption pacing: `paced_rate()` slows playback so every caption except the last stays on

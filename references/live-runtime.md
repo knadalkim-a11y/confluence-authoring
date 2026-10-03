@@ -1,4 +1,4 @@
-# Live runtime — architecture, contract and quality gates (v0.6.0)
+# Live runtime — architecture, contract and quality gates (v0.7.0)
 
 The CSS-keyframe renderer (`reference_scene.py`) bakes every movement into keyframes.
 That made state-driven pictures hard: decorative token streams needed disclaimers,
@@ -38,11 +38,11 @@ Implemented grammars:
   explicit time arrays cut at T, `mark` draws an event line, `ticksX` custom tick labels,
   `spark` a compact trend with end dot.
 
-Implemented scenes: `thread-pool` (pool + two time panels the prose refers to),
-`pipeline-bottleneck` (one stage chain, no panel), `bounded-queue` (two chains side by side,
-stacked below 560 px, each with readouts and a wait-time sparkline), `cpu-latency` (three
-columns, CPU over P99 on one time axis; stacked groups below 560 px). Visual language:
-references/visual-guidelines.md.
+Implemented scenes: generic kinds `flow`, `trend`, `bars`, `timeline` (data from
+`scripts/visual_spec.py`, see `visual-specs.md`); custom `thread-pool`. The monitoring cases
+pipeline-bottleneck, bounded-queue and cpu-latency are specs of `flow`/`trend`
+(`monitoring_cases.pipeline_spec` etc.). A kind renders live (script) or static (no script;
+wide and phone static scenes) from the same code. Visual language: `visual-guidelines.md`.
 
 Candidate grammar mapping for the remaining cases (planning, not implemented):
 shared-time panels — memory-leak, memory-spike, slow-degradation, deploy-comparison, gc-pause, traffic,

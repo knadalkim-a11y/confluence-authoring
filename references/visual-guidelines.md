@@ -83,3 +83,15 @@ so every live case inherits it.
   line, value labelled at the cursor dot. Drop a panel the surrounding text never reads.
 - **Compact:** aim for the main figure plus status and caption; time panels are the
   exception that must earn their height.
+
+## Readability rules enforced by the gates (v0.6.1+)
+
+- Captions: 25–45 chars, one claim each, bound to model events; playback slows so each stays
+  on screen max(2.5 s, chars ÷ 12) at the default speed; captions too close to read both are
+  a build error (merge them).
+- Text contrast ≥ 4.5:1 (including chips); the faint grey is for rails and grids only.
+- Labels over lines, areas or dots use the white halo; no text may be painted over by a
+  later shape; value labels avoid each other and event labels.
+- No in-flight tokens in the final/static scene; a phone-width static scene is shown when
+  scripts do not run.
+- Decimals follow the author's data; a change within the stated flat band reads "≈ 그대로".

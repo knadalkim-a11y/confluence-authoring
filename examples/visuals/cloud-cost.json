@@ -1,0 +1,36 @@
+{
+  "kind": "bars",
+  "title": "서비스별 월 클라우드 비용 (최적화 전후)",
+  "claim": "예약 인스턴스 전환으로 검색과 API 비용이 크게 줄었고, 저장소는 거의 그대로다.",
+  "source": "예시: 최적화 전후 한 달 청구액",
+  "data_kind": "example",
+  "unit": "만 원",
+  "better": "lower",
+  "flat_pct": 5,
+  "pair_labels": [
+    "최적화 전",
+    "최적화 후"
+  ],
+  "items": [
+    {
+      "label": "검색",
+      "before": 820,
+      "after": 410
+    },
+    {
+      "label": "API 서버",
+      "before": 640,
+      "after": 380
+    },
+    {
+      "label": "배치",
+      "before": 300,
+      "after": 240
+    },
+    {
+      "label": "저장소",
+      "before": 260,
+      "after": 255
+    }
+  ]
+}
