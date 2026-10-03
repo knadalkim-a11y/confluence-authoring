@@ -72,40 +72,38 @@ class LiveRuntimeTests(unittest.TestCase):
     chk=live_checks(c['id'],c['params']);self.assertEqual(len(chk['samples']),6)
     for label,at in chk['annotations']:self.assertIn(label,a['svg'])   # final scene shows every annotation
  def test_pipeline_model_binding(self):
-  p=CASES['pipeline-bottleneck']['params'];data,_,_,_,num=pipeline_live_data(p);rows=fluid_queue(p,steps=200);S=data['series']
-  self.assertAlmostEqual(S['q'][-1],rows[-1]['q']);self.assertAlmostEqual(S['q'][-1],1800)
-  unit=data['unit'];self.assertEqual(unit,20);tok=data['tokens']
+  p=CASES['pipeline-bottleneck']['params'];data,_,_,_,num=pipeline_live_data(p);rows=fluid_queue(p,steps=200);l=data['lanes'][0]
+  self.assertEqual(data['scene'],'flow');self.assertAlmostEqual(l['q'][-1],rows[-1]['q']);self.assertAlmostEqual(l['q'][-1],1800)
+  unit=data['unit'];tok=l['tokens']
   self.assertEqual(len(tok),int(rows[-1]['incoming']//unit));self.assertFalse(any(t[2] for t in tok))
   served=[t for t in tok if t[1] is not None];self.assertEqual(len(served),int(rows[-1]['served']//unit+1e-9))
   self.assertEqual([t[1] for t in served],sorted(t[1] for t in served))           # FIFO departures
   self.assertTrue(all(t[1]>=t[0] for t in served))
-  ev=data['events'];self.assertAlmostEqual(ev['t_wait1'],p['change_time']+1);self.assertAlmostEqual(ev['t_wait2'],p['change_time']+2)
-  self.assertIn([p['change_time'],'②'],[x[:2] for x in data['captions']]);self.assertIn(ev['t_wait1'],[x[0] for x in data['captions']])
+  ev=num['events'];self.assertAlmostEqual(ev['wait:1'],p['change_time']+1);self.assertAlmostEqual(ev['wait:2'],p['change_time']+2)
+  times=[x[0] for x in data['captions']];self.assertTrue(any(abs(p['change_time']-x)<1e-6 for x in times));self.assertTrue(any(abs(ev['wait:1']-x)<1e-6 for x in times))
   before=[t for t in tok if t[0]<p['change_time']];self.assertTrue(all(abs(t[1]-t[0])<1e-3 for t in before))   # no wait below capacity
  def test_bounded_model_binding(self):
-  p=CASES['bounded-queue']['params'];data,_,_,_,num=bounded_live_data(p);S=data['series'];unit=data['unit']
-  self.assertAlmostEqual(S['qb'][-1],p['queue_limit']);self.assertAlmostEqual(S['qu'][-1],600);self.assertAlmostEqual(num['rejected'],592)
-  self.assertAlmostEqual(num['overload_rejection_fraction'],592/1200)
-  self.assertLessEqual(max(S['qb']),p['queue_limit']+1e-9)
-  tb=data['tokens_b'];tu=data['tokens_u'];self.assertEqual(len(tb),len(tu));self.assertEqual([t[0] for t in tb],[t[0] for t in tu])
-  rej=sum(t[2] for t in tb);self.assertLessEqual(abs(rej*unit-num['rejected']),unit)   # token rejections track the fluid balance
-  self.assertFalse(any(t[2] for t in tu))
+  p=CASES['bounded-queue']['params'];data,_,_,_,num=bounded_live_data(p);u,b=data['lanes'];unit=data['unit']
+  self.assertAlmostEqual(b['q'][-1],p['queue_limit']);self.assertAlmostEqual(u['q'][-1],600);self.assertAlmostEqual(num['rejected'],592)
+  self.assertAlmostEqual(num['overload_rejection_fraction'],592/1200);self.assertLessEqual(max(b['q']),p['queue_limit']+1e-9)
+  self.assertEqual([t[0] for t in b['tokens']],[t[0] for t in u['tokens']])
+  rej=sum(t[2] for t in b['tokens']);self.assertLessEqual(abs(rej*unit-num['rejected']),unit)   # token rejections track the fluid balance
+  self.assertFalse(any(t[2] for t in u['tokens']))
   # Continuous fill time is 4.08 s; the fluid model integrates in 0.05 s steps, so allow one step.
-  self.assertLessEqual(abs(data['events']['t_full']-(p['change_time']+p['queue_limit']/(p['after_rate']-p['capacity']))),0.05+1e-9)
-  self.assertIn(data['events']['t_full'],[x[0] for x in data['captions']])
+  self.assertLessEqual(abs(num['events']['full@1']-(p['change_time']+p['queue_limit']/(p['after_rate']-p['capacity']))),0.05+1e-9)
+  self.assertTrue(any(abs(num['events']['full@1']-x[0])<1e-6 for x in data['captions']))
  def test_bounded_requires_overload(self):
   p=copy.deepcopy(CASES['bounded-queue']['params']);p['after_rate']=90
   with self.assertRaises(ValueError):bounded_live_data(p)
  def test_cpu_series_and_verdict_timing(self):
-  data=cpu_live_data({})[0];sc=cpu_scenarios();H=data['axes']['end'];ts=data['series']['t']
-  for s,x in zip(data['services'],sc):
-   self.assertEqual(s['cpu'],[round(x['cpu'](t/H),3) for t in ts]);self.assertEqual(s['p99'],[round(x['p99'](t/H),3) for t in ts])
-  ev=data['events'];self.assertEqual(data['services'][2]['pill'][-1][0],ev['cpu_saturated']);self.assertEqual(data['services'][1]['pill'][-1][0],ev['p99_plateau'])
-  for t in ev.values():self.assertIn(t,[x[0] for x in data['captions']])
+  data,_,_,_,num=cpu_live_data({});sc=cpu_scenarios();H=data['time']['end'];E=num['events']
+  for g,x in zip(data['groups'],sc):
+   cpu=g['panels'][0]['series'][0];p99=g['panels'][1]['series'][0]
+   self.assertEqual(cpu['v'],[round(x['cpu'](t/H),3) for t in cpu['t']]);self.assertEqual(p99['v'],[round(x['p99'](t/H),3) for t in p99['t']])
+  self.assertEqual(data['groups'][2]['pill'][-1][0],E['cpu_saturated']);self.assertEqual(data['groups'][1]['pill'][-1][0],E['p99_plateau'])
+  for t in E.values():self.assertTrue(any(abs(t-x[0])<1e-6 for x in data['captions']))
   st=node_static(data)['svg'];self.assertIn('CPU 100%에 붙었다',st);self.assertIn('CPU는 노는데 느리다',st)
-  # Verdict must not be in a frame drawn before its event (same draw code, Node).
-  self.assertNotIn('노는데 느리다',static_at(data,ev['p99_plateau']-0.5));self.assertNotIn('100%에 붙었다',static_at(data,ev['cpu_saturated']-0.5))
-
+  self.assertNotIn('노는데 느리다',static_at(data,E['p99_plateau']-0.5));self.assertNotIn('100%에 붙었다',static_at(data,E['cpu_saturated']-0.5))
  def test_captions_readable_at_default_speed(self):
   # Every caption but the last (which stays after playback) is on screen long enough to read.
   for c in LIVE:

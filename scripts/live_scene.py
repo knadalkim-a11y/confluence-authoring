@@ -54,6 +54,8 @@ def node_static(data: dict, width: int = STATIC_WIDTH) -> dict:
 
 
 def stats_html(stats: dict) -> str:
+    if not stats.get('left') and not stats.get('right'):
+        return ''   # empty -> the status line collapses (static figures)
     def b(value, hot):
         return '<b' + (' class="hot"' if hot else '') + '>' + html.escape(str(value)) + '</b>'
     out = '<span class="grp">' + ''.join('<span>' + html.escape(a) + b(v, hot) + html.escape(u) + '</span>'
@@ -65,7 +67,9 @@ def stats_html(stats: dict) -> str:
 
 
 def assemble_live(case_id: str, prefix: str, speed: float, data: dict, aria: str, notes: str,
-                  table: tuple[list[str], list[list]]) -> str:
+                  table: tuple[list[str], list[list]], live: bool = True) -> str:
+    """One self-contained <section>. live=False gives a static figure: same scene code rendered
+    once in Node (720 px and 360 px), no script, no controls."""
     if not re.fullmatch(r'[A-Za-z][A-Za-z0-9-]{2,40}', prefix):
         raise ValueError('Invalid prefix')
     static = node_static(data)
@@ -88,9 +92,13 @@ def assemble_live(case_id: str, prefix: str, speed: float, data: dict, aria: str
         'ARIA': html.escape(aria, quote=True), 'NOTES': html.escape(notes), 'TABLE': table_html,
     }
     out = (LIVE / 'shell.html').read_text(encoding='utf-8')
+    if not live:
+        ctl = re.search(r'\n<div class="ca-live-ctl" data-ca-controls>.*?</div>', out)
+        out = out.replace(ctl[0], '').replace('<script>%%SCRIPT%%</script>\n', '').replace('data-ca-runtime="live"', 'data-ca-runtime="static"')
+        script = ''
     for key, value in values.items():
         out = out.replace('%%' + key + '%%', value)
     out = out.replace('%%SCRIPT%%', script)   # last: data must not be re-substituted
-    if re.search(r'%%[A-Z_]+%%', out.replace(script, '')):
+    if re.search(r'%%[A-Z_]+%%', out.replace(script, '') if script else out):
         raise ValueError('Unresolved live template token')
     return out

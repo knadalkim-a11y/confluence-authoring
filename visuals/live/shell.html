@@ -3,6 +3,7 @@
 .%%PREFIX%%{--ink:#343a40;--text:#495057;--muted:#697077;--faint:#adb5bd;--rule:#e9ecef;--blue:#1971c2;--red:#c92a2a;display:block;max-width:760px;margin:16px auto;padding:6px 0 4px;box-sizing:border-box;background:#fff;color:var(--text);font:13px/1.5 Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;text-align:left}
 .%%PREFIX%% *{box-sizing:border-box}
 .%%PREFIX%% .ca-live-stats{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 0;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums;min-height:22px;text-align:center}
+.%%PREFIX%% .ca-live-stats:empty{display:none}
 .%%PREFIX%% .ca-live-stats span{white-space:nowrap}
 .%%PREFIX%% .ca-live-stats .grp{display:contents}
 .%%PREFIX%% .ca-live-stats .grp>span+span::before,.%%PREFIX%% .ca-live-stats .grp+span::before{content:"·";margin:0 9px;color:var(--faint)}
@@ -38,7 +39,7 @@
 <svg data-ca-static data-ca-narrow viewBox="0 0 %%WN%% %%HN%%" role="img" aria-label="%%ARIA%%">%%STATIC_SVG_N%%</svg>
 <div class="ca-live-foot">
 <p class="ca-live-cap" data-ca-caption aria-live="polite">%%CAPTION%%</p>
-<div class="ca-live-row"><details><summary>모델 입력과 사건표</summary><p>%%NOTES%%</p><div class="ca-live-tbl">%%TABLE%%</div></details>
+<div class="ca-live-row"><details><summary>데이터와 출처</summary><p>%%NOTES%%</p><div class="ca-live-tbl">%%TABLE%%</div></details>
 <div class="ca-live-ctl" data-ca-controls><button type="button" data-a="play">재생</button><button type="button" data-a="restart">처음부터</button><button type="button" data-a="end">최종 장면</button></div></div>
 </div>
 <script>%%SCRIPT%%</script>

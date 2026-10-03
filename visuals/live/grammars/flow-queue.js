@@ -20,9 +20,10 @@ CA_GRAMMARS.flowQueue={
       o+=K.rect(left-8,g.my-9,g.qh-left+16,18,{r:9,fill:C.amberSoft,st:'#ffe8a1'});
       o+=K.text(g.qh+8,g.my-15,st.queueLabel,{fs:12,c:C.amberText,a:'end',w:700});}
     st.queue.forEach(function(pos){if(pos>g.qcap-1)return;o+=K.dot(g.qh-pos*g.step,g.my,4.5,C.amber);});
-    if(st.queueCount>g.qcap)o+=K.text(g.qh-(g.qcap-1)*g.step,g.my+4,'+'+(st.queueCount-g.qcap+1),{fs:10,c:C.amberText,a:'middle',w:700});
     st.transit.forEach(function(t){var tx=t.target==null?inX1-4:g.qh-Math.min(t.target,g.qcap-1)*g.step;
       o+=K.dot(tx*t.p,g.my,4.5,C.blue,K.clamp(t.p*4));});
+    /* overflow count drawn after dots and tokens so nothing paints over it */
+    if(st.queueCount>g.qcap)o+=K.text(g.qh-(g.qcap-1)*g.step,g.my+4,'+'+(st.queueCount-g.qcap+1),{fs:10,c:C.amberText,a:'middle',w:700,halo:1});
     o+=K.rect(g.px,g.py,g.pw,g.ph,{r:8,fill:full?C.hotPaper:C.paper2,st:full?C.red:C.edge,sw:full?1.6:1});
     o+=K.text(g.px,g.py-8,st.poolLabel,{fs:12,c:C.text,w:700});
     o+=K.text(g.px+g.pw,g.py-8,st.used+'/'+st.slots+(g.nw?'':' 사용 중'),{fs:12,c:full?C.redText:C.muted,a:'end',w:full?700:400});

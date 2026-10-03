@@ -1,137 +1,96 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T14:51:17+00:00",
+  "tested_at_utc": "2026-10-03T15:13:03+00:00",
   "cases": [
     {
       "id": "cpu-latency",
+      "live": true,
       "checks": {
-        "autoplay_from_start_and_advances": [
-          2.75,
-          4.25
+        "autoplay": [
+          2.948,
+          4.663
         ],
-        "height_715": 356,
-        "no_text_overlap_or_clip_715": 6,
-        "state_matches_python_model_715": 6,
-        "text_contrast_aa_715": true,
-        "min_text_px_715": 10,
-        "height_360": 548,
-        "no_text_overlap_or_clip_360": 6,
-        "state_matches_python_model_360": 6,
-        "text_contrast_aa_360": true,
-        "min_text_px_360": 10,
-        "captions_match_model_events": true,
-        "no_future_annotation_leak": true,
-        "controls_end_restart_pause_keyboard": true,
-        "resize_relayout_keeps_clock": true,
-        "print_final_scene_controls_hidden": true,
-        "independent_instances": true,
-        "no_errors_no_external_requests": true,
-        "reduced_motion_final_no_autoplay": true,
-        "nojs_static_final_scene": true,
-        "nojs_phone_static_scene_min_text_px": 10,
+        "height_715": 362,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 582,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "4e4058913903d10773e06dfa41ebe3c300aeb65c636d50b714b15d29e9d2e243",
-      "bytes": 121621
+      "sha256": "98451108ac2d7951eaf20fe008f87aec95f2d8057372978c3364764a9e94c769",
+      "bytes": 131888,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
     },
     {
       "id": "thread-pool",
+      "live": true,
       "checks": {
-        "autoplay_from_start_and_advances": [
+        "autoplay": [
           0.86,
           1.36
         ],
         "height_715": 472,
-        "no_text_overlap_or_clip_715": 6,
-        "state_matches_python_model_715": 6,
-        "text_contrast_aa_715": true,
-        "min_text_px_715": 11,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
         "height_360": 453,
-        "no_text_overlap_or_clip_360": 6,
-        "state_matches_python_model_360": 6,
-        "text_contrast_aa_360": true,
-        "min_text_px_360": 11,
-        "captions_match_model_events": true,
-        "no_future_annotation_leak": true,
-        "controls_end_restart_pause_keyboard": true,
-        "resize_relayout_keeps_clock": true,
-        "print_final_scene_controls_hidden": true,
-        "independent_instances": true,
-        "no_errors_no_external_requests": true,
-        "reduced_motion_final_no_autoplay": true,
-        "nojs_static_final_scene": true,
-        "nojs_phone_static_scene_min_text_px": 11,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "6c1ac2c8cae114b2fc1e12f1aecd402bc870f8010a76acf2a998d8ca19fd1ec1",
-      "bytes": 80167
+      "sha256": "1de6ce2c4f0ab9d0421b00d40467903003f299938d7ae573021b4a1066d83aee",
+      "bytes": 80292,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
     },
     {
       "id": "pipeline-bottleneck",
+      "live": true,
       "checks": {
-        "autoplay_from_start_and_advances": [
-          1.046,
-          1.654
+        "autoplay": [
+          0.896,
+          1.417
         ],
         "height_715": 260,
-        "no_text_overlap_or_clip_715": 6,
-        "state_matches_python_model_715": 6,
-        "text_contrast_aa_715": true,
-        "min_text_px_715": 11,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
         "height_360": 254,
-        "no_text_overlap_or_clip_360": 6,
-        "state_matches_python_model_360": 6,
-        "text_contrast_aa_360": true,
-        "min_text_px_360": 11,
-        "captions_match_model_events": true,
-        "no_future_annotation_leak": true,
-        "controls_end_restart_pause_keyboard": true,
-        "resize_relayout_keeps_clock": true,
-        "print_final_scene_controls_hidden": true,
-        "independent_instances": true,
-        "no_errors_no_external_requests": true,
-        "reduced_motion_final_no_autoplay": true,
-        "nojs_static_final_scene": true,
-        "nojs_phone_static_scene_min_text_px": 11,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "7ea8c650e2eef3f98c2be927551c98123ec11ec74c18f99d63ae0b5f3dc91ac8",
-      "bytes": 45923
+      "sha256": "18beb1c5a83bf76bf23774f345df7cce9f70ac7be1d2b19d30ddd3650d8652d9",
+      "bytes": 49372,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
     },
     {
       "id": "bounded-queue",
+      "live": true,
       "checks": {
-        "autoplay_from_start_and_advances": [
-          1.1,
-          1.7
+        "autoplay": [
+          0.896,
+          1.396
         ],
-        "height_715": 340,
-        "no_text_overlap_or_clip_715": 6,
-        "state_matches_python_model_715": 6,
-        "text_contrast_aa_715": true,
-        "min_text_px_715": 11,
-        "height_360": 560,
-        "no_text_overlap_or_clip_360": 6,
-        "state_matches_python_model_360": 6,
-        "text_contrast_aa_360": true,
-        "min_text_px_360": 11,
-        "captions_match_model_events": true,
-        "no_future_annotation_leak": true,
-        "controls_end_restart_pause_keyboard": true,
-        "resize_relayout_keeps_clock": true,
-        "print_final_scene_controls_hidden": true,
-        "independent_instances": true,
-        "no_errors_no_external_requests": true,
-        "reduced_motion_final_no_autoplay": true,
-        "nojs_static_final_scene": true,
-        "nojs_phone_static_scene_min_text_px": 11,
+        "height_715": 342,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 562,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "501dea6c7f3ad10322a8ac72def8b88f75bb1ecf92e641aae47791596983b866",
-      "bytes": 74844
+      "sha256": "ff15e58b6fbb1577da1bb6a14ef79902c4290a195258072837ec7ffef50c638b",
+      "bytes": 80556,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
     }
   ],
   "browser": "141.0.7390.37",
-  "result": "PASS",
-  "test_sha256": "c69c0102745d51bd452391a77df7ad1819dcdd8862d2ad139e729ea585cdfe38"
+  "result": "PASS"
 }
