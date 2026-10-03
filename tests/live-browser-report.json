@@ -1,14 +1,14 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T17:22:31+00:00",
+  "tested_at_utc": "2026-10-03T17:55:21+00:00",
   "cases": [
     {
       "id": "cpu-latency",
       "live": true,
       "checks": {
         "autoplay": [
-          2.948,
-          4.663
+          3.017,
+          4.662
         ],
         "height_715": 378,
         "samples_715": 6,
@@ -18,8 +18,8 @@
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "9acc239f95698275f2714942bb770540e7086d81238878c88a6655c5681aef8b",
-      "bytes": 133711,
+      "sha256": "110246f1f908310010d9a4823ff0fb6a045deb5b8250651370ad5f7c6727618c",
+      "bytes": 136373,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -73,8 +73,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.917,
-          1.417
+          0.896,
+          1.416
         ],
         "height_715": 346,
         "samples_715": 6,
@@ -86,6 +86,50 @@
       },
       "sha256": "b65b2b3f53e6aba3c8fa7de0eef2347659b5b549e1613cc578a2030f3cbf28d0",
       "bytes": 81988,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "slow-degradation",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          0.299,
+          0.472
+        ],
+        "height_715": 332,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 278,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "00f70a614dd732f3ac14ac50a7aaa5ffa25c0f0de1b83cb1748c14c3c592411d",
+      "bytes": 56170,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "postmortem-timeline",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          4.013,
+          6.253
+        ],
+        "height_715": 354,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 300,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "b8f26f9608303d7d838dacae8121034f8a4d9b9d0b2beba0b894596a843166d5",
+      "bytes": 54492,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"

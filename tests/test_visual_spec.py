@@ -139,6 +139,24 @@ class VisualSpecTests(unittest.TestCase):
                 with self.assertRaisesRegex(SpecError, msg):
                     build(spec)
 
+    def test_trend_vocabulary(self):
+        # bands compute their duration, annotations fill model placeholders, between needs real series
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        from monitoring_cases import postmortem_spec, slow_spec
+        import json as _j
+        cases = {c['id']: c for c in _j.loads((ROOT / 'examples/monitoring-cases.json').read_text())['cases']}
+        pm = build(postmortem_spec(cases['postmortem-timeline']['params'])[0])['data']
+        self.assertEqual(pm['bands'][0][2], '감지 공백 18분')
+        self.assertEqual([e[2] for e in pm['events']], ['amber', 'red', 'purple', 'green'])
+        sl = slow_spec(cases['slow-degradation']['params'])[0]
+        self.assertEqual(build(sl)['data']['annotations'][0][3], '+72% (180ms → 310ms)')
+        bad = copy.deepcopy(sl); bad['between'][0]['lower'] = '없는 선'
+        with self.assertRaisesRegex(SpecError, 'series'):
+            build(bad)
+        bad = copy.deepcopy(sl); bad['annotations'][0]['text'] = '{없는값}'
+        with self.assertRaisesRegex(SpecError, 'placeholder'):
+            build(bad)
+
     def test_figure_footer_fits(self):
         # the exported SVG's source line wraps inside the figure (a 90-char source used to overflow)
         from live_scene import wrap_text, text_width

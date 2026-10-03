@@ -11,7 +11,7 @@ CA_SCENES['trend']=function(D,K,GR){
   function latest(list,T){var r=null;(list||[]).forEach(function(x){if(T>=x[0]-1e-9)r=x;});return r;}
   function geom(W){var g={W:W,nw:W<560,cols:[]},cols=!g.nw&&G.length>1,y=0;
     G.forEach(function(gr,i){var n=gr.panels.length,ph=cols?(n>2?48:62):g.nw?(G.length>1?34:n===1?96:n===2?56:44):(n===1?150:n===2?80:60);
-      var cw=cols?(W-18*(G.length-1))/G.length:W,x0=cols?i*(cw+18):0,top=cols?0:y,head=gr.pill.length?24:0,c={x0:x0,x1:x0+cw,top:top,panels:[]};
+      var cw=cols?(W-18*(G.length-1))/G.length:W,x0=cols?i*(cw+18):0,top=cols?0:y,head=(gr.pill.length?24:0)+(gr.title?24:0)+(D.bands.length?22:0),c={x0:x0,x1:x0+cw,top:top,panels:[]};
       var py=top+head+18;gr.panels.forEach(function(p){c.panels.push(TP.panelIn(x0+36,x0+cw,py,ph,end,p.max));py+=ph+24;});
       c.bottom=py-24+(cols||!g.nw||i===G.length-1?18:0);c.note=c.bottom+16;
       c.axis=cols||i===G.length-1;g.cols.push(c);y=c.bottom+(gr.note.length&&!g.nw?24:6)+(cols?0:10);});
@@ -33,12 +33,19 @@ CA_SCENES['trend']=function(D,K,GR){
       if(best==null)best=Math.max(lo,Math.min(hi,it.dy-8));var b=box(it,best);b.dy=it.dy;b.ly=best;placed.push(b);
       o+=K.text(it.x,best,it.s,{fs:12,c:it.c,a:it.a,w:700,halo:1});});
     return o;}
+  function series(pd,nm){for(var i=0;i<pd.series.length;i++)if(pd.series[i].name===nm)return pd.series[i];return null;}
   function panel(p,pd,T,first){var o=K.rect(p.x0,p.y,p.x1-p.x0,p.h,{r:3,fill:C.paper2,st:C.rule}),multi=pd.series.length>1;
     pd.ticks.forEach(function(v){o+=K.line(p.x0,p.Y(v),p.x1,p.Y(v),C.rule)+K.text(p.x0-5,p.Y(v)+3.5,tick(v,pd),{fs:11,c:C.muted,a:'end'});});
-    o+=K.text(p.x0,p.y-7,pd.label,{fs:12,c:C.text,w:700});
+    o+=K.text(p.x0,p.y-7,pd.label,{fs:13,c:C.text,w:700});
+    /* an interval is shaded once it has ended: the reader sees it as a finding, not a forecast */
+    D.bands.forEach(function(b){if(T>=b[1]-1e-9)o+=K.rect(p.X(b[0]),p.y,p.X(b[1])-p.X(b[0]),p.h,{r:0,fill:PAL[b[3]][2],op:.9});});
+    D.between.forEach(function(b){if(b[0]!==pd.label||T<b[3])return;var u=series(pd,b[1]),l=series(pd,b[2]),t1=Math.min(T,b[4]),ts=[b[3]];
+      u.t.forEach(function(t){if(t>b[3]&&t<t1)ts.push(t);});ts.push(t1);
+      var upr=ts.map(function(t){return K.f(p.X(t))+' '+K.f(p.Y(TP.at(u.t,u.v,t)));}),bot=ts.slice().reverse().map(function(t){return K.f(p.X(t))+' '+K.f(p.Y(TP.at(l.t,l.v,t)));});
+      o+=K.path('M'+upr.join('L')+'L'+bot.join('L')+'Z',PAL[b[5]][2],'.85');});
     if(multi){var lx=p.x1;pd.series.slice().reverse().forEach(function(s){var w=K.tw(s.name,12)+14;lx-=w;o+=K.rect(lx,p.y-15,9,9,{r:2,fill:PAL[s.color][0]})+K.text(lx+12,p.y-7,s.name,{fs:12,c:C.muted});lx-=6;});}
     var marks=[];
-    pd.series.forEach(function(s){var c=PAL[s.color],pts=TP.cut(K,p,s.t,s.v,T);if(pts.length<2)return;var last=Math.min(T,s.t[s.t.length-1]),v=TP.at(s.t,s.v,last),x=p.X(last),y=p.Y(v);
+    pd.series.forEach(function(s){var c=PAL[s.color],pts=TP.cut(K,p,s.t,s.v,T);if(pts.length<2||T<s.t[0])return;var last=Math.min(T,s.t[s.t.length-1]),v=TP.at(s.t,s.v,last),x=p.X(last),y=p.Y(v);
       if(!multi)o+=K.path('M'+K.f(p.X(s.t[0]))+' '+K.f(p.Y(0))+'L'+pts.join('L')+'L'+K.f(x)+' '+K.f(p.Y(0))+'Z',c[2],'1');
       o+='<path d="M'+pts.join('L')+'" fill="none" stroke="'+c[0]+'" stroke-width="2" stroke-linejoin="round"/>'+K.ring(x,y,3.5,'#fff',c[0],2);
       var right=x>p.x1-56;marks.push({x:right?x-6:x+6,y:y-8>=p.y+11?y-8:y+16,dy:y,s:fmt(v,pd),c:c[1],a:right?'end':'start'});});
@@ -46,15 +53,31 @@ CA_SCENES['trend']=function(D,K,GR){
     /* thresholds after the series (an area fill must not paint over their label); the label sits
        on the side away from the cursor, where the value labels are */
     var late=p.X(Math.min(T,end))>(p.x0+p.x1)/2;
-    D.thresholds.forEach(function(th){if(th[0]===pd.label)o+=K.line(p.x0,p.Y(th[1]),p.x1,p.Y(th[1]),C.red,{d:'4 3',op:.8})+K.text(late?p.x0+4:p.x1-4,p.Y(th[1])-4,th[2],{fs:12,c:C.redText,a:late?'start':'end',halo:1});});
-    var fixed=first?D.events.filter(function(e){return T>=e[0]-1e-9;}).map(function(e){var x=p.X(e[0])+4;return {x0:x-3,x1:x+K.tw(e[1],12)+3,y0:p.y-2,y1:p.y+17};}):[];
+    D.thresholds.forEach(function(th){if(th[0]!==pd.label)return;var ly=p.Y(th[1]),ty=ly-p.y<18?ly+15:ly-5;   /* near the top edge the label goes under the line */
+      o+=K.line(p.x0,ly,p.x1,ly,C.red,{d:'4 3',op:.8})+K.text(late?p.x0+4:p.x1-4,ty,th[2],{fs:12,c:C.redText,a:late?'start':'end',w:700,halo:1});});
+    var fixed=first?(p.evBoxes||[]):[];
+    /* annotations at a series value, bold and coloured like the series they explain */
+    D.annotations.forEach(function(a){if(a[1]!==pd.label||T<a[0]-1e-9)return;var sr=series(pd,a[2]),x=p.X(a[0]),y=p.Y(TP.at(sr.t,sr.v,a[0])),w=K.tw(a[3],13),
+        an=x>p.x1-w/2-4?'end':x<p.x0+w/2+4?'start':'middle',ty=Math.max(p.y+15,Math.min(p.y+p.h-5,a[5]==='below'?y+20:y-11)),x0=an==='end'?x-w:an==='middle'?x-w/2:x;
+      o+=K.text(x,ty,a[3],{fs:13,c:PAL[a[4]][1],a:an,w:700,halo:1});fixed.push({x0:x0-3,x1:x0+w+3,y0:ty-15,y1:ty+5});});
     return o+labels(marks,p,fixed);}
   function draw(T,g){var o=g.mark?K.text(g.W,g.H-3,D.labels.data_kind,{fs:12,c:C.muted,a:'end'}):'';   /* illustrative/estimated data says so in the picture */
-    G.forEach(function(gr,i){var c=g.cols[i],pl=latest(gr.pill,T),nt=latest(gr.note,T);
-      if(pl)o+=K.pill(c.x0,c.top+11,pl[1],pl[2],{a:'start',fs:13});
+    G.forEach(function(gr,i){var c=g.cols[i],pl=latest(gr.pill,T),nt=latest(gr.note,T),hy=c.top;
+      if(gr.title){o+=K.text(c.x0,hy+15,gr.title,{fs:14,c:PAL[gr.color][1],w:700});hy+=24;}
+      if(pl)o+=K.pill(c.x0,hy+11,pl[1],pl[2],{a:'start',fs:13});
+      var a=c.panels[0],b=c.panels[c.panels.length-1],rows=[];
+      /* event labels inside the top panel, each on the first row where it does not touch another */
+      a.evBoxes=[];D.events.forEach(function(e){if(T<e[0]-1e-9)return;var x=a.X(e[0]),w=K.tw(e[1],12),right=x+w+6>a.x1,x0=right?x-4-w:x+4,r=0;
+        while(rows[r]&&rows[r].some(function(q){return x0<q[1]+6&&x0+w>q[0]-6;}))r++;(rows[r]=rows[r]||[]).push([x0,x0+w]);
+        var col=e[2]&&e[2]!=='gray'?PAL[e[2]]:null,ty=a.y+14+r*16;
+        e.ty=ty;e.x0=x0;e.right=right;e.col=col;a.evBoxes.push({x0:x0-3,x1:x0+w+3,y0:ty-13,y1:ty+4});});
       gr.panels.forEach(function(pd,j){o+=panel(c.panels[j],pd,T,j===0);});
-      var a=c.panels[0],b=c.panels[c.panels.length-1];
-      D.events.forEach(function(e){if(T>=e[0]-1e-9)o+=K.line(a.X(e[0]),a.y,a.X(e[0]),b.y+b.h,C.ink,{d:'3 3',op:.55})+K.text(a.X(e[0])+4,a.y+12,e[1],{fs:12,c:C.text,w:700,halo:1});});
+      /* lines after the panels (a panel background would hide them), labels last */
+      D.events.forEach(function(e){if(T<e[0]-1e-9)return;var x=a.X(e[0]);o+=K.line(x,a.y,x,b.y+b.h,e.col?e.col[0]:C.ink,{d:'4 3',sw:1.4,op:e.col?.9:.55});});
+      D.events.forEach(function(e){if(T<e[0]-1e-9)return;o+=K.text(e.x0,e.ty,e[1],{fs:12,c:e.col?e.col[1]:C.text,w:700,halo:1});});
+      D.bands.forEach(function(bd){if(T<bd[1]-1e-9)return;var x0=a.X(bd[0]),x1=a.X(bd[1]),y=a.y-26,cl=PAL[bd[3]];
+        o+='<path d="M'+K.f(x0)+' '+K.f(y+6)+'V'+K.f(y)+'H'+K.f(x1)+'V'+K.f(y+6)+'" fill="none" stroke="'+cl[0]+'" stroke-width="1.6"/>';
+        o+=K.text((x0+x1)/2,y-5,bd[2],{fs:13,c:cl[1],a:'middle',w:700,halo:1});});
       if(c.axis)o+=TP.ticksX(K,b,D.ticks);
       if(nt&&!g.nw)o+=K.text((a.x0+a.x1)/2,c.note,nt[1],{fs:13,c:nt[2]==='hot'?C.redText:nt[2]==='warn'?C.amberText:C.greenText,a:'middle',w:700});});
     return o;}

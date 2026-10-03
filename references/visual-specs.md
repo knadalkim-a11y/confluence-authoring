@@ -1,4 +1,4 @@
-# Document visuals from a spec (v0.9.1)
+# Document visuals from a spec (v0.9.2)
 
 Purpose: when someone wants a visual for a report or document, write a short JSON spec that
 states the claim, the data and its provenance; `scripts/build_visual.py` computes the model,
@@ -96,8 +96,17 @@ unknown events are build errors that list what is available. Never type a comput
   with `pill`/`note` timelines `[[at, text, tone]]`, as in the CPU example). ≤ 3 series per
   panel (legend appears automatically); points must cover `0..end`. Colours: blue, purple,
   green, red, amber, gray. Value labels sit at the cursor and avoid each other and events.
+- Article vocabulary (v0.9.2), each shown only from its time on:
+  `events[].color` colours an event line and its label (labels stack so they never touch);
+  `bands: [{"from", "to", "label": "감지 공백 {duration}", "color"}]` shades an interval in every
+  panel and brackets it above, `{duration}` computed; `annotations: [{"at", "panel", "series",
+  "text", "color", "side"}]` writes bold text at that series value (placeholders allowed, e.g.
+  `{P99_change_pct}% ({P99_start}ms → {P99_end}ms)`); `between: [{"panel", "upper", "lower",
+  "from", "to", "color"}]` shades the gap between two series (week-over-week); group `title`
+  + `color` heads a column (정상 / 누수). A series may cover only part of the axis (a copied
+  week laid over the last one). A threshold near the top edge puts its label under the line.
 - Events: `start`, `end` and every event `label` (or `name`).
-- Placeholders: `<series name>_end`, `<series name>_max` (non-word characters → `_`, e.g.
+- Placeholders: `<series name>_end`, `_max`, `_start`, `_change_pct` (non-word characters → `_`, e.g.
   `{리드_타임_end}`), `@i` suffix for group i > 0; `end`, `time_unit`.
 
 ### `bars` — categories, or before/after pairs

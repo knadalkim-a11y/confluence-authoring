@@ -20,8 +20,9 @@ references/live-runtime.md before touching them. Numbers come from the Python mo
 captions and pacing bind to model events; the static fallback is the same JS scene run in
 Node. Do not hand-edit generated macros, add other scripts, or migrate a case without
 its unit and browser gates (tests/test_live_runtime.py, tests/browser_live.py). Migrated:
-thread-pool (custom scene), pipeline-bottleneck, bounded-queue, cpu-latency (specs of flow/trend);
-do not claim others are.
+thread-pool (custom scene), pipeline-bottleneck, bounded-queue, cpu-latency, slow-degradation,
+postmortem-timeline (specs of flow/trend); do not claim others are. Each migration is checked
+side by side with the article demo (dist/ref18/pairs, local only, not committed).
 
 Read references/diagram-layout.md for structure/flow work. Explicit route coordinates
 must generate both the visible line and particle motion. The current layout pass covers

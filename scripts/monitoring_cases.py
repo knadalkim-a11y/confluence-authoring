@@ -552,6 +552,59 @@ def cpu_spec(p):
                   dict(at=E['p99_plateau'],text='두 번째는 CPU가 한가한데 느리다. 무언가를 기다린다.'),
                   dict(at=summary,text='CPU만 보면 두 번째는 정상처럼 보인다. P99와 함께 읽자.')]),dict(events=E,early_p99_max=early,b_cpu_mean=b_cpu)
 
+def slow_spec(p):
+    """SlowBurn: 4 weeks of P99 creeping up under the alert line; week 1 copied over week 4."""
+    v1=finite(p['week1'],'week1',0,10000);v4=finite(p['week4'],'week4',v1+.001,10000);th=finite(p['threshold'],'threshold',v4,20000)
+    W=4.0;n=224;f=lambda w:v1+(v4-v1)*w/W+18*math.sin(w/W*2*math.pi*28)+6*math.sin(w/W*2*math.pi*56)
+    p99=[[round(i*W/n,5),round(f(i*W/n),3)] for i in range(n+1)]
+    copy=[[round(3+i/56,5),round(f(i/56),3)] for i in range(57)]   # the first week's curve, laid over the fourth
+    top=max(th*1.1,max(v for _,v in p99)*1.15)
+    return dict(kind='trend',title='알람 없이 누적되는 성능 저하',claim='급락은 알람이 잡지만, 침식은 지난주와의 비교가 잡는다.',
+        source='설명용 합성값. 4주 P99, 같은 트래픽 조건 가정',data_kind='example',
+        time=dict(unit='주',end=W,ticks=[[.5,'1주차'],[1.5,'2주차'],[2.5,'3주차'],[3.5,'4주차']]),
+        panels=[dict(label='P99 응답 시간 (4주)',unit='ms',max=round(top),ticks=[round(th),round(th/2),0],decimals=0,
+                     series=[dict(name='P99',color='blue',points=p99),dict(name='1주차 곡선(복제)',color='green',points=copy)])],
+        thresholds=[dict(panel='P99 응답 시간 (4주)',value=th,label=f'알람 임계선 {fmt(th)}ms')],
+        between=[dict(panel='P99 응답 시간 (4주)',upper='P99',lower='1주차 곡선(복제)',**{'from':3,'to':4},color='red')],
+        annotations=[dict(at=3.5,panel='P99 응답 시간 (4주)',series='P99',text='{P99_change_pct}% ({P99_start}ms → {P99_end}ms)',color='red',side='above')],
+        captions=[dict(at=0,text='4주 동안 P99가 조금씩 오른다. 알람은 울리지 않는다.'),
+                  dict(at=3,text='4주차에 1주차 곡선을 겹쳐 보면 차이가 보인다.'),
+                  dict(at=3.6,text='급락은 알람이 잡지만, 침식은 지난주와의 비교가 잡는다.')]),dict(week1=v1,week4=v4,growth_percent=(v4-v1)/v1*100 if v1 else None)
+
+def slow_live_data(p):
+    sp,extra=slow_spec(p);d,a,n,t,num_,info=_from_spec(sp,'',extra)
+    aria=(f"4주 동안의 P99 응답 시간. 대표값이 {fmt(extra['week1'])}ms에서 {fmt(extra['week4'])}ms로 오르지만 알람 임계선 {fmt(p['threshold'])}ms 아래라 알람은 없다. "
+          f"4주차에 1주차 곡선을 겹치면 그 차이(+{extra['growth_percent']:.0f}%)가 드러난다.")
+    return d,aria,n,t,num_
+
+def postmortem_spec(p):
+    """Postmortem: the recovery graph, four coloured events and the detection gap as a band."""
+    f,a,r,z=[p[x] for x in ['first','alert','response','recovery']];h=finite(p['horizon'],'horizon',1,300)
+    if not 0<f<a<r<z<h:raise ValueError('Incident timestamps must be ordered')
+    fn=lambda m:piece(m/h,[(0,70),(f/h,75),(a/h,300),(.62,550),(z/h,550),((z+1)/h,75),(1,75)])+4*math.sin(m*1.7)
+    stamp=lambda m:f'{2+int(m)//60:02d}:{int(m)%60:02d}'
+    pts=[[round(i*h/180,4),round(fn(i*h/180),3)] for i in range(181)]
+    ev=[('first',f,'첫 흔적','amber'),('alert',a,'알람 발화','red'),('response',r,'대응 시작','purple'),('recovery',z,'복구','green')]
+    return dict(kind='trend',title='첫 흔적에서 복구까지의 시간을 나누기',claim='다음엔 더 빨리 알고 더 빨리 끝내려면, 두 간격을 줄인다.',
+        source='설명용 합성 곡선. 사건 시각은 예시',data_kind='example',
+        time=dict(unit='분',end=h,ticks=[[x,stamp(x)] for x in range(0,int(h)+1,30)]),
+        panels=[dict(label='P99 응답 시간',unit='ms',max=700,ticks=[600,300,0],decimals=0,series=[dict(name='P99',color='blue',points=pts)])],
+        thresholds=[dict(panel='P99 응답 시간',value=300,label='알람 임계선 300ms')],
+        events=[dict(name=k,at=t,label=f'{stamp(t)} {lb}',color=c) for k,t,lb,c in ev],
+        bands=[dict(**{'from':'first','to':'alert'},label='감지 공백 {duration}',color='amber')],
+        captions=[dict(at=0,text='복구가 끝났다. 그래프를 되감아 사건을 다시 맞춘다.'),
+                  dict(at='first',text=f'{stamp(f)} 첫 흔적. 아직 알람은 없다.'),
+                  dict(at='alert',text=f'{stamp(a)} 알람. 첫 흔적에서 {fmt(a-f)}분이 지났다.'),
+                  dict(at='response',text=f'{fmt(r-a)}분 뒤 대응 시작, 그로부터 {fmt(z-r)}분 뒤 복구.'),
+                  dict(at=z+(h-z)*.4,text='다음엔 더 빨리 알고 더 빨리 끝내려면, 두 간격을 줄인다.')]),dict(intervals={'감지 공백':a-f,'알림 → 복구':z-a,'알림 → 대응 시작':r-a,'대응 시작 → 복구':z-r})
+
+def postmortem_live_data(p):
+    sp,extra=postmortem_spec(p);d,a,n,t,num_,info=_from_spec(sp,'',extra)
+    iv=extra['intervals']
+    aria=(f"P99 응답 시간과 네 사건. 첫 흔적에서 알람까지 {fmt(iv['감지 공백'])}분(감지 공백), 알람에서 대응 시작까지 {fmt(iv['알림 → 대응 시작'])}분, "
+          f"대응 시작에서 복구까지 {fmt(iv['대응 시작 → 복구'])}분.")
+    return d,aria,n,t,num_
+
 def _from_spec(spec,aria,extra=None):
     from visual_spec import build
     info=build(spec);numeric=dict(info['numeric']);numeric.update(extra or {})
@@ -598,11 +651,13 @@ def live_checks(case_id,p):
         samples=[.5,p['slow_start']+.6,(ev['t_queue'] or 5)+.5,ev['t_queue_max'] or 9,p['recovery']+1.5,p['horizon']]
         notes=[]   # the scene has no verdict labels any more; queue and response times are live state
         return dict(expect=_probe_pool(p),samples=samples,annotations=notes,end=p['horizon'],resize_at=6.0)
-    spec={'pipeline-bottleneck':pipeline_spec,'bounded-queue':bounded_spec,'cpu-latency':lambda q:cpu_spec(q)[0]}[case_id](p)
+    spec={'pipeline-bottleneck':pipeline_spec,'bounded-queue':bounded_spec,'cpu-latency':lambda q:cpu_spec(q)[0],
+          'slow-degradation':lambda q:slow_spec(q)[0],'postmortem-timeline':lambda q:postmortem_spec(q)[0]}[case_id](p)
     from visual_spec import build
     return build(spec)['checks']
 
-LIVE_BUILDERS={'thread-pool':pool_live_data,'pipeline-bottleneck':pipeline_live_data,'bounded-queue':bounded_live_data,'cpu-latency':cpu_live_data}
+LIVE_BUILDERS={'thread-pool':pool_live_data,'pipeline-bottleneck':pipeline_live_data,'bounded-queue':bounded_live_data,'cpu-latency':cpu_live_data,
+               'slow-degradation':slow_live_data,'postmortem-timeline':postmortem_live_data}
 
 BUILDERS={'traffic-patterns':traffic,'percentile-comparison':distributions,'survivorship-bias':survivorship,'cpu-latency':cpu,'cpu-throttling':throttling,'memory-leak':memory,'memory-spike':spike,'thread-pool':pool,'cluster-cascade':cascade,'event-loop':event_loop,'pipeline-bottleneck':pipeline,'utilization-wait':utilization,'bounded-queue':bounded,'cache-stampede':cache,'timeout-mismatch':timeout,'slow-degradation':slow,'deploy-comparison':deploy,'postmortem-timeline':postmortem,'gc-pause':gc_pause}
 

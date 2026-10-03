@@ -1,5 +1,18 @@
 # Changes
 
+## 0.9.2 — reference parity, batch 1
+
+- Captured all 18 article demos (not only 4) and paired each with ours at the same width and
+  scale (dist/ref18, local only). Finding: the 14 CSS-tier cases read as dashboards (cards,
+  buttons, KPI tiles, 3-5x taller) while the demos are one chart with direct annotations.
+- `trend` gains the demos' vocabulary: coloured event lines with stacked labels, bands with a
+  computed `{duration}` bracket, annotations at series values, shading between two series,
+  column titles, partial series, `_start` / `_change_pct` placeholders.
+- slow-degradation and postmortem-timeline moved to the live tier as trend specs (same model
+  numbers: +72%, 18 / 3 / 29 minutes), matching the demos' layout.
+- Fix found by the validator: a variable named `top` tripped the forbidden-API lint (`top.`);
+  event lines were hidden under the panel background.
+
 ## 0.9.1 — focus pass after a same-scale comparison with the article demos
 
 - Thread pool shows only the mechanism (inflow, queue, pool, slow DB); the two charts under it

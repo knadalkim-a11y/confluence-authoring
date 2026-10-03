@@ -1,4 +1,4 @@
-# Status — v0.9.1 focus pass (same-scale comparison with the article demos)
+# Status — v0.9.2 reference parity in progress (6 of 18 article cases on the live tier)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -61,6 +61,15 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.9.2 reference parity (in progress)
+
+All 18 article demos were captured and paired with ours (same 673 px width, 2x). Six cases now
+follow the demos (thread-pool, pipeline-bottleneck, bounded-queue, cpu-latency,
+slow-degradation, postmortem-timeline). The other 12 still use the CSS tier and read as
+dashboards; they are the remaining work. Gates: unit 109, 15/15 examples and 6/6 live under
+both fonts, CSS suites pass. Whether the six now match the demos' quality is for the user to
+judge from the pairs.
 
 ## v0.9.1 focus pass
 
