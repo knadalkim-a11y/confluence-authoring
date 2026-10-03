@@ -64,13 +64,13 @@ with sync_playwright() as p:
   page.emulate_media(media='screen',reduced_motion='no-preference');report['cases'].append(record);print('PASS',c['id'],flush=True)
  if not options.skip_extra:
   # Independent instances + keyboard operation.
-  css_index,css_case=next((i,x['id']) for i,x in enumerate(cases) if x['id']=='memory-leak');own=f'ca-monitor-{css_index:02d}'
+  css_index,css_case=next((i,x['id']) for i,x in enumerate(cases) if x['id']=='gc-pause');own=f'ca-monitor-{css_index:02d}'   # gc-pause stays on the CSS tier
   text=(OUT/css_case/'macro.html').read_text();second=text.replace(own,'ca-independent')
   page.set_content('<html><body>'+text+second+'</body></html>');page.wait_for_timeout(80)
   page.locator('.ca-pause-label').first.click();page.wait_for_timeout(50);a=page.evaluate('document.getAnimations().map(a=>[a.effect.target.closest("section").dataset.caPrefix,a.currentTime])');page.wait_for_timeout(100);b=page.evaluate('document.getAnimations().map(a=>[a.effect.target.closest("section").dataset.caPrefix,a.currentTime])')
   assert all(abs(x[1]-y[1])<2 for x,y in zip(a,b) if x[0]==own);assert any(y[1]>x[1] for x,y in zip(a,b) if x[0]=='ca-independent')
   report['checks']['independent_instances']=True
-  page.set_content((OUT/'traffic-patterns'/'preview.html').read_text());page.keyboard.press('Tab');assert page.locator('.ca-pause').evaluate('(e)=>e===document.activeElement');page.keyboard.press('Space');assert page.locator('.ca-pause').is_checked();assert page.locator('.ca-pause-label').evaluate('(e)=>getComputedStyle(e).outlineStyle')!='none'
+  page.set_content((OUT/'gc-pause'/'preview.html').read_text());page.keyboard.press('Tab');assert page.locator('.ca-pause').evaluate('(e)=>e===document.activeElement');page.keyboard.press('Space');assert page.locator('.ca-pause').is_checked();assert page.locator('.ca-pause-label').evaluate('(e)=>getComputedStyle(e).outlineStyle')!='none'
   report['checks']['keyboard_visible_focus']=True
   # Event-loop rotation holds while global time proceeds.
   page.set_content((OUT/'event-loop'/'preview.html').read_text());seek(page,14.4*(.06+.8*.4));a=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');seek(page,14.4*(.06+.8*.55));b=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');assert a==b,(a,b)

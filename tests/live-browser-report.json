@@ -1,14 +1,60 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T17:55:21+00:00",
+  "tested_at_utc": "2026-10-03T22:15:09+00:00",
   "cases": [
+    {
+      "id": "traffic-patterns",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          3.667,
+          5.666
+        ],
+        "height_715": 392,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 516,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "f5a193c8e69d15989be2762e69ea4b24433c865c2b0a1a3a3d4333ab3d3c982c",
+      "bytes": 101365,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "survivorship-bias",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          4.583,
+          7.083
+        ],
+        "height_715": 436,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 388,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "7cbf6ec0e4bb3f2e6d56eee2e948f963fce0393eaaf42221ae8f21ad368a052b",
+      "bytes": 62017,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
     {
       "id": "cpu-latency",
       "live": true,
       "checks": {
         "autoplay": [
-          3.017,
-          4.662
+          2.948,
+          4.663
         ],
         "height_715": 378,
         "samples_715": 6,
@@ -16,10 +62,34 @@
         "height_360": 598,
         "samples_360": 6,
         "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "110246f1f908310010d9a4823ff0fb6a045deb5b8250651370ad5f7c6727618c",
-      "bytes": 136373,
+      "sha256": "c762a95be48cbd7c3ad236a1a8c85e59501bce824f568160fcd912727305b03c",
+      "bytes": 140560,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "memory-leak",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          7.465,
+          11.631
+        ],
+        "height_715": 268,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 384,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "23eaee9d11875db11eddbbdfb78e26bb18d78a0d2d84da3779d023bc78d82487",
+      "bytes": 133014,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -38,10 +108,11 @@
         "height_360": 232,
         "samples_360": 6,
         "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "2b81d674cc7987f90bdcecf7f434aaefcfce45a714943972e807d542e9572ca4",
-      "bytes": 45381,
+      "sha256": "ceb513bf2b3f155b5d458fbabe84ae8bccb9b450447d99bd99ea96b972c108d7",
+      "bytes": 45436,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -51,7 +122,7 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.896,
+          0.916,
           1.417
         ],
         "height_715": 268,
@@ -60,10 +131,34 @@
         "height_360": 258,
         "samples_360": 6,
         "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "8e818755940dc02f6501a99fedfc0fc6fa535e60c33a4b7ed236b7a3cd3c3ec1",
-      "bytes": 49480,
+      "sha256": "48a0b221678bb928d3c50ce8b8e25aa2d87d2300e7830e7a77149a336ba9db68",
+      "bytes": 49535,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "utilization-wait",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          7.091,
+          11.215
+        ],
+        "height_715": 354,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 300,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "b007dd0528279adb44f374decd44f2ad9e129e0f26a90e6f0cfa84c58ba0473b",
+      "bytes": 49680,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -73,8 +168,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.896,
-          1.416
+          0.917,
+          1.417
         ],
         "height_715": 346,
         "samples_715": 6,
@@ -82,10 +177,34 @@
         "height_360": 570,
         "samples_360": 6,
         "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "b65b2b3f53e6aba3c8fa7de0eef2347659b5b549e1613cc578a2030f3cbf28d0",
-      "bytes": 81988,
+      "sha256": "dca0a3d7e4e9c952a3f1307c4736e8c28a1a35eecb6c0297a6ec9419376cd957",
+      "bytes": 82043,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "cache-stampede",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          4.479,
+          6.979
+        ],
+        "height_715": 464,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 416,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "4af889097c582a7a6589a94f727068051b82e33c52bff794980890e143ac1863",
+      "bytes": 63119,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -104,10 +223,34 @@
         "height_360": 278,
         "samples_360": 6,
         "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "00f70a614dd732f3ac14ac50a7aaa5ffa25c0f0de1b83cb1748c14c3c592411d",
-      "bytes": 56170,
+      "sha256": "2f695527909a340407234017ba06b29137ae4d9cd3aa18fc501f1a95db9a39dc",
+      "bytes": 60074,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "deploy-comparison",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          4.422,
+          6.993
+        ],
+        "height_715": 268,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 384,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "6149c3000ea88289c02fea172976469e5083d452dee54f2a5db5cc05e3604ba3",
+      "bytes": 76009,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -126,10 +269,11 @@
         "height_360": 300,
         "samples_360": 6,
         "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "b8f26f9608303d7d838dacae8121034f8a4d9b9d0b2beba0b894596a843166d5",
-      "bytes": 54492,
+      "sha256": "d66ed09db818610183d8bd891be4f7e817b10b3869ab19884f6534d4da29ffe7",
+      "bytes": 58343,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"

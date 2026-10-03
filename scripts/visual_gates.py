@@ -125,6 +125,12 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
                     t = end * k / 24; seek(t); o = root.evaluate(OVERLAP_JS)
                     if o['bad'] or o['out']: fail(f'{width}px T={t:.2f}: overlapping/clipped text {(o["bad"] or o["out"])[:3]}'); break
                 rec['checks'][f'dense_overlap_{width}'] = 24
+        if live:   # Confluence columns are rarely exactly 715 px: the same dense sweep at 600 px
+            page.set_viewport_size({'width': 800, 'height': 1000}); page.set_content(wrap(fragment, 600)); page.wait_for_timeout(250)
+            for k in range(0, 25):
+                t = end * k / 24; seek(t); o = root.evaluate(OVERLAP_JS); bx = root.evaluate(BOX_JS)
+                if o['bad'] or o['out'] or bx: fail(f'600px T={t:.2f}: overlapping/clipped text {(o["bad"] or o["out"] or bx)[:3]}'); break
+            rec['checks']['dense_overlap_600'] = 25
         if live:
             page.set_viewport_size({'width': 800, 'height': 1000}); page.set_content(wrap(fragment, 715)); page.wait_for_timeout(200)
             for label, at in checks.get('annotations', []):

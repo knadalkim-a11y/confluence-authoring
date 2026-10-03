@@ -21,7 +21,10 @@ CA_SCENES['diagram']=function(D,K,GR){
   function attr(svg,a){return svg.replace('<text ','<text '+a+' ');}
   function hits(b,list){for(var i=0;i<list.length;i++){var f=list[i];if(Math.min(b.x1,f.x1)>Math.max(b.x0,f.x0)&&Math.min(b.y1,f.y1)>Math.max(b.y0,f.y0))return true;}return false;}
 
-  function geom(W){var g={W:W,v:W<560,N:{}},L=LY.length,maxK=0,over=[],under=[];
+  function needW(){var w=LY.length*92+8;for(var r=0;r<LY.length-1;r++){var mw=0,c=0;E.forEach(function(e,i){if(between(i,r)&&lab(i)){mw=Math.max(mw,K.tw(lab(i),12));c++;}});
+      w+=Math.max(44,Math.min(220,mw+24+(c>2?14*(c-2):0)));}return w;}
+  /* rotate to the phone layout whenever the row would squeeze boxes or labels (not only below 560 px) */
+  function geom(W){var g={W:W,v:W<560||W<needW(),N:{}},L=LY.length,maxK=0,over=[],under=[];
     LY.forEach(function(ly){maxK=Math.max(maxK,ly.nodes.length);});
     E.forEach(function(e,i){if(e.route==='over')over.push(i);if(e.route==='under')under.push(i);});
     var GH=D.groups.length?24:0,side=E.some(function(e){return e.route==='side';}),widths={},X=[],gap=[],m=GH?12:4;

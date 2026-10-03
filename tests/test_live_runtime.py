@@ -54,7 +54,7 @@ class LiveRuntimeTests(unittest.TestCase):
   self.assertTrue(validate(f.replace('<script>','<script src="x.js">')))
  def test_unknown_scene(self):
   with self.assertRaises(ValueError):core_js('../x')
-  meta=copy.deepcopy(CASES['memory-leak']);meta['runtime']='live'
+  meta=copy.deepcopy(CASES['gc-pause']);meta['runtime']='live'   # a case with no live builder
   with self.assertRaises(ValueError):build_case(meta,'ca-live-x')
   meta['runtime']='canvas'
   with self.assertRaises(ValueError):build_case(meta,'ca-live-y')

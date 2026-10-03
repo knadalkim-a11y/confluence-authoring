@@ -22,8 +22,10 @@ class MonitoringSuiteTests(unittest.TestCase):
   a,_=build_case(BY_ID['cpu-latency'],'ca-one');b,_=build_case(BY_ID['cpu-latency'],'ca-two')
   self.assertEqual(validate(a+b),[]);self.assertIn('Duplicate prefix',validate(a+a))
  def test_multiple_svg_ids(self):
-  fragment=self.rendered['traffic-patterns'][0];ids=re.findall(r'id="([^"]+)"',fragment)
-  self.assertEqual(len(ids),len(set(ids)));self.assertEqual(fragment.count('<svg'),4)
+  for cid,(fragment,_) in self.rendered.items():   # every case: ids unique inside its block
+   if cid in ('cluster-cascade','event-loop'):continue   # CSS tier repeats marker ids in its wide/narrow SVGs; removed when these move to live scenes
+   with self.subTest(id=cid):ids=re.findall(r'id="([^"]+)"',fragment);self.assertEqual(len(ids),len(set(ids)))
+  self.assertEqual(self.rendered['traffic-patterns'][0].count('<svg'),2)   # live tier: wide + phone static scene
  def test_distribution_values(self):
   n=self.rendered['percentile-comparison'][1]
   self.assertEqual(n['서버 A'],dict(n=40,mean=100.0,p50=100,p95=115,p99=130))
@@ -77,7 +79,7 @@ class MonitoringSuiteTests(unittest.TestCase):
   vals=self.rendered['utilization-wait'][1]['normalized_wait'];self.assertAlmostEqual(vals[-1][1],19);self.assertAlmostEqual(vals[2][1],4)
  def test_slow_burn(self):self.assertAlmostEqual(self.rendered['slow-degradation'][1]['growth_percent'],72.2222222222)
  def test_escape_untrusted_text(self):
-  meta=copy.deepcopy(BY_ID['traffic-patterns']);meta['title']='</h3><script>alert(1)</script>';fragment,_=build_case(meta,'ca-escape')
+  meta=copy.deepcopy(BY_ID['gc-pause']);meta['title']='</h3><script>alert(1)</script>';fragment,_=build_case(meta,'ca-escape')   # CSS tier
   self.assertNotIn('<script',fragment);self.assertIn('&lt;script&gt;',fragment);self.assertEqual(validate(fragment),[])
   # Live tier: the only script element is the bundled runtime; the title stays escaped text.
   meta=copy.deepcopy(BY_ID['pipeline-bottleneck']);meta['title']='</h3><script>alert(1)</script>';fragment,_=build_case(meta,'ca-escape-live')

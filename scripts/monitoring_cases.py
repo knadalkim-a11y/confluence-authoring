@@ -605,6 +605,116 @@ def postmortem_live_data(p):
           f"대응 시작에서 복구까지 {fmt(iv['대응 시작 → 복구'])}분.")
     return d,aria,n,t,num_
 
+def _pts(fn,end,n):return [[round(i*end/n,5),round(fn(i*end/n),3)] for i in range(n+1)]
+
+def traffic_spec(p):
+    """TrafficPattern: four 48-hour shapes in a 2 x 2 grid, each named by a pill."""
+    base=lambda t:1800+6300*(max(0,math.sin(2*math.pi*(t*2-.22)))**2)+250*math.sin(t*math.pi*16)
+    fs=[('① 평소 모양','ok',lambda t:base(t),[]),('② 수직 급락','bad',lambda t:base(t) if t<.7 else 180+80*math.sin(t*32),[(.7*48,'급락 발생','red')]),
+        ('③ 수직 급증','warn',lambda t:base(t)*.45 if t<.55 else 8500+160*math.sin(t*24),[(.55*48,'급증 발생','amber')]),
+        ('④ 새벽의 규칙적 스파이크','purple',lambda t:min(10000,base(t)+7000*sum(math.exp(-((t-u)/.009)**2) for u in [4/48,28/48])),[(4,'새벽 4시','purple'),(28,'다음 날 4시','purple')])]
+    groups=[dict(pill=[[0,lb,tone]],panels=[dict(label=f'RPS {i+1}',hide_label=True,unit='',max=10000,ticks=[10000,5000,0],decimals=0,
+                 series=[dict(name='RPS',color='blue',points=_pts(lambda h,f=fn:f(h/48),48,192))])],
+                 events=[dict(name=f'e{i}{k}',at=a,label=l,color=c) for k,(a,l,c) in enumerate(ev)]) for i,(lb,tone,fn,ev) in enumerate(fs)]
+    return dict(kind='trend',title='트래픽 모양으로 원인 후보를 좁힌다',claim='모양은 단서다. 같은 시간대의 반복부터 비교한다.',
+        source='설명용 합성 RPS. 48시간',data_kind='example',time=dict(unit='시',end=48,ticks=[[0,'0시'],[24,'24시'],[48,'48시']]),groups=groups,
+        captions=[dict(at=0,text='RPS(초당 요청 수)를 이틀치 겹쳐 본다. 평소에는 매일 같은 모양이다.'),
+                  dict(at=26.4,text='급락은 유입 경로 장애, 급증은 이벤트나 봇을 먼저 의심한다.'),
+                  dict(at=36,text='새벽 4시마다 튀는 스파이크는 배치나 크론을 의심한다.')]),{}
+
+def survivorship_spec(p):
+    """Survivorship: errors jump, the success-only P99 'improves' because fast failures leave the sample."""
+    pre=stats([80,140],[900,99]);post=stats([75],[500]);E=60.0;t0=.4*E
+    err=_pts(lambda t:piece(t/E,[(0,.1),(.4,.1),(.47,50),(1,50)]),E,120)
+    lat=_pts(lambda t:piece(t/E,[(0,pre['p99']),(.4,pre['p99']),(.5,post['p99']),(1,post['p99'])])+3*math.sin(t*.7),E,120)
+    return dict(kind='trend',title='에러가 늘자 P99가 좋아졌다?',claim='P99는 성공한 요청만 본다. 빠르게 실패한 요청은 통계에서 빠진다.',
+        source='설명용 합성값. 성공 요청만 지연 분포에 집계하는 예',data_kind='example',time=dict(unit='초',end=E,ticks=[[0,'0'],[E,f'{E:g}초']]),
+        panels=[dict(label='에러율',unit='%',max=50,ticks=[50,25,0],decimals=0,series=[dict(name='에러율',color='red',points=err)]),
+                dict(label='P99 응답 시간',unit='ms',max=200,ticks=[200,100,0],decimals=0,series=[dict(name='P99',color='purple',points=lat)])],
+        events=[dict(name='reject',at=t0,label='DB 커넥션 거부 시작',color='red')],
+        stream=dict(after='에러율',label='요청',phases=[{'from':0,'divert':0.001,'color':'blue','divert_color':'red'},
+                    {'from':'reject','divert':.5,'color':'blue','divert_color':'red','note':'3ms 실패 — 즉시 이탈'}],end_note='정상 처리 — 지연 분포에 남음'),
+        annotations=[dict(at=E*.8,panel='P99 응답 시간',series='P99',text='좋아진 게 아니다',color='red',side='above')],
+        captions=[dict(at=0,text='평소: 에러율 0.1%, P99는 140ms 근처.'),
+                  dict(at='reject',text='DB가 커넥션을 거부한다. 요청 절반이 밀리초 만에 실패한다.'),
+                  dict(at=E*.62,text='P99가 75ms로 \'개선\'됐다. 실패한 요청이 빠졌을 뿐이다.')]),dict(before=pre,after=post,
+        populations={'before':{'success':999,'failure':1,'p99':pre['p99']},'after':{'success':500,'failure':500,'p99':post['p99']}},error_final=50,p99_success_final=post['p99'])
+
+def memory_spec(p):
+    """MemoryLeak: two sawtooths side by side; the floor after each GC tells them apart."""
+    E=100.0
+    normal=lambda t:35+38*((t/E*7)%1)
+    def leak(t):
+        u=t/E
+        if u<.82:return min(100,30+int(u*7)*9+38*((u*7)%1))
+        if u<.85:return 2
+        return 13+25*((u-.85)/.15)
+    fa=[[round(i*E/7,4),35] for i in range(1,7)];fb=[[round(i*E/7,4),30+i*9] for i in range(1,6)]
+    g=lambda lb,col,fn,fl,fc,note,extra:dict(title=lb,color=col,events=extra or [],panels=[dict(label=lb,hide_label=True,unit='%',max=110,ticks=[100,50,0],decimals=0,
+        series=[dict(name='힙',color='blue',points=_pts(fn,E,700)),dict(name='GC 후 최저점',color=fc,points=fl,style='dashed',dots=True,area=False,label=False)])])
+    return dict(kind='trend',title='톱니보다 GC 뒤 바닥을 본다',claim='GC 직후 최저점이 계속 오르면 누수다.',source='설명용 합성 힙 사용률',data_kind='example',
+        time=dict(unit='분',end=E,ticks=[[0,'시작'],[E,'끝']]),
+        groups=[g('정상 (GC 톱니)','green',normal,fa,'green','',None),g('메모리 누수','red',leak,fb,'red','',[dict(name='oom',at=82,label='OOM',color='red'),dict(name='restart',at=85,label='재시작',color='purple')])],
+        thresholds=[dict(panel='정상 (GC 톱니)',value=100,label='힙 한계'),dict(panel='메모리 누수',value=100,label='힙 한계')],
+        annotations=[dict(at=round(3*E/7,4),panel='정상 (GC 톱니)',series='GC 후 최저점',text='GC 후 최저점: 수평 = 건강',color='green',side='below'),
+                     dict(at=round(3*E/7,4),panel='메모리 누수',series='GC 후 최저점',text='최저점 계속 상승 = 누수',color='red',side='below')],
+        captions=[dict(at=0,text='두 서버 모두 힙이 톱니 모양으로 오르내린다.'),
+                  dict(at=round(3*E/7,4),text='봐야 할 것은 GC 직후의 최저점이다.'),
+                  dict(at='oom@1',text='바닥이 계속 오른 쪽은 결국 힙 한계에 닿아 죽는다.')]),{}
+
+def utilization_spec(p):
+    """UtilizationCurve: queueing wait vs utilisation (M/M/1, normalised to 50%)."""
+    E=95.0;w=lambda u:(u/100)/(1-u/100)
+    pts=[[float(u),round(w(u),4)] for u in range(0,96)]
+    return dict(kind='trend',title='사용률이 오르면 대기는 급격히 늘어난다',claim='100% 가동은 목표가 아니라 사고다. 80%부터 대기가 가파르다.',
+        source='M/M/1 모델의 평균 대기, 사용률 50%를 1로 정규화',data_kind='estimate',time=dict(unit='%',end=E,ticks=[[0,'0%'],[50,'50%'],[70,'70%'],[80,'80%'],[90,'90%'],[95,'95%']]),
+        panels=[dict(label='평균 대기 시간 (50% 대비)',unit='x',max=20,ticks=[15,10,5,1],decimals=1,series=[dict(name='대기',color='blue',points=pts,area=False)])],
+        events=[dict(name='risk',at=80,label='위험선 80%',color='amber')],
+        bands=[dict(**{'from':'risk','to':'end'},label='위험 구간',color='red')],
+        annotations=[dict(at=90,panel='평균 대기 시간 (50% 대비)',series='대기',text=f'사용률 90% → 대기 {w(90):.0f}x',color='red',side='above')],
+        captions=[dict(at=0,text='사용률이 오르면 대기는 비례가 아니라 곡선으로 늘어난다.'),
+                  dict(at=70,text=f'70%에서 대기는 50%일 때의 {w(70):.1f}배다.'),
+                  dict(at=88,text=f'90%면 {w(90):.0f}배, 95%면 {w(95):.0f}배. 100%는 목표가 아니라 사고다.')]),{'normalized_wait':[(r,(r)/(1-r)) for r in [.5,.7,.8,.9,.95]]}
+
+def cache_spec(p):
+    """CacheStampede: a hot key expires, misses go to the DB at once."""
+    total=finite(p['requests_per_second'],'requests_per_second',1);normal=finite(p['normal_hit_percent'],'normal_hit_percent',0,100);low=finite(p['minimum_hit_percent'],'minimum_hit_percent',0,normal)
+    E=60.0;hit=lambda t:piece(t/E,[(0,normal),(.4,normal),(.42,low),(.56,low),(.78,normal),(1,normal)])
+    top=total*1.1
+    return dict(kind='trend',title='인기 키가 만료되는 순간',claim='한 명만 다시 계산하게 하라 — 잠금, 조기 갱신, TTL 지터.',
+        source=f'설명용 합성값. 총 {fmt(total)}건/s 일정, 미스당 DB 1회',data_kind='example',time=dict(unit='초',end=E,ticks=[[0,'0'],[E,f'{E:g}초']]),
+        panels=[dict(label='캐시 히트율',unit='%',max=100,ticks=[100,50,0],decimals=0,series=[dict(name='히트율',color='green',points=_pts(hit,E,120))]),
+                dict(label='DB QPS',unit='',max=round(top),ticks=[round(total),round(total/2),0],decimals=0,series=[dict(name='DB',color='purple',points=_pts(lambda t:total*(1-hit(t)/100),E,120))])],
+        events=[dict(name='ttl',at=.4*E,label='인기 키 TTL 만료',color='amber'),dict(name='heal',at=.78*E,label='회복',color='green')],
+        stream=dict(after='캐시 히트율',label='요청',box='캐시 HIT',side='DB',phases=[{'from':0,'divert':1-normal/100,'color':'blue','divert_color':'purple'},
+                    {'from':'ttl','divert':1-low/100,'color':'blue','divert_color':'purple','note':'동시 미스 → DB 직행'},{'from':'heal','divert':1-normal/100,'color':'blue','divert_color':'purple'}],end_note='빠른 응답'),
+        captions=[dict(at=0,text=f'평소: 히트율 {fmt(normal)}%. DB는 캐시 뒤에서 한가하다.'),
+                  dict(at='ttl',text=f'인기 키가 만료되자 요청이 한꺼번에 DB로 간다. 히트율 {fmt(low)}%.'),
+                  dict(at='heal',text='캐시가 다시 채워지면 DB는 조용해진다.')]),dict(total=total,normal=normal,low=low,
+        hit=[[t,hit(t)] for t,_ in _pts(hit,E,120)],qps=[[t,total*(1-hit(t)/100)] for t,_ in _pts(hit,E,120)])
+
+def deploy_spec(p):
+    """Deploy: two scenarios after the same deploy; direction, not level, decides."""
+    E=60.0
+    first=lambda t:piece(t/E,[(0,80),(.25,80),(.31,220),(.62,95),(1,85)])+2*math.sin(50*t/E)
+    second=lambda t:piece(t/E,[(0,80),(.25,80),(.31,245),(.75,310),(.84,85),(1,80)])+2*math.sin(50*t/E)
+    g=lambda lb,col,fn,ev,note,nc,at:dict(title=lb,color='gray',events=ev,panels=[dict(label=lb,hide_label=True,unit='ms',max=360,ticks=[300,200,100],decimals=0,series=[dict(name='P99',color=col,points=_pts(fn,E,240))])])
+    return dict(kind='trend',title='가장 위험한 30분',claim='B는 롤백 후 빠르게 회복한다. 판단 기준은 수치가 아니라 방향이다.',source='설명용 합성 P99',data_kind='example',
+        time=dict(unit='분',end=E,ticks=[[0,'0'],[E,'시간 →']]),
+        groups=[g('시나리오 A','blue',first,[dict(name='deployA',at=.25*E,label='배포',color='purple')],'',None,None),
+                g('시나리오 B','blue',second,[dict(name='deployB',at=.25*E,label='배포',color='purple'),dict(name='rollback',at=.75*E,label='롤백',color='red')],'',None,None)],
+        annotations=[dict(at=.5*E,panel='시나리오 A',series='P99',text='회복 추세 — 워밍업',color='green',side='above'),
+                     dict(at=.7*E,panel='시나리오 B',series='P99',text='악화 추세',color='red',side='below')],
+        captions=[dict(at=0,text='배포 전: 두 시나리오 모두 안정. 배포 마커는 반드시 남겨라.'),
+                  dict(at=.3*E,text='배포 직후 둘 다 튄다. 아직 판단하지 않는다.'),
+                  dict(at=.6*E,text='A는 내려오고, B는 계속 오른다. B는 롤백한다.'),
+                  dict(at=.86*E,text='B는 롤백 후 빠르게 회복한다. 기준은 방향이다.')]),{}
+
+def _spec_live(fn,aria):
+    def build_(p):
+        sp,extra=fn(p);d,a,n,t,num_,info=_from_spec(sp,'',extra);return d,aria,n,t,num_
+    return build_
+
 def _from_spec(spec,aria,extra=None):
     from visual_spec import build
     info=build(spec);numeric=dict(info['numeric']);numeric.update(extra or {})
@@ -652,12 +762,20 @@ def live_checks(case_id,p):
         notes=[]   # the scene has no verdict labels any more; queue and response times are live state
         return dict(expect=_probe_pool(p),samples=samples,annotations=notes,end=p['horizon'],resize_at=6.0)
     spec={'pipeline-bottleneck':pipeline_spec,'bounded-queue':bounded_spec,'cpu-latency':lambda q:cpu_spec(q)[0],
-          'slow-degradation':lambda q:slow_spec(q)[0],'postmortem-timeline':lambda q:postmortem_spec(q)[0]}[case_id](p)
+          'slow-degradation':lambda q:slow_spec(q)[0],'postmortem-timeline':lambda q:postmortem_spec(q)[0],
+          **{k:(lambda f:lambda q:f(q)[0])(f) for k,(f,_) in SPEC_CASES.items()}}[case_id](p)
     from visual_spec import build
     return build(spec)['checks']
 
 LIVE_BUILDERS={'thread-pool':pool_live_data,'pipeline-bottleneck':pipeline_live_data,'bounded-queue':bounded_live_data,'cpu-latency':cpu_live_data,
                'slow-degradation':slow_live_data,'postmortem-timeline':postmortem_live_data}
+SPEC_CASES={'traffic-patterns':(traffic_spec,'48시간 RPS의 네 가지 모양: 평소 반복, 수직 급락, 수직 급증, 새벽 4시의 규칙적 스파이크.'),
+            'survivorship-bias':(survivorship_spec,'에러율이 50%로 뛰자 성공 요청만 집계한 P99가 오히려 내려간다. 빠르게 실패한 요청이 통계에서 빠졌기 때문이다.'),
+            'memory-leak':(memory_spec,'정상 서버와 누수 서버의 힙. 정상은 GC 후 최저점이 수평이고, 누수는 최저점이 계속 올라 힙 한계에서 OOM이 난다.'),
+            'utilization-wait':(utilization_spec,'M/M/1 모델에서 사용률에 따른 평균 대기(50%를 1로). 80%부터 가파르게 오른다.'),
+            'cache-stampede':(cache_spec,'인기 키 TTL 만료 순간 캐시 히트율이 떨어지고, 미스가 한꺼번에 DB로 가 DB QPS가 치솟는다.'),
+            'deploy-comparison':(deploy_spec,'같은 배포 뒤 두 시나리오. A는 워밍업 후 회복하고, B는 계속 악화되어 롤백 후 회복한다.')}
+LIVE_BUILDERS.update({k:_spec_live(f,a) for k,(f,a) in SPEC_CASES.items()})
 
 BUILDERS={'traffic-patterns':traffic,'percentile-comparison':distributions,'survivorship-bias':survivorship,'cpu-latency':cpu,'cpu-throttling':throttling,'memory-leak':memory,'memory-spike':spike,'thread-pool':pool,'cluster-cascade':cascade,'event-loop':event_loop,'pipeline-bottleneck':pipeline,'utilization-wait':utilization,'bounded-queue':bounded,'cache-stampede':cache,'timeout-mismatch':timeout,'slow-degradation':slow,'deploy-comparison':deploy,'postmortem-timeline':postmortem,'gc-pause':gc_pause}
 

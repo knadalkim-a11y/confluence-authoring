@@ -82,7 +82,7 @@ with sync_playwright() as p:
                 with gp.expect_download() as info:gp.locator('#lab-download').click()
                 assert Path(info.value.path()).read_text()==code
         report.setdefault('gallery_checks',[]).append(cid+': previous v0.3.1/current at all 3 speeds; exact macro export')
-    gp.locator('#lab-search').fill('');gp.locator('#lab-list button').nth(0).click();assert gp.locator('#lab-baseline').is_disabled()
+    gp.locator('#lab-search').fill('gc-pause');gp.locator('#lab-list button').nth(0).click();assert gp.locator('#lab-baseline').is_disabled()   # a case without a baseline
     assert not errors
     gp.locator('#lab-search').fill('cluster-cascade');gp.locator('#lab-list button').click();seek(gp,.53)
     gp.screenshot(path=str(SHOTS/'gallery-wide.png'),full_page=True)

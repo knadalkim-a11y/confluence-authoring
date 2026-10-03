@@ -13,7 +13,7 @@ var CA_KIT=(function(){
     purple:'#845ef7',purpleText:'#7048e8',purpleSoft:'#f3f0ff',
     paper:'#fff',paper2:'#f8f9fa',hotPaper:'#fff5f5'};
   /* Pill kinds: [background, text]; every pair >= 4.5:1. */
-  var PILL={ok:['#d3f9d8','#237032'],warn:['#fff3bf','#a85a00'],hot:['#e03131','#fff'],info:['#e7f5ff','#1864ab']};
+  var PILL={ok:['#d3f9d8','#237032'],warn:['#fff3bf','#a85a00'],hot:['#e03131','#fff'],info:['#e7f5ff','#1864ab'],bad:['#ffe3e3','#c92a2a'],purple:['#f3f0ff','#6741d9']};
   function f(v){return Math.round(v*10)/10;}
   function clamp(v){return v<0?0:v>1?1:v;}
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
