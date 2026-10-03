@@ -1,30 +1,33 @@
 <section class="%%PREFIX%%" data-ca-prefix="%%PREFIX%%" data-ca-pattern="reference-%%CASE%%" data-ca-runtime="live" data-ca-speed="%%SPEED%%">
 <style>
-.%%PREFIX%%{--ink:#1d2733;--muted:#66727f;--rule:#e2e7ed;--blue:#2c6ad8;--red:#cf3d29;display:block;max-width:760px;margin:16px auto;padding:14px 16px 10px;box-sizing:border-box;background:#fff;color:var(--ink);border:1px solid var(--rule);border-radius:12px;font:13px/1.5 Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;text-align:left}
+.%%PREFIX%%{--ink:#343a40;--text:#495057;--muted:#868e96;--faint:#adb5bd;--rule:#e9ecef;--blue:#1c7ed6;--red:#e03131;display:block;max-width:760px;margin:16px auto;padding:6px 0 4px;box-sizing:border-box;background:#fff;color:var(--text);font:13px/1.5 Pretendard,"Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;text-align:left}
 .%%PREFIX%% *{box-sizing:border-box}
-.%%PREFIX%% .ca-live-stats{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 18px;color:var(--muted);font-variant-numeric:tabular-nums;min-height:20px}
+.%%PREFIX%% .ca-live-stats{display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:2px 0;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums;min-height:22px;text-align:center}
 .%%PREFIX%% .ca-live-stats span{white-space:nowrap}
-.%%PREFIX%% .ca-live-stats .grp{display:flex;flex-wrap:wrap;gap:4px 16px}
-.%%PREFIX%% .ca-live-stats b{color:var(--ink);font-weight:700}
+.%%PREFIX%% .ca-live-stats .grp{display:contents}
+.%%PREFIX%% .ca-live-stats .grp>span+span::before,.%%PREFIX%% .ca-live-stats .grp+span::before{content:"·";margin:0 9px;color:var(--faint)}
+.%%PREFIX%% .ca-live-stats b{color:var(--blue);font-weight:700}
 .%%PREFIX%% .ca-live-stats b.hot{color:var(--red)}
-.%%PREFIX%% svg{display:block;width:100%;height:auto;margin-top:8px;overflow:visible}
+.%%PREFIX%% svg{display:block;width:100%;height:auto;margin-top:10px;overflow:visible}
 .%%PREFIX%% svg text{font-family:inherit;font-variant-numeric:tabular-nums}
-.%%PREFIX%% .ca-live-foot{display:flex;align-items:flex-start;gap:12px;margin-top:6px;padding-top:8px;border-top:1px solid var(--rule)}
-.%%PREFIX%% .ca-live-cap{flex:1;min-height:42px;font-size:13.5px;line-height:1.55;margin:0}
-.%%PREFIX%% .ca-live-cap .n{color:var(--blue);font-weight:700;margin-right:6px}
-.%%PREFIX%% .ca-live-ctl{display:flex;gap:4px;flex:none;visibility:hidden}
+.%%PREFIX%% .ca-live-foot{margin-top:8px}
+.%%PREFIX%% .ca-live-cap{min-height:40px;font-size:13px;line-height:1.55;margin:0 auto;max-width:620px;text-align:center;color:var(--muted)}
+.%%PREFIX%% .ca-live-cap .n{margin-right:5px}
+.%%PREFIX%% .ca-live-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
+.%%PREFIX%% .ca-live-ctl{display:flex;gap:2px;flex:none;visibility:hidden}
 .%%PREFIX%%[data-ca-live-bound] .ca-live-ctl{visibility:visible}
-.%%PREFIX%% .ca-live-ctl button{font:inherit;font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--rule);border-radius:6px;padding:3px 9px;min-height:30px;cursor:pointer}
-.%%PREFIX%% .ca-live-ctl button:hover{color:var(--ink);border-color:#c3cbd5}
+.%%PREFIX%% .ca-live-ctl button{font:inherit;font-size:12px;color:var(--muted);background:none;border:0;border-radius:6px;padding:4px 8px;min-height:28px;cursor:pointer}
+.%%PREFIX%% .ca-live-ctl button:hover{color:var(--ink);background:#f1f3f5}
 .%%PREFIX%% .ca-live-ctl button:focus-visible,.%%PREFIX%% summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.%%PREFIX%% details{margin-top:4px;font-size:12px;color:var(--muted)}
+.%%PREFIX%% details{font-size:12px;color:var(--muted);min-width:0}
 .%%PREFIX%% details p{margin:6px 0}
 .%%PREFIX%% summary{cursor:pointer;padding:2px 0;width:max-content;max-width:100%}
+.%%PREFIX%% details[open]{flex-basis:100%}
 .%%PREFIX%% .ca-live-tbl{max-height:220px;overflow:auto;margin-top:6px}
 .%%PREFIX%% table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
 .%%PREFIX%% th,.%%PREFIX%% td{border-bottom:1px solid var(--rule);padding:2px 8px;text-align:right}
 .%%PREFIX%% th{position:sticky;top:0;background:#fff;color:var(--ink)}
-@media (max-width:540px){.%%PREFIX%%{padding:12px 12px 8px}.%%PREFIX%% .ca-live-foot{flex-direction:column;gap:6px}}
+@media (max-width:540px){.%%PREFIX%% .ca-live-stats{font-size:13px}.%%PREFIX%% .ca-live-row{flex-wrap:wrap}}
 @media (prefers-reduced-motion:reduce){.%%PREFIX%% .ca-live-cap{transition:none}}
 @media print{.%%PREFIX%% .ca-live-ctl{display:none}.%%PREFIX%%{break-inside:avoid}.%%PREFIX%% .ca-live-tbl{max-height:none}}
 </style>
@@ -32,8 +35,8 @@
 <svg data-ca-live data-ca-static viewBox="0 0 %%W%% %%H%%" role="img" aria-label="%%ARIA%%">%%STATIC_SVG%%</svg>
 <div class="ca-live-foot">
 <p class="ca-live-cap" data-ca-caption aria-live="polite">%%CAPTION%%</p>
-<div class="ca-live-ctl" data-ca-controls><button type="button" data-a="play">재생</button><button type="button" data-a="restart">처음부터</button><button type="button" data-a="end">최종 장면</button></div>
+<div class="ca-live-row"><details><summary>모델 입력과 사건표</summary><p>%%NOTES%%</p><div class="ca-live-tbl">%%TABLE%%</div></details>
+<div class="ca-live-ctl" data-ca-controls><button type="button" data-a="play">재생</button><button type="button" data-a="restart">처음부터</button><button type="button" data-a="end">최종 장면</button></div></div>
 </div>
-<details><summary>모델 입력과 사건표</summary><p>%%NOTES%%</p><div class="ca-live-tbl">%%TABLE%%</div></details>
 <script>%%SCRIPT%%</script>
 </section>

@@ -1,18 +1,18 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T11:58:45+00:00",
+  "tested_at_utc": "2026-10-03T12:56:46+00:00",
   "cases": [
     {
       "id": "cpu-latency",
       "checks": {
         "autoplay_from_start_and_advances": [
-          2.687,
+          2.688,
           4.25
         ],
-        "height_715": 347,
+        "height_715": 356,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
-        "height_360": 587,
+        "height_360": 548,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
         "captions_match_model_events": true,
@@ -26,8 +26,8 @@
         "nojs_static_final_scene": true,
         "gallery_executes_live_macro": true
       },
-      "sha256": "26357b00083a52539eac02c7bf82a0d1795c6d036f42d05df1ea504050bf20d8",
-      "bytes": 56356
+      "sha256": "b0ca2450c6f5753a852a7a29cd6faf0674ce7f55cbaf0c02c27e1a2212deba55",
+      "bytes": 80592
     },
     {
       "id": "thread-pool",
@@ -36,10 +36,10 @@
           0.985,
           1.558
         ],
-        "height_715": 487,
+        "height_715": 472,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
-        "height_360": 504,
+        "height_360": 453,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
         "captions_match_model_events": true,
@@ -53,8 +53,8 @@
         "nojs_static_final_scene": true,
         "gallery_executes_live_macro": true
       },
-      "sha256": "93b61a53b2970d8e62487e97666faf7da714265fc6fd19d07874401378e52abf",
-      "bytes": 55614
+      "sha256": "871cac07e14e49e805542d1b2933bc1d90965516093cb2dde89fee995495dbd6",
+      "bytes": 59533
     },
     {
       "id": "pipeline-bottleneck",
@@ -63,10 +63,10 @@
           1.1,
           1.7
         ],
-        "height_715": 397,
+        "height_715": 260,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
-        "height_360": 409,
+        "height_360": 254,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
         "captions_match_model_events": true,
@@ -80,20 +80,20 @@
         "nojs_static_final_scene": true,
         "gallery_executes_live_macro": true
       },
-      "sha256": "9b8b50f9aef8e1bd643b22e7e90cbcc700634a1fa383de41ec16374857894124",
-      "bytes": 37678
+      "sha256": "77b7cad400f195b6120ce87478fca5fb6f600363c1c7b0ea874f3d5d7c82d1d8",
+      "bytes": 40907
     },
     {
       "id": "bounded-queue",
       "checks": {
         "autoplay_from_start_and_advances": [
-          1.1,
+          1.075,
           1.7
         ],
-        "height_715": 498,
+        "height_715": 340,
         "no_text_overlap_or_clip_715": 6,
         "state_matches_python_model_715": 6,
-        "height_360": 533,
+        "height_360": 560,
         "no_text_overlap_or_clip_360": 6,
         "state_matches_python_model_360": 6,
         "captions_match_model_events": true,
@@ -107,11 +107,11 @@
         "nojs_static_final_scene": true,
         "gallery_executes_live_macro": true
       },
-      "sha256": "1c731ed9fa675f02d3241177f1ec1fe2060d3bca561993f769422311d90e28fa",
-      "bytes": 45306
+      "sha256": "09a9cb5b735e73d1f4647cf10c3804899c929eabe2b342ba40501bd55cca362e",
+      "bytes": 57717
     }
   ],
   "browser": "141.0.7390.37",
   "result": "PASS",
-  "test_sha256": "9aa9c883df1ac01cd5da0a1dd9e74926b366b38fae63c0fde206f16578bf38cc"
+  "test_sha256": "f642f59239f9fe3d889ab9ecf5ae04a5cea453689f7bf881cbb169706b7e6919"
 }

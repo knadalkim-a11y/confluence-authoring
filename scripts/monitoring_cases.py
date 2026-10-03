@@ -442,6 +442,10 @@ def fluid_tokens(series,unit):
         k+=1
     return out
 
+def token_speed(peak_rate,unit,spacing=15):
+    """Token speed in px/s so that tokens of the busiest stream sit ~`spacing` px apart."""
+    return max(240,round(spacing*peak_rate/unit))
+
 def live_rate_map(points,h):
     out=[];last=-1
     for t,r in points:
@@ -465,11 +469,10 @@ def pipeline_live_data(p):
     captions.append([h,'⑤',f'{h:g}초 시점 대기 {grp(qend)}건, 새 요청은 {qend/cap:.1f}초를 기다린다. 유입이 한도 아래로 내려오기 전에는 줄지 않는다.'])
     rate=live_rate_map([[0,1.2],[c0-.5,.6],[(t1 or c0)+.5,1.0],[(t2 or c0+1)+.8,1.5]],h)
     data=dict(scene='pipeline-bottleneck',params={k:p[k] for k in ['before_rate','after_rate','gateway_capacity','application_capacity','database_capacity','change_time','horizon']},
-      series=dict(t=S['t'],q=S['q'],srv=S['srv']),tokens=fluid_tokens(S,unit),unit=unit,
+      series=dict(t=S['t'],q=S['q'],srv=S['srv']),tokens=fluid_tokens(S,unit),unit=unit,speed=token_speed(after,unit),
       events=dict(t_change=c0,t_wait1=t1,t_wait2=t2,q_end=qend),captions=captions,rate=rate,
       axes=dict(q_max=nice_max(max(1,qend)),x_step=2 if h<=16 else 5),
-      labels=dict(unit=f'점 1개 = 요청 {grp(unit)}건 · 한도 단위 건/s',source='Gateway',server='Application',server_short='App',dependency='DB',
-                  panel='Application 앞 대기 (건)',change=f'유입 {grp(after)}건/s'))
+      labels=dict(unit=f'점 1개 = 요청 {grp(unit)}건 · 한도 단위 건/s',source='Gateway',server='Application',server_short='App',dependency='DB'))
     aria=(f'Gateway, Application, DB 순서의 파이프라인. {c0:g}초에 유입이 {grp(before)}에서 {grp(after)}건/s로 늘자 한도 {grp(cap)}건/s인 '
           f'Application 앞에 매초 {grp(after-cap)}건씩 대기가 쌓여 {h:g}초에 {grp(qend)}건이 된다. DB는 한도 {grp(db)}건/s 중 {grp(cap)}건/s만 받는다.')
     notes=(f'결정론적 유체 모델입니다. 유입 {grp(before)}→{grp(after)}건/s({c0:g}초 변경), Gateway·Application·DB 한도 {grp(gw)}·{grp(cap)}·{grp(db)}건/s. '
@@ -495,11 +498,11 @@ def bounded_live_data(p):
     rate=live_rate_map([[0,1.2],[c0-.5,.6],[(t_wait or c0)+.4,1.0],[(t_wait or c0+1)+1.5,1.5]],h)
     data=dict(scene='bounded-queue',params={k:p[k] for k in ['before_rate','after_rate','capacity','queue_limit','change_time','horizon']},
       series=dict(t=U['t'],qu=U['q'],qb=Bq['q'],srv=Bq['srv'],rej=Bq['rej'],inc=Bq['inc']),
-      tokens_u=fluid_tokens(U,unit),tokens_b=fluid_tokens(Bq,unit),unit=unit,
+      tokens_u=fluid_tokens(U,unit),tokens_b=fluid_tokens(Bq,unit),unit=unit,speed=token_speed(after,unit),
       events=dict(t_change=c0,t_full=t_full,t_wait1=t_wait),captions=captions,rate=rate,
       axes=dict(q_max=nice_max(max(1,U['q'][-1])),wait_max=nice_max(max(1,U['q'][-1]/cap)),x_step=2 if h<=16 else 5),
-      labels=dict(unit=f'점 1개 = 요청 {grp(unit)}건',lane_u='상한 없음',lane_b=f'상한 {limit:g}건',inflow='유입',server='처리',
-                  panel='새 요청이 기다릴 시간 (초)',legend_u='상한 없음',legend_b=f'상한 {limit:g}건',change=f'유입 {grp(after)}건/s'))
+      labels=dict(unit=f'점 1개 = 요청 {grp(unit)}건 · 상한 칸 1개 = 1건 · 아래 선 = 대기 시간',lane_u='상한 없음 (무한 큐)',lane_b=f'상한 {limit:g}건 + 즉시 거부',server='서버',
+                  limit=f'상한 {limit:g}',pill_u='대기 시간 계속 증가',pill_b=f'수용분 대기 {limit/cap*1000:.0f}ms'))
     if abs(U['srv'][-1]-served)>1e-6:raise ValueError('Both queues are expected to serve the same amount')
     aria=(f'같은 유입과 처리 한도 {grp(cap)}건/s의 두 큐. {c0:g}초에 유입이 {grp(after)}건/s로 늘자 상한 없는 큐는 {h:g}초에 대기 {grp(U["q"][-1])}건까지 쌓이고, '
           f'상한 {limit:g}건 큐는 대기를 {limit:g}건으로 유지하며 {grp(rej)}건을 거부한다. 두 큐의 처리량은 {grp(served)}건으로 같다.')
@@ -517,9 +520,11 @@ def cpu_live_data(p):
     b,c=sc[1],sc[2];E={k:v*H for k,v in {**b['events'],**c['events']}.items()}
     early=max(max(ser(x['p99'])[:int(n*min(E.values())/H)+1]) for x in sc)
     b_cpu=sum(ser(b['cpu']))/(n+1);b_peak=b['p99'](1)
-    services=[dict(name='A',cpu=ser(x['cpu']),p99=ser(x['p99'])) for x in sc]
-    services[0]['name']='A · 기준';services[1]['verdict']=[E['p99_plateau'],'대기 의심','warn'];services[2]['verdict']=[E['cpu_saturated'],'연산 포화 의심','hot']
-    services[1]['name']='B';services[2]['name']='C'
+    services=[dict(cpu=ser(x['cpu']),p99=ser(x['p99'])) for x in sc]
+    # Pattern names and readings appear only once the event that justifies them has happened.
+    services[0].update(pill=[[0,'① 건강한 상태','ok']],note=[[E['cpu_rise'],'CPU는 부하를 따르고 응답은 안정','ok']])
+    services[1].update(pill=[[0,'②','info'],[E['p99_plateau'],'② CPU는 노는데 느리다','warn']],note=[[E['p99_plateau'],'I/O·락·풀 대기를 의심','warn']])
+    services[2].update(pill=[[0,'③','info'],[E['cpu_saturated'],'③ CPU 100%에 붙었다','hot']],note=[[E['cpu_saturated'],'연산 병목 또는 무한 루프를 의심','hot']])
     summary=E['p99_plateau']+.15*H
     captions=[[0,'①',f'세 서비스의 CPU(위)와 P99(아래)를 같은 시간축에 놓았다. 처음에는 셋 다 P99 {math.ceil(early/10)*10:g}ms 이하다.'],
               [E['cpu_rise'],'②','C의 CPU가 오르기 시작하자 같은 시각에 P99도 따라 오른다.'],
@@ -530,7 +535,7 @@ def cpu_live_data(p):
     captions.sort(key=lambda x:x[0])
     rate=live_rate_map([[0,3.0],[E['cpu_rise']-1,2.0],[E['p99_plateau']+2,2.6],[summary,4.0]],H)
     data=dict(scene='cpu-latency',services=services,series=dict(t=ts),events=E,captions=captions,rate=rate,
-      axes=dict(end=H,p99_max=1000,x_ticks=[[0,'0'],[20,'20'],[40,'40'],[60,'60초']]),labels=dict(cpu='CPU (0–100%)',p99='P99 (0–1,000ms)'))
+      axes=dict(end=H,p99_max=1000,x_ticks=[[0,'0'],[20,'20'],[40,'40'],[60,'60초']]),labels=dict(cpu='CPU 사용률',p99='P99 응답 시간'))
     aria=('세 서비스의 CPU 사용률과 P99 응답 시간을 같은 시간축에 위아래로 놓은 그림. A는 둘 다 평온하다. '
           f'C는 CPU가 100%로 오르며 P99도 오른다(연산 포화 의심). B는 CPU가 {b_cpu:.0f}% 근처인데 P99가 {b_peak:g}ms로 오른다(대기 의심).')
     notes=('설명용 합성값입니다. 가로축 60초는 읽기 편의를 위한 합성 시간이며, 사건 시각(C CPU 상승 12초·포화 24초, B P99 상승 21초·정점 36초)은 곡선의 꺾임점입니다. '
@@ -548,7 +553,9 @@ def _probe_pool(p):
 def _probe_pipeline(p):
     S=pipeline_live_data(p)[0]['series']
     def probe(t):
-        q=max(0,interp(S['t'],S['q'],t));return dict(state=dict(queue=round(q,1)),stats=[f'{q/p["application_capacity"]:.1f}'])
+        q=max(0,interp(S['t'],S['q'],t));i=next((k for k in range(1,len(S['t'])) if S['t'][k]>t+1e-9),len(S['t'])-1)
+        rate=p['before_rate'] if t<p['change_time']-1e-9 else p['after_rate'];served=(S['srv'][i]-S['srv'][i-1])/(S['t'][i]-S['t'][i-1])
+        return dict(state=dict(queue=round(q,1)),stats=[grp(rate),grp(served),f'{q/p["application_capacity"]:.1f}'])
     return probe
 
 def _probe_bounded(p):
@@ -575,15 +582,15 @@ def live_checks(case_id,p):
     if case_id=='pipeline-bottleneck':
         ev=data['events'];c0=p['change_time']
         return dict(probe=_probe_pipeline(p),samples=[1.0,c0+.3,(ev['t_wait1'] or c0)+.2,(ev['t_wait2'] or c0)+.5,p['horizon']-1.3,p['horizon']],
-                    annotations=[(data['labels']['change'],c0),('한도 도달',c0+.06)],end=p['horizon'],resize_at=c0+1.5)
+                    annotations=[('한도 도달',c0+.06),('여유(한가함)',c0+.06)],end=p['horizon'],resize_at=c0+1.5)
     if case_id=='bounded-queue':
         ev=data['events'];c0=p['change_time']
         return dict(probe=_probe_bounded(p),samples=[1.0,c0+.04,(ev['t_full'] or c0)+.3,(ev['t_wait1'] or c0)+.3,p['horizon']-1.3,p['horizon']],
-                    annotations=[('(상한)',ev['t_full'])] if ev['t_full'] is not None else [],end=p['horizon'],resize_at=c0+1.5)
+                    annotations=[(a,b) for a,b in [(data['labels']['pill_b'],ev['t_full']),(data['labels']['pill_u'],ev['t_wait1'])] if b is not None],end=p['horizon'],resize_at=c0+1.5)
     if case_id=='cpu-latency':
         E=data['events'];H=data['axes']['end']
         return dict(probe=_probe_cpu(p),samples=[3,E['cpu_rise']+2,E['p99_rise']+1.5,E['cpu_saturated']+2,E['p99_plateau']+3,H],
-                    annotations=[('연산 포화 의심',E['cpu_saturated']),('대기 의심',E['p99_plateau'])],end=H,resize_at=30.0)
+                    annotations=[('CPU 100%에 붙었다',E['cpu_saturated']),('CPU는 노는데 느리다',E['p99_plateau'])],end=H,resize_at=30.0)
     raise ValueError('No live checks for '+case_id)
 
 LIVE_BUILDERS={'thread-pool':pool_live_data,'pipeline-bottleneck':pipeline_live_data,'bounded-queue':bounded_live_data,'cpu-latency':cpu_live_data}

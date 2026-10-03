@@ -1,5 +1,18 @@
 # Changes
 
+## 0.6.0 — visual language for the live tier
+
+Goal: the look and finish of the kciter.so article demos, not their content. Their
+traits were measured from local recordings and applied once in the kit, shell and
+grammars: Open Color palette, quiet chrome (no card border, centred status and caption,
+text-only controls), waiting requests as dots or buffer cells, stages with a thick gauge
+and %, plain-language pills that appear only when true, and charts only where the
+article text reads them. `flowQueue` gains a stage-chain variant; `timePanels` gains
+sparklines. pipeline-bottleneck drops its queue panel (397 → 260 px at 715 px);
+bounded-queue puts the two queues side by side (498 → 340 px); cpu-latency gets
+event-timed ①②③ pills; thread-pool keeps its structure and is restyled. Fixed the
+browser resize gate, which had passed only because of the old card padding.
+
 ## 0.5.0 — pipeline-bottleneck, bounded-queue and cpu-latency on the live tier
 
 `flowQueue` gains a fluid-lane variant for rate models: a queue bar on a request-count

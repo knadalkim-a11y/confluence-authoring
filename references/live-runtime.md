@@ -1,4 +1,4 @@
-# Live runtime — architecture, contract and quality gates (v0.5.0)
+# Live runtime — architecture, contract and quality gates (v0.6.0)
 
 The CSS-keyframe renderer (`reference_scene.py`) bakes every movement into keyframes.
 That made state-driven pictures hard: decorative token streams needed disclaimers,
@@ -26,21 +26,23 @@ Implemented grammars:
 
 - `flowQueue`: inflow → queue → server → dependency. Two server kinds share the idea:
   `geom/draw` for a discrete worker pool (slots, request dots; thread-pool) and
-  `laneGeom/laneDraw` for rate (fluid) models. In the fluid variant the queue is a bar on
-  a request-count scale and each stage shows a gauge of its limit. A source stage,
-  dependency and reject branch (bounded queue) are optional. One token = `unit` requests,
-  chosen so the busiest stream draws ≤ 30 tokens/s. Token arrival, rejection and FIFO
-  departure times are computed in Python from the model's cumulative inflow, rejected
-  and served curves (`fluid_tokens`). All token routes share one speed; travel time
-  shortens when tokens would sit closer than 12 px.
+  `chainGeom/chainDraw` for rate (fluid) models: a chain of stages, each with its limit,
+  a thick gauge and % below, optional pills; the queue sits in front of one stage as a dot
+  grid (one dot = `unit` requests) or as `slots` buffer cells (one cell = one request);
+  optional reject tokens. One token = `unit` requests (busiest stream ≤ 30 tokens/s).
+  Token arrival, rejection and FIFO departure times are computed in Python from the
+  model's cumulative inflow, rejected and served curves (`fluid_tokens`); all routes share
+  one speed (`token_speed`, ~15 px spacing) and tokens pass behind later stages.
 - `timePanels`: panels sharing one model-time axis (band, stacked area, limit line,
   points, cursor). `panelIn` places a panel inside a column box, `area`/`series` draw
-  explicit time arrays cut at T, `mark` draws an event line, `ticksX` custom tick labels.
+  explicit time arrays cut at T, `mark` draws an event line, `ticksX` custom tick labels,
+  `spark` a compact trend with end dot.
 
-Implemented scenes: `thread-pool` (pool), `pipeline-bottleneck` (one fluid lane with
-source and dependency, plus a queue panel), `bounded-queue` (two fluid lanes on one
-count scale, plus a wait-time panel), `cpu-latency` (three columns, CPU over P99 on one
-time axis; three stacked groups below 560 px).
+Implemented scenes: `thread-pool` (pool + two time panels the prose refers to),
+`pipeline-bottleneck` (one stage chain, no panel), `bounded-queue` (two chains side by side,
+stacked below 560 px, each with readouts and a wait-time sparkline), `cpu-latency` (three
+columns, CPU over P99 on one time axis; stacked groups below 560 px). Visual language:
+references/visual-guidelines.md.
 
 Candidate grammar mapping for the remaining cases (planning, not implemented):
 shared-time panels — memory-leak, memory-spike, slow-degradation, deploy-comparison, gc-pause, traffic,

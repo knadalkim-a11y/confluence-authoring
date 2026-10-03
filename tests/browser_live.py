@@ -73,8 +73,10 @@ with sync_playwright() as pw:
   root.locator('[data-a="play"]').focus();page.keyboard.press('Enter');page.wait_for_timeout(250);assert live_state(page,prefix)['T']>a
   rec['checks']['controls_end_restart_pause_keyboard']=True
   # Resize keeps the model clock.
-  ra=chk['resize_at'];seek(page,prefix,ra);page.set_viewport_size({'width':420,'height':1000});page.wait_for_timeout(200)
-  assert abs(live_state(page,prefix)['T']-ra)<1e-6;assert page.locator('svg[data-ca-live]').get_attribute('viewBox').split()[2]!='715'
+  ra=chk['resize_at'];seek(page,prefix,ra);before=page.locator('svg[data-ca-live]').get_attribute('viewBox').split()[2]
+  page.set_viewport_size({'width':420,'height':1000});page.evaluate('document.querySelector("[data-ca-prefix]").parentElement.style.width="400px"');page.wait_for_timeout(250)
+  after=page.locator('svg[data-ca-live]').get_attribute('viewBox').split()[2]
+  assert abs(live_state(page,prefix)['T']-ra)<1e-6;assert after!=before and float(after)<=400,(before,after)
   rec['checks']['resize_relayout_keeps_clock']=True
   # Print: final scene, controls hidden.
   page.set_viewport_size({'width':800,'height':1000});page.set_content(wrap(frag,715));page.wait_for_timeout(500)
@@ -92,7 +94,7 @@ with sync_playwright() as pw:
   st=live_state(page,prefix);assert abs(st['T']-end)<1e-6 and not st['playing'];rec['checks']['reduced_motion_final_no_autoplay']=True;ctx.close()
   # No JavaScript (export-like): static final scene from the same draw code, controls hidden.
   ctx=browser.new_context(viewport={'width':800,'height':1000},java_script_enabled=False);page=ctx.new_page();page.set_content(wrap(frag,715))
-  assert page.locator('svg[data-ca-static] text').count()>20;assert page.locator('[data-ca-controls]').evaluate('e=>getComputedStyle(e).visibility')=='hidden'
+  assert page.locator('svg[data-ca-static] text').count()>=8;assert page.locator('[data-ca-controls]').evaluate('e=>getComputedStyle(e).visibility')=='hidden'
   assert data['captions'][-1][2] in page.locator('[data-ca-caption]').inner_text()
   page.locator('[data-ca-prefix]').screenshot(path=str(SHOTS/f"{c['id']}-nojs.png"));rec['checks']['nojs_static_final_scene']=True;ctx.close()
   # Gallery mounts and runs the exact macro.

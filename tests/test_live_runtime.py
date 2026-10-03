@@ -100,11 +100,11 @@ class LiveRuntimeTests(unittest.TestCase):
   data=cpu_live_data({})[0];sc=cpu_scenarios();H=data['axes']['end'];ts=data['series']['t']
   for s,x in zip(data['services'],sc):
    self.assertEqual(s['cpu'],[round(x['cpu'](t/H),3) for t in ts]);self.assertEqual(s['p99'],[round(x['p99'](t/H),3) for t in ts])
-  ev=data['events'];self.assertEqual(data['services'][2]['verdict'][0],ev['cpu_saturated']);self.assertEqual(data['services'][1]['verdict'][0],ev['p99_plateau'])
+  ev=data['events'];self.assertEqual(data['services'][2]['pill'][-1][0],ev['cpu_saturated']);self.assertEqual(data['services'][1]['pill'][-1][0],ev['p99_plateau'])
   for t in ev.values():self.assertIn(t,[x[0] for x in data['captions']])
-  st=node_static(data)['svg'];self.assertIn('연산 포화 의심',st);self.assertIn('대기 의심',st)
+  st=node_static(data)['svg'];self.assertIn('CPU 100%에 붙었다',st);self.assertIn('CPU는 노는데 느리다',st)
   # Verdict must not be in a frame drawn before its event (same draw code, Node).
-  self.assertNotIn('대기 의심',static_at(data,ev['p99_plateau']-0.5));self.assertNotIn('연산 포화 의심',static_at(data,ev['cpu_saturated']-0.5))
+  self.assertNotIn('노는데 느리다',static_at(data,ev['p99_plateau']-0.5));self.assertNotIn('100%에 붙었다',static_at(data,ev['cpu_saturated']-0.5))
 
 def static_at(data,t,width=720):
  import shutil,subprocess,tempfile

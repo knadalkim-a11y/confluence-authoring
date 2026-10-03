@@ -60,3 +60,26 @@ These rules come from the v0.4.0 thread-pool rebuild and apply to both tiers:
 - Height budget: about 520 px at a 715 px container and 600 px at 360 px.
 - Stack metrics that must be read together on one shared time axis, not side by side.
 - Moving tokens stand for real units in the model and travel on drawn routes.
+
+## Visual language (live tier, v0.6.0)
+
+Target: the look, feel and finish of the kciter.so article demos, not their content.
+Derived by measuring the recorded originals (palette sampled from pixels, sizes at a
+673 px column) and applied once in `visuals/live/kit.js`, `shell.html` and the grammars,
+so every live case inherits it.
+
+- **Palette:** Open Color. Busy/flow = blue `#228be6`; waiting = yellow dots `#fab005`;
+  alarm = pink fill `#fff5f5` + red border `#fa5252`; healthy = green border `#40c057`;
+  P99/latency = violet `#845ef7`; text greys `#495057` / `#868e96` / `#adb5bd`. Small text
+  uses the darker variants (`redText`, `amberText`, `greenText`, `blueText`) for contrast.
+- **Chrome is quiet:** no card border; one centred status line ("label **value**" joined by
+  " · ", value blue or red when alarming); centred small grey caption with ①②③; text-only
+  controls and the collapsed notes on one low row.
+- **Things, not abstractions:** waiting requests are dots in a grid or cells in a buffer;
+  stages are white boxes with a thick gauge and a bold % below; plain-language pills
+  ("여유(한가함)", "한도 도달", "수용분 대기 80ms") sit on the element they describe and
+  appear only when true.
+- **Charts only when the prose needs them.** Light panel (`#f8f9fa`), soft area fill, 2 px
+  line, value labelled at the cursor dot. Drop a panel the surrounding text never reads.
+- **Compact:** aim for the main figure plus status and caption; time panels are the
+  exception that must earn their height.

@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence. Select a flexible document recipe and, only when helpful, reusable static or animated explanations. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools; optional local HTML generation requires Python 3.10+. Browser tests require Playwright and Chromium.
 metadata:
-  version: "0.5.0"
+  version: "0.6.0"
 ---
 
 # Confluence Authoring
