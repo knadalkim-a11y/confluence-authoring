@@ -1,4 +1,4 @@
-# Document visuals from a spec (v0.9.2)
+# Document visuals from a spec (v0.10.0)
 
 Purpose: when someone wants a visual for a report or document, write a short JSON spec that
 states the claim, the data and its provenance; `scripts/build_visual.py` computes the model,
@@ -26,7 +26,8 @@ specs it cannot render well.
 | a schedule: phases, status, milestones, today; or an incident's minutes (detection, response, recovery) | `timeline` (dates, numbers, or `HH:MM` clock times; `"durations": true`) | static |
 | what the parts of a system are and how they connect (architecture, data pipeline, ownership, current vs proposed) | `diagram` | static |
 | the path a request, document or approval takes through those parts (AI agent call, RAG, approval process, failure propagation) | `diagram` with `steps` | animated, one step at a time; the step list stays in the picture |
-| a mechanism none of these express (discrete workers, retries, routing, cycles) | custom live scene, see `live-runtime.md` (thread-pool is the example) | animated |
+| how values spread, and what the average hides (latency, durations, any per-item measure) | `distribution` | dots arrive, then mean / P50 / P95 / P99 one at a time |
+| a mechanism none of these express (discrete workers, retries, routing, cycles) | custom live scene, see `live-runtime.md` (thread-pool, cfs, cascade, eventloop, timeout are examples) | animated |
 
 Deliberately not offered: pie/donut, 3D, dual y-axes, KPI gauge tiles, decorative motion.
 `motion: "none"` forces a static figure (use it when the target Confluence does not run inline
@@ -36,7 +37,7 @@ scripts); `"play"` animates a kind that is static by default (bars grow once).
 
 | Field | Rule |
 |---|---|
-| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` · `diagram` |
+| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` · `diagram` · `distribution` |
 | `title` | Accessible name (≤ 120 chars). The page heading usually says it too. |
 | `claim` | The one-sentence takeaway (≤ 120). Shown under a static figure; use it as the last caption of an animated one. |
 | `source` | Where the numbers come from. Required. |
@@ -105,6 +106,14 @@ unknown events are build errors that list what is available. Never type a comput
   "from", "to", "color"}]` shades the gap between two series (week-over-week); group `title`
   + `color` heads a column (정상 / 누수). A series may cover only part of the axis (a copied
   week laid over the last one). A threshold near the top edge puts its label under the line.
+- More (v0.10.0): up to 4 groups (2 x 2 grid), `groups[].events` for one column only (scenario A
+  / B), series `style: "dashed"`, `dots: true`, `area: false`, `label: false` (helper line: no
+  value label, no legend entry), panel `hide_label`, pill tones `bad` and `purple`,
+  `stream: {"after": panel, "label", "box", "side", "phases": [{"from", "divert", "color",
+  "divert_color", "note"}], "end_note"}` (a row of requests between panels; `divert` = share
+  failing fast or going to the side box, from the model) and `log: {"label", "lines": [[at,
+  text], [at, text, "hot"]]}` (log lines aligned with the chart clock; the hot line is the culprit).
+  Value labels are dropped where no free spot exists; the reading is in the table.
 - Events: `start`, `end` and every event `label` (or `name`).
 - Placeholders: `<series name>_end`, `_max`, `_start`, `_change_pct` (non-word characters → `_`, e.g.
   `{리드_타임_end}`), `@i` suffix for group i > 0; `end`, `time_unit`.
@@ -126,6 +135,21 @@ unknown events are build errors that list what is available. Never type a comput
   printed under the bars. `"drop": "rate"` (default) marks the lowest conversion, `"count"` the
   step that loses most people. "가장 많이 이탈" is ambiguous: these can be different steps, so
   say which one the claim means and set `drop` to match.
+
+### `distribution` — one dot per observation, and what the average hides
+
+```json
+{"kind": "distribution", "unit": "ms", "max": 1000,
+ "groups": [{"label": "서버 A", "values": [70, 100, 130], "counts": [4, 30, 6]},
+            {"label": "서버 B", "values": [22, 42, 470, 850], "counts": [26, 8, 5, 1]}],
+ "markers": ["mean", "p50", "p95", "p99"], "tail": {"from": 400, "label": "긴 꼬리 (요청의 {share}%)"},
+ "captions": [{"at": 0, "text": "…"}, {"at": "mean", "text": "평균은 둘 다 {mean}ms"}, {"at": "tail", "text": "…"}]}
+```
+
+- 1–3 samples side by side (stacked on phones), ≤ 120 observations each, values increasing.
+  Mean and percentiles are computed in Python; each marker appears at its own event (`mean`,
+  `p50`, `p95`, `p99`, `tail`); placeholders `{mean}`, `{p99}`, … (`@1` for the second sample).
+- `tail` shades the values at or above `from` where a sample has any, with `{share}` computed.
 
 ### `share` — composition (100% bars)
 

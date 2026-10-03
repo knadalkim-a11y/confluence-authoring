@@ -1,6 +1,6 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T22:15:09+00:00",
+  "tested_at_utc": "2026-10-03T23:14:23+00:00",
   "cases": [
     {
       "id": "traffic-patterns",
@@ -19,8 +19,31 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "f5a193c8e69d15989be2762e69ea4b24433c865c2b0a1a3a3d4333ab3d3c982c",
-      "bytes": 101365,
+      "sha256": "9528db62ca60ea27845da6082c85bea1e3352580941d4b62525c4445b869e7be",
+      "bytes": 102302,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "percentile-comparison",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          0.806,
+          1.275
+        ],
+        "height_715": 428,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 556,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "e5e6c5a0934a2d43b38f313680945b900b4a23eb6041dbc21d060de0ec23b562",
+      "bytes": 47169,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -30,8 +53,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          4.583,
-          7.083
+          4.479,
+          7.084
         ],
         "height_715": 436,
         "samples_715": 6,
@@ -42,8 +65,8 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "7cbf6ec0e4bb3f2e6d56eee2e948f963fce0393eaaf42221ae8f21ad368a052b",
-      "bytes": 62017,
+      "sha256": "4c090e949a7017830659c04e39c15cc6fc1df66754db942f6c423126470b8d38",
+      "bytes": 62954,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -53,7 +76,7 @@
       "live": true,
       "checks": {
         "autoplay": [
-          2.948,
+          3.017,
           4.663
         ],
         "height_715": 378,
@@ -65,8 +88,31 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "c762a95be48cbd7c3ad236a1a8c85e59501bce824f568160fcd912727305b03c",
-      "bytes": 140560,
+      "sha256": "98c3b156e8733995b5d5f88ce92586ca60d833ca21500c8a407c83a7a2ff2d7f",
+      "bytes": 141497,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "cpu-throttling",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          0.57,
+          0.888
+        ],
+        "height_715": 442,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 446,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "a6298f50f283a3b30046f0b8ba5ad752d280335b75c3396aa97b389633d50f16",
+      "bytes": 57025,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -88,8 +134,31 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "23eaee9d11875db11eddbbdfb78e26bb18d78a0d2d84da3779d023bc78d82487",
-      "bytes": 133014,
+      "sha256": "4b89c59aaa1843aa586c66edd8fa1c38ef62ecba14c54167dbe803c9bcee2313",
+      "bytes": 133951,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "memory-spike",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          1.866,
+          2.951
+        ],
+        "height_715": 500,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 536,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "ada707dd3153965c824c4553d1291e65eb615fb31bcf6c13b8236b53f442d742",
+      "bytes": 56717,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -118,12 +187,58 @@
       "result": "PASS"
     },
     {
+      "id": "cluster-cascade",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          0.587,
+          0.906
+        ],
+        "height_715": 404,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 556,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "d239da2d140823c9c988f85077cb460ba83aa14f4968d5ba47a3fa229c9aae4d",
+      "bytes": 42927,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "event-loop",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          0.42,
+          0.67
+        ],
+        "height_715": 422,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 412,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "603cff734b20f469e7aa09a4973664ddedd68c497a478b6a52b9a1f78e4797a9",
+      "bytes": 36456,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
       "id": "pipeline-bottleneck",
       "live": true,
       "checks": {
         "autoplay": [
-          0.916,
-          1.417
+          0.896,
+          1.396
         ],
         "height_715": 268,
         "samples_715": 6,
@@ -145,8 +260,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          7.091,
-          11.215
+          6.927,
+          11.05
         ],
         "height_715": 354,
         "samples_715": 6,
@@ -157,8 +272,8 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "b007dd0528279adb44f374decd44f2ad9e129e0f26a90e6f0cfa84c58ba0473b",
-      "bytes": 49680,
+      "sha256": "bae2f5d31f315e2ceafc9e5bb8b0ff7d4809693bae891b77f2ada3fa99f066dd",
+      "bytes": 50617,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -168,8 +283,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.917,
-          1.417
+          0.896,
+          1.396
         ],
         "height_715": 346,
         "samples_715": 6,
@@ -203,8 +318,31 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "4af889097c582a7a6589a94f727068051b82e33c52bff794980890e143ac1863",
-      "bytes": 63119,
+      "sha256": "ab41e75fc6d3645d29482a715f3a9c03ad3c599b5bdcba2f669c5ae4373ec7b4",
+      "bytes": 64056,
+      "browser": "141.0.7390.37",
+      "failures": [],
+      "result": "PASS"
+    },
+    {
+      "id": "timeout-mismatch",
+      "live": true,
+      "checks": {
+        "autoplay": [
+          0.717,
+          1.117
+        ],
+        "height_715": 364,
+        "samples_715": 6,
+        "dense_overlap_715": 24,
+        "height_360": 346,
+        "samples_360": 6,
+        "dense_overlap_360": 24,
+        "dense_overlap_600": 25,
+        "gallery_executes_live_macro": true
+      },
+      "sha256": "638b1b3f7c464bfb0be36e8d110eaf7a7bab53dba7aed1de320b45ac42a8dfa9",
+      "bytes": 38002,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -214,7 +352,7 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.299,
+          0.306,
           0.472
         ],
         "height_715": 332,
@@ -226,8 +364,8 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "2f695527909a340407234017ba06b29137ae4d9cd3aa18fc501f1a95db9a39dc",
-      "bytes": 60074,
+      "sha256": "40bb5b577706fc417da74b236f3a0debe1b36f1c2c1ff82b988c2101d076471f",
+      "bytes": 61011,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -237,8 +375,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          4.422,
-          6.993
+          4.423,
+          6.994
         ],
         "height_715": 268,
         "samples_715": 6,
@@ -249,8 +387,8 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "6149c3000ea88289c02fea172976469e5083d452dee54f2a5db5cc05e3604ba3",
-      "bytes": 76009,
+      "sha256": "98675338bdc626bbd743e693ff6aba17f36e7680a2d843f156575b4bf4af3f65",
+      "bytes": 76946,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -261,7 +399,7 @@
       "checks": {
         "autoplay": [
           4.013,
-          6.253
+          6.346
         ],
         "height_715": 354,
         "samples_715": 6,
@@ -272,8 +410,8 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "d66ed09db818610183d8bd891be4f7e817b10b3869ab19884f6534d4da29ffe7",
-      "bytes": 58343,
+      "sha256": "a475e1b76c7510317ce63e418eaf2d6cc14ff3c40c5d5ac701dde038b68a1210",
+      "bytes": 59280,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"

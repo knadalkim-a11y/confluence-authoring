@@ -1,5 +1,21 @@
 # Changes
 
+## 0.10.0 — all 18 article cases rebuilt after the reference demos
+
+- Every in-article case now runs on the live tier and was compared side by side with its
+  reference demo (same width, 2x; dist/ref18, local only). Only gc-pause (bonus) stays CSS.
+- New kind `distribution` (dots per observation, mean / P50 / P95 / P99 in sequence, tail band
+  with computed share). `trend` gains a 2 x 2 grid, per-column events, helper series (dashed,
+  dots, no label), a request `stream` strip, a `log` strip, hidden panel labels, soft pill tones.
+- Custom live scenes for mechanisms no kind expresses: `cfs` (CPU quota throttling),
+  `cascade` (load balancer domino), `eventloop` (Node.js loop blocked by CPU work), `timeout`
+  (gateway 504 vs backend 200). Their numbers come from Python models.
+- Gates: a dense overlap sweep at 600 px as well (found a clipped CPU note and a diagram label on
+  a box); diagram switches to the phone layout when its row would be too tight; annotations
+  avoid event labels; value labels are skipped when no free spot exists.
+- Tests that meant "a CSS-tier case" now use gc-pause; model-number tests kept by exporting the
+  same numbers from the new specs; svg-id uniqueness is now checked for every case.
+
 ## 0.9.2 — reference parity, batch 1
 
 - Captured all 18 article demos (not only 4) and paired each with ours at the same width and

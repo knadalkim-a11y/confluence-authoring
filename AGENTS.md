@@ -20,14 +20,17 @@ references/live-runtime.md before touching them. Numbers come from the Python mo
 captions and pacing bind to model events; the static fallback is the same JS scene run in
 Node. Do not hand-edit generated macros, add other scripts, or migrate a case without
 its unit and browser gates (tests/test_live_runtime.py, tests/browser_live.py). Migrated:
-thread-pool (custom scene), pipeline-bottleneck, bounded-queue, cpu-latency, slow-degradation,
-postmortem-timeline, traffic-patterns, survivorship-bias, memory-leak, utilization-wait,
-cache-stampede, deploy-comparison (specs of flow/trend); do not claim others are. Each migration is checked
+all 18 article cases: thread-pool, cpu-throttling, cluster-cascade, event-loop, timeout-mismatch
+(custom scenes); pipeline-bottleneck, bounded-queue (flow); cpu-latency, slow-degradation,
+postmortem-timeline, traffic-patterns, survivorship-bias, memory-leak, memory-spike,
+utilization-wait, cache-stampede, deploy-comparison (trend); percentile-comparison
+(distribution). gc-pause (bonus) stays on the CSS tier; do not claim it is migrated. Each migration is checked
 side by side with the article demo (dist/ref18/pairs, local only, not committed).
 
 Read references/diagram-layout.md for structure/flow work. Explicit route coordinates
-must generate both the visible line and particle motion. The current layout pass covers
-cascade, event loop and pipeline only; do not claim all cases have been redesigned.
+must generate both the visible line and particle motion. The CSS layout pass (cascade, event
+loop, pipeline) is retired: those cases are live scenes now, gated by tests/browser_live.py, and
+tests/browser_diagram_layout.py reports SKIP while no CSS layout case remains.
 Preserve previous mechanism changes and the 1.25x default. Run geometry and browser
 checks before considering a layout complete.
 

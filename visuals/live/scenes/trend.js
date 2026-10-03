@@ -18,7 +18,9 @@ CA_SCENES['trend']=function(D,K,GR){
       var cw=cols?(W-18*(per-1))/per:W,x0=cols?k*(cw+18):0,top=y,head=(gr.pill.length?24:0)+(gr.title?24:0)+(D.bands.length?22:0),c={x0:x0,x1:x0+cw,top:top,panels:[]};
       var py=top+head+18;gr.panels.forEach(function(p){c.panels.push(TP.panelIn(x0+36,x0+cw,py,ph,end,p.max));py+=ph+24;
         if(D.stream&&p.label===D.stream.after){var sh=D.stream.side?78:50;c.strip={y:py-4,h:sh,x0:x0+36,x1:x0+cw};py+=sh+20;}});
-      c.bottom=py-24+(cols||!g.nw||i===G.length-1?18:0);c.note=c.bottom+16;
+      c.bottom=py-24+(cols||!g.nw||i===G.length-1?18:0);
+      if(D.log&&i===G.length-1){c.log={x0:x0+36,x1:x0+cw,y:c.bottom+30,h:20+D.log.lines.length*(g.nw?34:19)};c.bottom=c.log.y+c.log.h+4;}
+      c.note=c.bottom+16;
       c.axis=cols||i===G.length-1;g.cols.push(c);
       var cb=c.bottom+(gr.note.length&&!g.nw?24:0);rowB=k===0?cb:Math.max(rowB,cb);
       if(!cols)y=c.bottom+(gr.note.length&&!g.nw?24:6)+10;});
@@ -92,6 +94,13 @@ CA_SCENES['trend']=function(D,K,GR){
     var cur=phase(Math.min(T,end));if(cur[4])o+=K.text(bx+(st.side?44:14),my-12,cur[4],{fs:12,c:PAL[cur[3]][1],a:'start',w:700,halo:1});
     if(st.end_note)o+=K.text(x1,my+20,st.end_note,{fs:12,c:C.blueText,a:'end',halo:1});   /* under the line: the phase note is above */
     return o;}
+  /* log lines aligned with the chart's clock: a line appears when its time is reached */
+  function logbox(L,T,nw){var o=K.text(L.x0,L.y-6,D.log.label,{fs:13,c:C.text,w:700})+K.rect(L.x0,L.y,L.x1-L.x0,L.h,{r:4,fill:C.paper2,st:C.rule});
+    D.log.lines.forEach(function(ln,k){if(T<ln[0]-1e-9)return;var step=nw?34:19,y=L.y+16+k*step;
+      if(ln[2])o+=K.rect(L.x0+1,y-13,L.x1-L.x0-2,step-1,{r:0,fill:C.redSoft})+K.rect(L.x0+1,y-13,3,step-1,{r:0,fill:C.red});
+      var tx=ln[1];if(nw){var cut=tx.indexOf('  ');if(cut>0){o+=K.text(L.x0+10,y,tx.slice(0,cut),{fs:11,c:ln[2]?C.redText:C.muted,w:ln[2]?700:400});tx=tx.slice(cut+2);y+=15;}}
+      o+=K.text(L.x0+10,y,tx,{fs:nw?11:12,c:ln[2]?C.redText:C.muted,w:ln[2]?700:400});});
+    return o;}
   function draw(T,g){var o=g.mark?K.text(g.W,g.H-3,D.labels.data_kind,{fs:12,c:C.muted,a:'end'}):'';   /* illustrative/estimated data says so in the picture */
     G.forEach(function(gr,i){var c=g.cols[i],pl=latest(gr.pill,T),nt=latest(gr.note,T),hy=c.top;
       if(gr.title){o+=K.text(c.x0,hy+15,gr.title,{fs:14,c:PAL[gr.color][1],w:700});hy+=24;}
@@ -104,6 +113,7 @@ CA_SCENES['trend']=function(D,K,GR){
         e.ty=ty;e.x0=x0;e.right=right;e.col=col;a.evBoxes.push({x0:x0-3,x1:x0+w+3,y0:ty-13,y1:ty+4});});
       gr.panels.forEach(function(pd,j){o+=panel(c.panels[j],pd,T,j===0);});
       if(c.strip)o+=stream(D.stream,c.strip,T);
+      if(c.log)o+=logbox(c.log,T,g.nw);
       /* lines after the panels (a panel background would hide them), labels last */
       EV.forEach(function(e){if(T<e[0]-1e-9)return;var x=a.X(e[0]);o+=K.line(x,a.y,x,b.y+b.h,e.col?e.col[0]:C.ink,{d:'4 3',sw:1.4,op:e.col?.9:.55});});
       EV.forEach(function(e){if(T<e[0]-1e-9)return;o+=K.text(e.x0,e.ty,e[1],{fs:12,c:e.col?e.col[1]:C.text,w:700,halo:1});});

@@ -73,8 +73,7 @@ with sync_playwright() as p:
   page.set_content((OUT/'gc-pause'/'preview.html').read_text());page.keyboard.press('Tab');assert page.locator('.ca-pause').evaluate('(e)=>e===document.activeElement');page.keyboard.press('Space');assert page.locator('.ca-pause').is_checked();assert page.locator('.ca-pause-label').evaluate('(e)=>getComputedStyle(e).outlineStyle')!='none'
   report['checks']['keyboard_visible_focus']=True
   # Event-loop rotation holds while global time proceeds.
-  page.set_content((OUT/'event-loop'/'preview.html').read_text());seek(page,14.4*(.06+.8*.4));a=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');seek(page,14.4*(.06+.8*.55));b=page.locator('[data-event-rotor]').first.evaluate('(e)=>getComputedStyle(e).transform');assert a==b,(a,b)
-  report['checks']['event_loop_actual_rotation_holds']=True
+  # event-loop is a live scene now: its loop/queue state is gated by tests/browser_live.py (the CSS rotor check retired)
   # Exact worker state at a model time, not merely an animation presence test.
   # thread-pool now uses the live runtime; its exact model-state checks are in tests/browser_live.py.
   report['checks']['macro_external_requests']=[u for u in requests if u.startswith(('http:','https:'))];assert not report['checks']['macro_external_requests'];assert not errors

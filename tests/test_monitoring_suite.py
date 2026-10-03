@@ -23,7 +23,6 @@ class MonitoringSuiteTests(unittest.TestCase):
   self.assertEqual(validate(a+b),[]);self.assertIn('Duplicate prefix',validate(a+a))
  def test_multiple_svg_ids(self):
   for cid,(fragment,_) in self.rendered.items():   # every case: ids unique inside its block
-   if cid in ('cluster-cascade','event-loop'):continue   # CSS tier repeats marker ids in its wide/narrow SVGs; removed when these move to live scenes
    with self.subTest(id=cid):ids=re.findall(r'id="([^"]+)"',fragment);self.assertEqual(len(ids),len(set(ids)))
   self.assertEqual(self.rendered['traffic-patterns'][0].count('<svg'),2)   # live tier: wide + phone static scene
  def test_distribution_values(self):
@@ -59,7 +58,8 @@ class MonitoringSuiteTests(unittest.TestCase):
    row=[j for j in jobs if j['slot']==slot]
    for a,b in zip(row,row[1:]):self.assertLessEqual(a['end'],b['start'])
  def test_cascade_distribution(self):
-  data=self.rendered['cluster-cascade'][1]['shares_sum'];self.assertEqual([round(v,9) for _,v in data],[1,1,1,0])
+  n=self.rendered['cluster-cascade'][1]   # live servers always share the whole inflow; removals go 3 -> 2 -> 1
+  self.assertEqual([round(v,9) for _,v in n['shares_sum']],[1]*len(n['shares_sum']));self.assertEqual(n['healthy'],[3,3,2,1,1])
  def test_cache_identity(self):
   d=self.rendered['cache-stampede'][1]
   for (t,hit),(qtime,qps) in zip(d['hit'],d['qps']):self.assertEqual(t,qtime);self.assertAlmostEqual(qps,d['total']*(1-hit/100))

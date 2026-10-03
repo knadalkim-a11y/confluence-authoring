@@ -32,7 +32,7 @@
       "conclusion": "평균 100ms가 같아도 높은 백분위 지연은 다를 수 있다. 백분위 정의와 표본 수를 함께 읽는다.",
       "assumptions": "같은 평균이라는 원문 설명에 맞춰 구성한 자체 이산 표본. 각40건이며 nearest-rank 백분위. 원본의 분포 연출을 참고했지만 픽셀/코드를 복제하지 않았다.",
       "source_behavior": "두 분포에 점 누적, 평균 뒤 세 백분위 마커",
-      "implemented_behavior": "개별 요청 점 누적과 계산된 통계; 라벨·좌표·표는 동일 입력에서 생성",
+      "implemented_behavior": "라이브 런타임(distribution 스펙). 점 하나 = 요청 하나, 평균과 백분위가 차례로 나타나고 긴 꼬리 비율을 모델에서 계산.",
       "improvement": "제작본 첫 검수의100.25ms 평균 오차를 수정; P50/P95/P99를 표본에서 재계산",
       "params": {
         "a_values": [
@@ -74,7 +74,8 @@
       },
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#지연-시간-얼마나-걸리는가",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "survivorship-bias",
@@ -119,7 +120,7 @@
       "conclusion": "CPU 사용량과 실행할 수 없었던 시간은 다른 지표다. CPU 시간 예산과 스로틀 관측치를 함께 확인한다.",
       "assumptions": "단일 CPU 실행 흐름을 가정한 확대도. 실제 CFS 설정과 병렬 스레드의 CPU 시간 합산은 환경에 따라 다름. P99 수치를 임의로 추정하지 않는다.",
       "source_behavior": "주기별 실행/스로틀 구간과 지연 해석",
-      "implemented_behavior": "7개 CPU 시간 예산 막대; 실행과 정지를 해칭으로 구분",
+      "implemented_behavior": "라이브 런타임(전용 장면 cfs). 100ms 주기마다 실행과 강제 정지를 칸으로, 아래에 P99. 원본 데모와 같은 배치.",
       "improvement": "quota로 임의 P99를 산출하지 않고 차단 시간 자체를 표현",
       "params": {
         "period_ms": 100,
@@ -130,7 +131,8 @@
       },
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#CPU-사용률이라는-말의-함정",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "memory-leak",
@@ -158,12 +160,13 @@
       "conclusion": "같은 시각의 로그는 조사 대상을 좁힌다. 원인 확정에는 요청 크기·프로파일 등의 추가 근거가 필요하다.",
       "assumptions": "모든 로그와 API 이름은 합성. 타임스탬프는 요청 시작 시각이며 완료 응답 시간을 시작 시점에 사실처럼 표시하지 않는다.",
       "source_behavior": "힙 계단과 액세스 로그의 동시 강조",
-      "implemented_behavior": "사건 시각 수직선 + 순차 로그 + 합성 요청 강조",
+      "implemented_behavior": "라이브 런타임(trend 스펙 + 로그 줄). 원본 데모와 같은 배치로 다시 만듦.",
       "improvement": "상관관계를 확정된 범인이라고 표현하지 않음",
       "params": {},
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#메모리-누수와-스파이크",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "thread-pool",
@@ -200,12 +203,13 @@
       "conclusion": "로드밸런서에서 제외된 서버의 몫이 남은 대상에게 이동한다. 여기서는 공유 DB 지연이 원인인 것으로 설정한 시나리오다.",
       "assumptions": "서버 제외 시각과 공유 DB 장애는 가정으로 지정. 원본과 같은 3노드 토폴로지를 사용하며 분배율은 생존 노드 수로 계산.",
       "source_behavior": "LB/3대/DB, 실패 경로와 재분배",
-      "implemented_behavior": "동일 크기·등간격 서버와 중앙 LB/DB. 넓은 화면은 직선 분배 경로, 좁은 화면은 두 공유 레인. 요청·분배 대상·점유·제외를 같은 모델로 표시.",
+      "implemented_behavior": "라이브 런타임(전용 장면 cascade). LB·서버 3대·DB, 부하 막대와 헬스체크 제외, 몫의 재분배. 원본 데모와 같은 배치.",
       "improvement": "불필요한 곡선을 제거하고 경계 연결점을 통일. 하나의 Route에서 선과 점 경로를 생성하며 공유 레인은 한 번만 그린다.",
       "params": {},
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#비둘기집의-원리",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "event-loop",
@@ -216,7 +220,7 @@
       "conclusion": "CPU 작업이 실행 스레드를 점유하면 해당 루프의 콜백 처리가 지연된다. I/O 위임 경로와 CPU 작업을 구분한다.",
       "assumptions": "한 프로세스의 JS 이벤트 루프 개념도. 실제 구현의 모든 I/O가 libuv 스레드 풀을 사용하는 것은 아니다. 숫자는 합성 관찰 시간.",
       "source_behavior": "회전 루프, I/O 우회, CPU 정지와 큐 처리",
-      "implemented_behavior": "대기·JS 실행·응답을 같은 축에 배치. I/O 위임과 콜백 복귀는 서로 분리된 직선/직교 경로. 내부 순환과 사건 기반 대기·완료 모델은 유지.",
+      "implemented_behavior": "라이브 런타임(전용 장면 eventloop). 대기 큐, 루프, CPU 작업이 루프를 막는 구간, I/O 위임과 콜백, 루프 지연. 원본 데모와 같은 배치.",
       "improvement": "외부 곡선을 제거하고 연결선을 노드 경계 포트에 연결. 실행 궤적의 끝도 실제 응답 또는 I/O 포트와 맞췄다.",
       "params": {
         "block_start": 1.5,
@@ -225,7 +229,8 @@
       },
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#이벤트-루프-서버라면",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "pipeline-bottleneck",
@@ -323,7 +328,7 @@
       "conclusion": "취소가 전파되지 않은 이 경우에는 사용자가 504를 받은 뒤에도 백엔드가 일을 끝내고 성공을 남긴다.",
       "assumptions": "단일 요청, 전송 지연 0, 취소 전파 없음. 게이트웨이 3초/백엔드 5초. 단일 요청을 임의의 전체 에러율로 표현하지 않는다.",
       "source_behavior": "3초 504, 계속된 작업,5초200, 응답 폐기",
-      "implemented_behavior": "두 시간 예산 막대와 결과별 도착 경로",
+      "implemented_behavior": "라이브 런타임(전용 장면 timeout). 사용자·게이트웨이·백엔드의 시계와 두 대시보드. 원본 데모와 같은 배치.",
       "improvement": "근거 없는40% 에러율 대신 요청1건의 계층별 결과",
       "params": {
         "gateway_timeout": 3.0,
@@ -332,7 +337,8 @@
       },
       "in_article": true,
       "source_url": "https://kciter.so/posts/server-monitoring-analysis-guide/#두-대시보드가-서로-다른-말을-할-때",
-      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified"
+      "comparison_level": "published-source-and-semantic-review; live-original-visual-unverified",
+      "runtime": "live"
     },
     {
       "id": "slow-degradation",

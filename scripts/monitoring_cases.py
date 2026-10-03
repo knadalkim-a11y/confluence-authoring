@@ -710,6 +710,139 @@ def deploy_spec(p):
                   dict(at=.6*E,text='A는 내려오고, B는 계속 오른다. B는 롤백한다.'),
                   dict(at=.86*E,text='B는 롤백 후 빠르게 회복한다. 기준은 방향이다.')]),{}
 
+def spike_spec(p):
+    """MemorySpike: the heap steps up at one moment; the access log at that second names the request."""
+    E=25.0;cut=15.0
+    heap=lambda t:30+30*((t/E*6)%1) if t<cut else piece(t/E,[(.6,65),(.62,65),(.64,88),(1,93)])
+    clock=lambda s_:f'14:{31+(50+int(s_))//60:02d}:{(50+int(s_))%60:02d}'
+    lines=[[2,'14:31:52  GET /api/products 200 · 12ms'],[6,'14:31:56  GET /api/cart 200 · 9ms'],[10,'14:32:00  POST /api/orders 201 · 24ms'],
+           [13,'14:32:03  GET /api/products 200 · 11ms'],[cut,'14:32:05  GET /api/orders/export?range=all 200 · 8,412ms','hot'],[20,'14:32:10  GET /api/cart 200 · 10ms']]
+    return dict(kind='trend',title='메모리 스파이크의 범인 찾기',claim='같은 시각의 액세스 로그에서 범인 요청이 보인다.',source='설명용 합성 힙과 합성 로그',data_kind='example',
+        time=dict(unit='초',end=E,ticks=[[0,clock(0)],[E,clock(E)]]),
+        panels=[dict(label='힙 사용량',unit='%',max=110,ticks=[100,50,0],decimals=0,series=[dict(name='힙',color='blue',points=_pts(heap,E,250),area=False)])],
+        thresholds=[dict(panel='힙 사용량',value=100,label='힙 한계')],events=[dict(name='spike',at=cut,label=clock(cut),color='red')],
+        log=dict(label='액세스 로그',lines=lines),
+        captions=[dict(at=0,text='평소의 톱니 — GC가 만드는 정상 리듬.'),dict(at='spike',text=f'{clock(cut)}, 힙이 계단처럼 뛰고 내려오지 않는다.'),
+                  dict(at=cut+2.5,text='같은 시각의 액세스 로그에서 범인 요청이 보인다.')]),{}
+
+def percentile_spec(p):
+    """Percentile: two servers with the same mean; the tail decides."""
+    a=stats(p['a_values'],p['a_counts']);b=stats(p['b_values'],p['b_counts'])
+    return dict(kind='distribution',title='평균이 같은 두 서버',claim='평균은 같지만 P99는 6배 차이다. 평균은 꼬리를 숨긴다.',
+        source='설명용 합성 요청 40건씩',data_kind='example',unit='ms',max=1000,
+        groups=[dict(label='서버 A',values=p['a_values'],counts=p['a_counts']),dict(label='서버 B',values=p['b_values'],counts=p['b_counts'])],
+        markers=['mean','p50','p95','p99'],tail={'from':400,'label':'긴 꼬리 (요청의 {share}%)'},
+        captions=[dict(at=0,text='요청 40건씩, 점 하나가 요청 한 건이다.'),
+                  dict(at='mean',text=f'평균 응답 시간은 둘 다 {fmt(a["mean"])}ms — 평균만 보면 똑같다.'),
+                  dict(at='p95',text=f'P95부터 갈린다. B는 {fmt(b["p95"])}ms다.'),
+                  dict(at='tail',text=f'평균은 같지만 P99는 {b["p99"]/a["p99"]:.1f}배 차이 ({fmt(a["p99"])}ms vs {fmt(b["p99"])}ms).')]),{'서버 A':a,'서버 B':b}
+
+def r1(x):return math.floor(x*10+.5)/10   # half up, like the scenes' Math.round(x*10)/10
+
+def _custom(scene,captions,end,base,**fields):
+    """Data for a case-specific live scene: captions bound to model times, paced to be readable."""
+    caps=sorted([[round(t,6),'',x] for t,x in captions],key=lambda c:c[0])
+    for i,c in enumerate(caps):c[1]='①②③④⑤⑥⑦⑧'[i]
+    return dict(scene=scene,captions=caps,rate=paced_rate(caps,end,base),**fields)
+
+def throttle_model(p):
+    period=finite(p['period_ms'],'period',1,1000);quota=finite(p['quota_ms'],'quota',1,period);low=finite(p['low_use_ms'],'low_use',.001,quota)
+    n=p['periods'];change=p['load_start_period']
+    if not isinstance(n,int) or not 3<=n<=10 or not isinstance(change,int) or not 1<=change<n:raise ValueError('Invalid period count/change')
+    rows=[[i,low if i<change else quota,0 if i<change else period-quota] for i in range(n)]
+    base=60.0;hi=base+(period-quota)*3.5   # waiting out the throttled part of each period lands in the tail latency
+    p99=lambda t:base+(hi-base)*min(1,max(0,(t-change)/1.2))**2+5*math.sin(t*9)
+    return dict(period=period,quota=quota,low=low,n=n,change=change,rows=rows,p99=p99,hi=hi)
+
+def throttle_live_data(p):
+    m=throttle_model(p);n=m['n'];ch=m['change']
+    ts=[round(i*n/140,4) for i in range(141)]
+    caps=[(0,f'부하가 낮을 땐 주기당 할당량({fmt(m["quota"])}ms) 안에서 끝난다.'),
+          (ch,f'부하가 늘자 {fmt(m["quota"])}ms를 일찍 다 쓰고, 남은 {fmt(m["period"]-m["quota"])}ms는 강제로 멈춘다.'),
+          (ch+1.6,'CPU 사용률 그래프는 평온한데 P99만 뛴다.')]
+    d=_custom('cfs',caps,float(n),[[0,n/11]],period=m['period'],quota=m['quota'],rows=m['rows'],change=ch,
+              series=dict(t=ts,v=[round(m['p99'](t),2) for t in ts]),ymax=300 if m['hi']<280 else nice_max(m['hi']*1.15))
+    aria=(f"CFS 할당량 {fmt(m['quota'])}ms/{fmt(m['period'])}ms 컨테이너. 처음 {ch}주기는 {fmt(m['low'])}ms만 쓰고 끝나지만, 이후에는 {fmt(m['quota'])}ms를 다 쓰고 "
+          f"{fmt(m['period']-m['quota'])}ms 동안 강제로 멈춰 P99가 약 {fmt(m['hi'])}ms로 오른다.")
+    notes='설명용 합성 모델. CPU 사용률 지표는 실행한 시간만 세므로 스로틀된 시간은 보이지 않는다. P99는 강제 대기를 반영한 합성 곡선.'
+    table=(['주기','실행 ms','스로틀 ms'],[[r[0]+1,r[1],r[2]] for r in m['rows']])
+    return d,aria,notes,table,dict(quota=m['quota'],period=m['period'],rows=[[r[0]+1,r[1],r[2],m['period']-r[1]-r[2]] for r in m['rows']])
+
+def timeout_model(p):
+    gw=finite(p['gateway_timeout'],'gateway_timeout',.1,60);be=finite(p['backend_duration'],'backend_duration',gw+.01,90);h=finite(p['horizon'],'horizon',be,120)
+    sample=[.6,.9,1.4,1.8,2.2,2.7,3.5,4.2,be,5.5 if be<5.5 else be+.5]   # ten requests; the animated one takes `be` seconds
+    slow=sum(1 for x in sample if x>gw)
+    return dict(gw=gw,be=be,h=h,sample=sample,gw_error=slow/len(sample)*100,be_success=100.0)
+
+def timeout_live_data(p):
+    m=timeout_model(p)
+    caps=[(0,f'게이트웨이는 {fmt(m["gw"])}초까지만 기다린다. 백엔드의 쿼리는 {fmt(m["be"])}초짜리다.'),
+          (m['gw'],f'{fmt(m["gw"])}초, 게이트웨이가 포기하고 사용자에게 504를 보낸다.'),
+          (m['be'],'백엔드는 일을 끝내고 200을 기록한다. 받을 쪽은 이미 없다.'),
+          (m['be']+.45*(m['h']-m['be']),'두 대시보드가 다른 말을 하면 타임아웃 계층부터 의심하라.')]
+    d=_custom('timeout',caps,m['h'],[[0,.8]],gw=m['gw'],be=m['be'],end_h=m['h'],gw_error=m['gw_error'],be_success=m['be_success'])
+    aria=(f"사용자, 게이트웨이(타임아웃 {fmt(m['gw'])}초), 백엔드(처리 {fmt(m['be'])}초). 게이트웨이는 {fmt(m['gw'])}초에 504를 돌려주고, 백엔드는 {fmt(m['be'])}초에 성공으로 끝난다. "
+          f"그래서 게이트웨이 대시보드에는 504 에러율 {m['gw_error']:.0f}%, 백엔드에는 성공률 100%가 찍힌다.")
+    notes=f"설명용 합성 모델. 요청 10건의 백엔드 처리 시간 {', '.join(fmt(x) for x in m['sample'])}초 중 {fmt(m['gw'])}초를 넘는 것이 게이트웨이에서 504가 된다."
+    table=(['관찰자','결과','시점 s'],[['사용자/게이트웨이','504',m['gw']],['백엔드','200 (응답 미수신)',m['be']]])
+    return d,aria,notes,table,dict(gateway_timeout=m['gw'],backend_duration=m['be'],unobserved_work=m['be']-m['gw'],request_count=1,gateway_error_percent=m['gw_error'])
+
+def cascade_live_model():
+    """Three servers behind a load balancer; the DB slows, requests hold threads longer, a saturated
+    server fails its health check and its share moves to the others (dt = 0.01 s)."""
+    base=[31.0,26.0,34.0];slow=2.0;H=15.0;dt=.01;grace=.8
+    k=lambda t:1+2.0*min(1,max(0,(t-slow)/4.0))**1.4   # how much longer each request holds a worker
+    alive=[True]*3;hit=[None]*3;fail=[None]*3;ts=[];loads=[];healthy=[]
+    for i in range(int(H/dt)+1):
+        t=round(i*dt,4);n=sum(alive)
+        L=[min(100.0,base[j]*k(t)*3/n) if alive[j] else 0.0 for j in range(3)]
+        for j in range(3):
+            if alive[j] and L[j]>=100 and hit[j] is None:hit[j]=t
+        # one health-check removal at a time: the first to saturate (then the more loaded) goes first
+        cand=sorted([j for j in range(3) if alive[j] and hit[j] is not None],key=lambda j:(hit[j],-base[j]))
+        last=max([x for x in fail if x is not None],default=-1e9)
+        if cand and sum(alive)>1 and t>=max(hit[cand[0]],last)+grace:j=cand[0];alive[j]=False;fail[j]=t;L[j]=0.0
+        ts.append(t);loads.append(L);healthy.append(sum(alive))
+        if sum(alive)==1 and t>=max(x for x in fail if x is not None)+grace-.05:break   # end on the last server, saturated, just before its own removal
+    H=ts[-1]
+    return dict(base=base,slow=slow,H=H,ts=ts,loads=loads,healthy=healthy,hit=hit,fail=fail)
+
+def cascade_live_data(p):
+    m=cascade_live_model();f=sorted([(t,j) for j,t in enumerate(m['fail']) if t is not None])
+    caps=[(0,'정상: 트래픽이 3대에 고르게 나뉜다.'),(m['slow'],'DB가 느려지자 요청이 서버에 오래 머문다.')]
+    if f:caps.append((f[0][0],f'서버 {f[0][1]+1}이 헬스체크에 실패해 빠지고, 몫이 남은 서버로 간다.'))
+    if len(f)>1:caps.append((f[1][0],'빠진 서버의 몫이 남은 서버를 더 빨리 쓰러뜨린다 — 도미노.'))
+    step=10   # ship every 10th sample (0.1 s); the scene interpolates
+    d=_custom('cascade',caps,m['H'],[[0,.9],[m['slow'],.6]],ts=m['ts'][::step],loads=[[round(x,2) for x in L] for L in m['loads'][::step]],
+              hit=m['hit'],fail=m['fail'],slow=m['slow'],end_h=m['H'],healthy=m['healthy'][::step])
+    order=', '.join(f'{fmt(t)}초에 서버 {j+1}' for t,j in f)
+    aria=(f"로드 밸런서 뒤 서버 3대와 DB. {fmt(m['slow'])}초에 DB가 느려지자 서버 부하가 오르고, 포화된 서버가 헬스체크에서 빠진다({order}). "
+          "빠진 서버의 몫이 남은 서버로 넘어가 연쇄적으로 무너진다.")
+    notes='설명용 결정론적 모델. 부하 = 기본 부하 × 요청 점유 배수 × (3 / 정상 서버 수), 100%에 닿은 뒤 0.6초 안에 헬스체크로 제외된다.'
+    table=(['서버','기본 부하 %','포화 시각 s','제외 시각 s'],[[f'서버 {j+1}',m['base'][j],m['hit'][j] if m['hit'][j] is not None else '-',m['fail'][j] if m['fail'][j] is not None else '-'] for j in range(3)])
+    marks=[0.0,m['slow']]+sorted(t for t in m['fail'] if t is not None)+[m['H']]
+    hs=[m['healthy'][min(len(m['ts'])-1,int(round(t/.01)))] for t in marks]
+    return d,aria,notes,table,dict(failures=sorted(t for t in m['fail'] if t is not None),healthy=hs,shares_sum=[(t,h*(1/h)) for t,h in zip(marks,hs)],healthy_final=m['healthy'][-1])
+
+def eventloop_live_data(p):
+    from mechanism_scenes import event_model
+    m=event_model(p);a,b,h=m['block_start'],m['block_end'],m['horizon']
+    tasks=[[round(t['ready'],5),round(t['start'],5),round(t['end'],5),t['kind'],t['label']] for t in m['tasks'] if t['start']<=h+1e-9]
+    io=[[round(x['start'],5),round(x['finish'],5),round(x['ready'],5)] for x in m['io']]
+    caps=[(0,'요청은 큐에서 하나씩 루프로 들어가 금방 끝난다.'),(a,f'무거운 CPU 작업({fmt(b-a)}초)이 들어오면 루프가 그 자리에서 멈춘다.'),
+          (a+.45*(b-a),'그동안 들어온 요청은 큐에 쌓이고, 루프 지연이 늘어난다.'),(b,'작업이 끝나야 밀린 큐가 한꺼번에 처리된다. 루프 지연이 곧 응답 지연이다.')]
+    d=_custom('eventloop',caps,h,[[0,.5],[a,.45],[b,.5]],tasks=tasks,io=io,a=a,b=b,end_h=h,cpu_label='이미지 리사이즈')
+    st=[x for x in m['states'] if x['t']<=h]
+    aria=(f"Node.js 이벤트 루프. 평소엔 요청이 하나씩 금방 끝나지만, {fmt(a)}초에 {fmt(b-a)}초짜리 CPU 작업이 루프를 막아 그동안 큐가 최대 {max(x['queued'] for x in st)}건까지 쌓인다. "
+          f"작업이 끝난 {fmt(b)}초 뒤에야 큐가 처리된다.")
+    notes='설명용 결정론적 모델. 단일 스레드 루프가 큐의 작업을 순서대로 실행하고, I/O는 OS/libuv 스레드 풀에서 끝난 뒤 콜백으로 다시 큐에 들어온다.'
+    table=(['작업','도착 s','시작 s','끝 s'],[[t[4],t[0],t[1],t[2]] for t in tasks])
+    return d,aria,notes,table,dict(max_queue=max(x['queued'] for x in st),done=st[-1]['done'],block=[a,b])
+
+def _loop_state(tasks,T):
+    q=sum(1 for t in tasks if t[3]!='cpu' and t[0]<=T<t[1]);done=sum(1 for t in tasks if t[3] in ('normal','callback') and t[2]<=T)
+    return q,done
+
 def _spec_live(fn,aria):
     def build_(p):
         sp,extra=fn(p);d,a,n,t,num_,info=_from_spec(sp,'',extra);return d,aria,n,t,num_
@@ -756,6 +889,24 @@ def _probe_pool(p):
 def live_checks(case_id,p):
     """Browser-gate inputs per live case: model expectation at T, sample times, and annotations
     that must be absent just before and present just after their event time."""
+    if case_id=='cpu-throttling':
+        m=throttle_model(p);d=throttle_live_data(p)[0];ts=d['series']['t'];vs=d['series']['v']
+        return dict(expect=lambda T:dict(state={'p99':r1(interp(ts,vs,T)),'throttled':sum(1 for r in m['rows'] if r[2]>0 and T>=r[0]+m['quota']/m['period']-1e-9)},stats=[]),
+                    samples=[.5,m['change']+.6,m['change']+1.5,m['n']-.5,m['n'],m['n']],annotations=[['컨테이너 스로틀 발생',m['change']+m['quota']/m['period']]],end=float(m['n']),resize_at=m['n']/2)
+    if case_id=='timeout-mismatch':
+        m=timeout_model(p)
+        return dict(expect=lambda T:dict(state={'elapsed':r1(min(T,m['h'])),'gw504':int(T>=m['gw']-1e-9),'beDone':int(T>=m['be']-1e-9)},stats=[]),
+                    samples=[.5,m['gw']-.2,m['gw']+.3,m['be']+.2,m['h'],m['h']],annotations=[['504 반환',m['gw']],['응답 버려짐',m['be']]],end=m['h'],resize_at=m['h']/2)
+    if case_id=='cluster-cascade':
+        m=cascade_live_model();ts=m['ts'];fl=sorted(t for t in m['fail'] if t is not None)
+        def ex(T):
+            i=min(len(ts)-1,int(round(T/.01)));return dict(state={'healthy':m['healthy'][i]},stats=[])
+        sm=([.5,m['slow']+.8]+[t+.3 for t in fl][:3]+[m['H']-.4,m['H']])[:5]+[m['H']]
+        return dict(expect=ex,samples=sm,annotations=[['재분배 중',fl[0]]] if fl else [],end=m['H'],resize_at=m['H']/2)
+    if case_id=='event-loop':
+        d=eventloop_live_data(p)[0];tk=d['tasks'];a_,b_,h=d['a'],d['b'],d['end_h']
+        ex=lambda T:dict(state=dict(zip(('queued','done'),_loop_state(tk,T))),stats=[])
+        return dict(expect=ex,samples=[.3*a_,a_+.2,(a_+b_)/2,b_+.05,b_+.4*(h-b_),h],annotations=[],end=h,resize_at=h/2)   # the CPU label leaves when the task ends
     if case_id=='thread-pool':
         data=pool_live_data(p)[0];ev=data['events'];jobs=pool_model(p);mj=jobs[ev['max_job']]
         samples=[.5,p['slow_start']+.6,(ev['t_queue'] or 5)+.5,ev['t_queue_max'] or 9,p['recovery']+1.5,p['horizon']]
@@ -774,8 +925,14 @@ SPEC_CASES={'traffic-patterns':(traffic_spec,'48시간 RPS의 네 가지 모양:
             'memory-leak':(memory_spec,'정상 서버와 누수 서버의 힙. 정상은 GC 후 최저점이 수평이고, 누수는 최저점이 계속 올라 힙 한계에서 OOM이 난다.'),
             'utilization-wait':(utilization_spec,'M/M/1 모델에서 사용률에 따른 평균 대기(50%를 1로). 80%부터 가파르게 오른다.'),
             'cache-stampede':(cache_spec,'인기 키 TTL 만료 순간 캐시 히트율이 떨어지고, 미스가 한꺼번에 DB로 가 DB QPS가 치솟는다.'),
+            'percentile-comparison':(percentile_spec,'평균 응답 시간이 같은 두 서버의 요청 분포. A는 100ms 근처에 모여 있고, B는 대부분 빠르지만 일부가 400ms 이상에 몰려 P99가 6배 높다.'),
+            'memory-spike':(spike_spec,'힙 사용량과 같은 시각의 액세스 로그. 14:32:05에 힙이 계단처럼 뛰고, 그 시각의 로그에 8초 넘게 걸린 전체 내보내기 요청이 있다.'),
             'deploy-comparison':(deploy_spec,'같은 배포 뒤 두 시나리오. A는 워밍업 후 회복하고, B는 계속 악화되어 롤백 후 회복한다.')}
 LIVE_BUILDERS.update({k:_spec_live(f,a) for k,(f,a) in SPEC_CASES.items()})
+LIVE_BUILDERS['cpu-throttling']=throttle_live_data
+LIVE_BUILDERS['timeout-mismatch']=timeout_live_data
+LIVE_BUILDERS['cluster-cascade']=cascade_live_data
+LIVE_BUILDERS['event-loop']=eventloop_live_data
 
 BUILDERS={'traffic-patterns':traffic,'percentile-comparison':distributions,'survivorship-bias':survivorship,'cpu-latency':cpu,'cpu-throttling':throttling,'memory-leak':memory,'memory-spike':spike,'thread-pool':pool,'cluster-cascade':cascade,'event-loop':event_loop,'pipeline-bottleneck':pipeline,'utilization-wait':utilization,'bounded-queue':bounded,'cache-stampede':cache,'timeout-mismatch':timeout,'slow-degradation':slow,'deploy-comparison':deploy,'postmortem-timeline':postmortem,'gc-pause':gc_pause}
 

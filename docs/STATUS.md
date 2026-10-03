@@ -1,4 +1,4 @@
-# Status — v0.9.2 reference parity in progress (6 of 18 article cases on the live tier)
+# Status — v0.10.0 all 18 article cases rebuilt after the reference demos
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -62,7 +62,17 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
 
-## v0.9.2 reference parity (in progress)
+## v0.10.0 reference parity (done for all 18; quality judgement pending)
+
+All 18 in-article cases run on the live tier and were compared side by side with the article's
+demos (`dist/ref18/compare-all.html`, local only: originals are recorded, not committed). New:
+`distribution` kind, trend `stream`/`log`/2 x 2 grid, custom scenes cfs, cascade, eventloop,
+timeout. The cascade model now ends on the last saturated server (the old CSS model let all
+three fail); event-loop and timeout keep their model times. browser_diagram_layout.py now reports SKIP
+(no CSS layout case left) and browser_monitoring.py retired its CSS event-loop rotor check. Whether each case reaches the
+demos' quality is for the user to judge from the comparison page.
+
+## v0.9.2 reference parity (batch 1)
 
 All 18 article demos were captured and paired with ours (same 673 px width, 2x). Six cases now
 follow the demos (thread-pool, pipeline-bottleneck, bounded-queue, cpu-latency,

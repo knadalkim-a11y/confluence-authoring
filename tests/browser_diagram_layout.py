@@ -4,9 +4,14 @@ import hashlib,json,sys
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'dist/monitoring-suite'
 SHOTS=OUT/'layout-screens';SHOTS.mkdir(exist_ok=True)
-# pipeline-bottleneck moved to the live tier (tests/browser_live.py).
-CASES=('cluster-cascade','event-loop')
+# pipeline-bottleneck, cluster-cascade and event-loop moved to the live tier (tests/browser_live.py);
+# this CSS rail/particle check runs only for layout cases still rendered by the CSS tier.
+_live={c['id'] for c in json.loads((ROOT/'examples/monitoring-cases.json').read_text())['cases'] if c.get('runtime')=='live'}
+CASES=tuple(c for c in ('cluster-cascade','event-loop') if c not in _live)
 report={'result':'RUNNING','cases':[],'original_live_ab':False,'confluence_rendering':False}
+if not CASES:
+    report.update(result='SKIP',reason='no layout case left on the CSS tier; their live scenes are gated by tests/browser_live.py')
+    (OUT/'layout-browser-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print('SKIP: no CSS layout cases left (see tests/browser_live.py)');sys.exit(0)
 
 def seek(page,t,speed=1.25):
     page.evaluate('t=>document.getAnimations().forEach(a=>{a.pause();a.currentTime=t})',18000/speed*(.06+.8*t))
