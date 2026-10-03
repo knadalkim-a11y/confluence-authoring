@@ -1,4 +1,4 @@
-# Document visuals from a spec (v0.9.0)
+# Document visuals from a spec (v0.9.1)
 
 Purpose: when someone wants a visual for a report or document, write a short JSON spec that
 states the claim, the data and its provenance; `scripts/build_visual.py` computes the model,
@@ -68,12 +68,13 @@ unknown events are build errors that list what is available. Never type a comput
   peak inflow (else the queue would form there; the build says so). 1–4 stages, ≤ 2 variants
   (variants may change the bottleneck `capacity` or the queue `limit`), ≤ 8 inflow steps,
   queue limit ≤ 40. Names longer than 8 chars need `short` for phones.
-- Picture: stages with limit, thick gauge and %; waiting requests as yellow dots (one dot = N
-  requests, chosen automatically) or limit cells (one cell = one request); rejected requests
-  leave in red; "한도 도달" and "여유" pills appear only while a queue exists (multi-stage).
-  Two single-stage variants sit side by side with per-lane readouts and a wait-time sparkline;
-  a single lane gets a "대기 추이" strip (peak labelled once reached) so the printed/no-JS
-  picture still shows a backlog that drained before the end.
+- Picture: stages with limit, thick gauge and %; a compact queue right in front of the
+  bottleneck (red dots while it is the problem, the count above it; the dot scale is in the
+  notes) or limit cells (one cell = one request); rejected requests leave in red; the
+  bottleneck is the red box, other stages get "여유" pills while a queue exists. Two
+  single-stage variants sit side by side with per-lane readouts and a wait-time sparkline;
+  a single lane gets a "대기 추이" strip only when the backlog drained before the end, so the
+  printed/no-JS picture still shows it.
 - Events: `start`, `end`, `change`, `change:2`…, `queue`, `drain`, `peak`, `full`,
   `wait:0.5|1|2|3|5|10` (wait reaches that many time units); add `@1` for the second variant.
 - Placeholders: `inflow_start`, `inflow_peak`, `inflow_end`, `change`, `end`, `time_unit`,

@@ -45,7 +45,7 @@ var CA_KIT=(function(){
   function arrow(x,y,c){return '<path d="M'+f(x-6)+' '+f(y-4)+'L'+f(x)+' '+f(y)+'L'+f(x-6)+' '+f(y+4)+'" fill="none" stroke="'+c+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>';}
   /* Thick utilisation gauge with a percentage label below (green < 100%, red at the limit). */
   function gauge(x,y,w,frac,hot,o){o=o||{};var fr=clamp(frac),c=hot?C.red:C.green,s=rect(x,y,w,6,{r:3,fill:C.rule})+rect(x,y,w*fr,6,{r:3,fill:c});
-    if(!o.noLabel)s+=text(x+w/2,y+21,Math.round(fr*100)+'%',{fs:12,c:hot?C.redText:C.greenText,a:'middle',w:700});return s;}
+    if(!o.noLabel)s+=text(x+w/2,y+22,Math.round(fr*100)+'%',{fs:o.fs||13,c:hot?C.redText:C.greenText,a:'middle',w:700});return s;}
   function num(v,d){return Number(v).toFixed(d==null?1:d);}
   /* Integer with thousands separators, locale independent. */
   function grp(v){var n=Math.round(v),s=String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',');return (n<0?'-':'')+s;}

@@ -251,9 +251,7 @@ def flow_data(spec):
     labels = dict(history=lb.get('history', '대기 추이'), inflow=lb.get('inflow', '유입'), served=lb.get('served', '처리'), wait=lb.get('wait', '새 요청 대기'),
                   spare=lb.get('spare', '여유'), limit_pill=lb.get('limit_pill', '한도 도달'), limit_tag=lb.get('limit_tag', '상한 {limit}'),
                   rate_unit=rate_u, count_unit=count_u, time_unit=tu, data_kind=DATA_KINDS[data_kind])
-    legend = [f'점 1개 = {grp(unit)}{count_u}']
-    if any(l['limit'] for l in lanes):
-        legend.append(f'상한 칸 1개 = 1{count_u}')
+    legend = []   # dot scale lives in the notes: the count label carries the number, as in the article demos
     if len(lanes) > 1:
         legend.append('아래 선 = 대기 시간')
     legend.append(DATA_KINDS[data_kind])
@@ -294,11 +292,8 @@ def flow_data(spec):
             stats = [grp(schedule_rate(sched, T)), grp(served), f'{max(0, interp(t, l["S"]["q"], T)) / cap:.1f}']   # same formatting as the scene
         return dict(state=st, stats=stats)
     ann = [[c[2], c[1]] for c in callouts]
-    if len(lanes) == 1 and max(lanes[0]['S']['q']) > 1e-6:   # history strip peak label appears at the peak
+    if len(lanes) == 1 and max(lanes[0]['S']['q']) > 1e-6 and lanes[0]['S']['q'][-1] < 1e-6:   # history strip only when the backlog drained
         qq = lanes[0]['S']['q']; ann.append([f'최대 {grp(max(qq))}{count_u}', lanes[0]['S']['t'][qq.index(max(qq))]])
-    for li, l in enumerate(lanes):
-        if len(l['stages']) > 1 and events.get('queue' if li == 0 else f'queue@{li}') is not None:
-            ann.append([labels['limit_pill'], events['queue' if li == 0 else f'queue@{li}']])   # pill appears as soon as the queue does
     samples = sorted({round(x, 4) for x in [0.05 * end] + [c[0] + 0.03 * end for c in captions if c[0] + 0.03 * end < end] + [end]})[:6]
     while len(samples) < 6:
         samples = sorted(set(samples + [round(end * (len(samples) + 1) / 7, 4)]))

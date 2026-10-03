@@ -596,7 +596,7 @@ def live_checks(case_id,p):
     if case_id=='thread-pool':
         data=pool_live_data(p)[0];ev=data['events'];jobs=pool_model(p);mj=jobs[ev['max_job']]
         samples=[.5,p['slow_start']+.6,(ev['t_queue'] or 5)+.5,ev['t_queue_max'] or 9,p['recovery']+1.5,p['horizon']]
-        notes=[[l,a] for l,a in [('최대 대기',ev['t_queue_max']),(f"최대 {mj['end']-mj['arrive']:.1f}초",mj['end'])] if a is not None]
+        notes=[]   # the scene has no verdict labels any more; queue and response times are live state
         return dict(expect=_probe_pool(p),samples=samples,annotations=notes,end=p['horizon'],resize_at=6.0)
     spec={'pipeline-bottleneck':pipeline_spec,'bounded-queue':bounded_spec,'cpu-latency':lambda q:cpu_spec(q)[0]}[case_id](p)
     from visual_spec import build

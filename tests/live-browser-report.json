@@ -1,6 +1,6 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T16:52:46+00:00",
+  "tested_at_utc": "2026-10-03T17:22:31+00:00",
   "cases": [
     {
       "id": "cpu-latency",
@@ -8,7 +8,7 @@
       "checks": {
         "autoplay": [
           2.948,
-          4.662
+          4.663
         ],
         "height_715": 378,
         "samples_715": 6,
@@ -18,8 +18,8 @@
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "d4a1aeb37c0344edc73f6876e23a49510f01dd71c50f03b723d770653e8aa3c6",
-      "bytes": 133477,
+      "sha256": "9acc239f95698275f2714942bb770540e7086d81238878c88a6655c5681aef8b",
+      "bytes": 133711,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -32,16 +32,16 @@
           0.86,
           1.36
         ],
-        "height_715": 472,
+        "height_715": 258,
         "samples_715": 6,
         "dense_overlap_715": 24,
-        "height_360": 453,
+        "height_360": 232,
         "samples_360": 6,
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "45afd66fba433a372534865f12a6168e0b74a48a1ec06245b5909bac2339dd25",
-      "bytes": 81029,
+      "sha256": "2b81d674cc7987f90bdcecf7f434aaefcfce45a714943972e807d542e9572ca4",
+      "bytes": 45381,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -51,19 +51,19 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.917,
+          0.896,
           1.417
         ],
-        "height_715": 330,
+        "height_715": 268,
         "samples_715": 6,
         "dense_overlap_715": 24,
-        "height_360": 324,
+        "height_360": 258,
         "samples_360": 6,
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "4d80a75fb09be96a62f262c5f734191bb10a9c371a47d5e0845a5ab64cca4ce0",
-      "bytes": 60642,
+      "sha256": "8e818755940dc02f6501a99fedfc0fc6fa535e60c33a4b7ed236b7a3cd3c3ec1",
+      "bytes": 49480,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -73,19 +73,19 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.896,
+          0.917,
           1.417
         ],
-        "height_715": 342,
+        "height_715": 346,
         "samples_715": 6,
         "dense_overlap_715": 24,
-        "height_360": 562,
+        "height_360": 570,
         "samples_360": 6,
         "dense_overlap_360": 24,
         "gallery_executes_live_macro": true
       },
-      "sha256": "03784ea116c0637ba695690bd7b0c8b9c78127038176a00ccd8fb11c05075069",
-      "bytes": 82085,
+      "sha256": "b65b2b3f53e6aba3c8fa7de0eef2347659b5b549e1613cc578a2030f3cbf28d0",
+      "bytes": 81988,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"

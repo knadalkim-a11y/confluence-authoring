@@ -1,5 +1,19 @@
 # Changes
 
+## 0.9.1 — focus pass after a same-scale comparison with the article demos
+
+- Thread pool shows only the mechanism (inflow, queue, pool, slow DB); the two charts under it
+  were a second claim and are gone (height 472 → 258 px). Busy slots are solid blue; the status
+  line has three items.
+- Flow chain: compact red queue right in front of the bottleneck, no "한도 도달" pill on the
+  already-red box, history strip only when the backlog drained, dot scale moved to the notes,
+  larger type (pipeline height 330 → 268 px).
+- Type one step larger in every scene on wide screens (15 / 13 / 12 px); diagram box text
+  layout no longer depends on font size; timeline ticks thin when labels would touch; paired
+  bars spaced for the larger type; diagram labels fall back to the least-overlapping spot and
+  group titles take a free corner.
+- Not changed: the font (Pretendard cannot be bundled), the 15 CSS-tier cases.
+
 ## 0.9.0 — architecture and process diagrams
 
 - New kind `diagram`: components in layers (left to right; top to bottom on phones), typed

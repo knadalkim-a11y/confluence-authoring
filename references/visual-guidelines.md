@@ -84,6 +84,23 @@ so every live case inherits it.
 - **Compact:** aim for the main figure plus status and caption; time panels are the
   exception that must earn their height.
 
+### Focus rules from the v0.9.1 side-by-side review
+
+A same-scale comparison with the article demos showed where ours read worse, and why:
+
+- **One mechanism per picture.** The demos show only the mechanism; ours stacked a second and
+  third claim (history strip, two charts under the thread pool) and became 2-3x taller with
+  no focal point. Secondary measures go to the status line, the caption or the table.
+- **Type scale:** box names 15 px bold, values and secondary text 13 px, notes 12 px on wide
+  screens (one step smaller on phones). 11 px is the floor for tertiary text only.
+- **State is a fill, not an outline.** Busy slots are solid blue; the bottleneck is a red
+  box with red waiting dots right in front of it; a pill must not repeat what the red box
+  already says.
+- **No meta text in the picture** beyond the data kind (dot scales, encodings go to notes).
+- Fonts: the demos use Pretendard; we list it first but cannot ship it (no font files, no
+  external requests). Readers without it see Apple SD Gothic Neo, Malgun Gothic or Noto Sans
+  KR; metrics differ slightly, which the gates check under two fonts.
+
 ## Readability rules enforced by the gates (v0.6.1+)
 
 - Captions: 25–45 chars, one claim each, bound to model events; playback slows so each stays

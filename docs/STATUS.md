@@ -1,4 +1,4 @@
-# Status — v0.9.0 document visuals: architecture and process diagrams
+# Status — v0.9.1 focus pass (same-scale comparison with the article demos)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -61,6 +61,15 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.9.1 focus pass
+
+The user judged the output below the article demos. A same-scale side-by-side (673 px
+column, 2x) confirmed it: our scenes were 2-3x taller, stacked secondary charts and legends
+on the mechanism, used 11-13 px type where the demos use 13-15 px, and drew busy state as
+outlines. Changes in docs/CHANGELOG.md 0.9.1; afterwards all gates pass again (unit 108, 15/15
+examples and 4/4 live under both fonts, CSS suites). Still different: the font (Pretendard is
+not shipped), and the judgement "now comparable" is mine, not the user's.
 
 ## Diagram kind: how it was checked (v0.9.0, same AI, not independent)
 

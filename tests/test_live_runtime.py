@@ -40,7 +40,7 @@ class LiveRuntimeTests(unittest.TestCase):
   svg=f.split('data-ca-static')[1].split('</svg>')[0];self.assertNotIn('최대 대기',svg);self.assertNotIn('대기 0.0',svg)
  def test_static_fallback_is_final_scene_of_same_code(self):
   data=pool_live_data(CASES['thread-pool']['params'])[0];a=node_static(data);b=node_static(data)
-  self.assertEqual(a,b);self.assertIn('최대 대기 14건',a['svg']);self.assertIn('0/8',a['svg'])
+  self.assertEqual(a,b);self.assertIn('0/8',a['svg']);self.assertIn('스레드 풀',a['svg'])
   f,_=build_case(CASES['thread-pool'],'ca-live-s');self.assertIn(a['svg'],f)
  def test_script_data_inert(self):
   s=json_for_script({'x':'</script><!-- \u2028'});self.assertNotIn('<',s);self.assertNotIn('\u2028',s)
