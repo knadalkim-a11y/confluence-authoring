@@ -10,30 +10,40 @@ CA_SCENES['cascade']=function(D,K,GR){
   function live(T){return [0,1,2].filter(function(j){return alive(j,T);}).length;}
   function geom(W){var g={W:W,nw:W<560};
     if(!g.nw){g.lb={x:0,y:96,w:96,h:62};g.db={x:W-86,y:96,w:86,h:62};g.sx=g.lb.w+70;g.sw=W-g.sx-g.db.w-60;g.ch=64;g.gap=22;g.top=30;
-      g.cards=[0,1,2].map(function(j){return {x:g.sx,y:g.top+j*(g.ch+g.gap),w:g.sw,h:g.ch};});g.H=g.top+3*g.ch+2*g.gap+16;}
-    else{g.lb={x:(W-140)/2,y:26,w:140,h:50};g.ch=58;g.gap=12;g.top=g.lb.y+g.lb.h+40;
-      g.cards=[0,1,2].map(function(j){return {x:0,y:g.top+j*(g.ch+g.gap),w:W,h:g.ch};});
-      g.db={x:(W-140)/2,y:g.top+3*g.ch+2*g.gap+40,w:140,h:50};g.H=g.db.y+g.db.h+30;}
+      g.cards=[0,1,2].map(function(j){return {x:g.sx,y:g.top+j*(g.ch+g.gap),w:g.sw,h:g.ch};});g.H=g.top+3*g.ch+2*g.gap+16;
+      var lm=g.lb.y+g.lb.h/2,dm=g.db.y+g.db.h/2,t1=g.lb.w+26,t2=g.db.x-26;g.lb.y=g.cards[1].y+g.ch/2-g.lb.h/2;g.db.y=g.lb.y;lm=g.lb.y+g.lb.h/2;dm=lm;
+      /* one trunk from the LB, square branches into each card; the same on the DB side */
+      g.inp=g.cards.map(function(c){var cm=c.y+c.h/2;return [[g.lb.w,lm],[t1,lm],[t1,cm],[c.x,cm]];});
+      g.out=g.cards.map(function(c){var cm=c.y+c.h/2;return [[c.x+c.w,cm],[t2,cm],[t2,dm],[g.db.x,dm]];});
+      g.trunk=[[t1,g.cards[0].y+g.ch/2],[t1,g.cards[2].y+g.ch/2]];g.trunk2=[[t2,g.cards[0].y+g.ch/2],[t2,g.cards[2].y+g.ch/2]];}
+    else{var sp=10,cx0=24,cx1=W-24;g.lb={x:cx0,y:26,w:150,h:48};g.ch=58;g.gap=12;g.top=g.lb.y+g.lb.h+22;
+      g.cards=[0,1,2].map(function(j){return {x:cx0,y:g.top+j*(g.ch+g.gap),w:cx1-cx0,h:g.ch};});
+      g.db={x:cx1-150,y:g.top+3*g.ch+2*g.gap+22,w:150,h:48};g.H=g.db.y+g.db.h+26;
+      var lm=g.lb.y+g.lb.h/2,dm=g.db.y+g.db.h/2;
+      /* phone: a spine down the left edge into each card, and up the right edge to the DB; no wire crosses a card */
+      g.inp=g.cards.map(function(c){var cm=c.y+c.h/2;return [[cx0,lm],[sp,lm],[sp,cm],[cx0,cm]];});
+      g.out=g.cards.map(function(c){var cm=c.y+c.h/2;return [[cx1,cm],[W-sp,cm],[W-sp,dm],[cx1,dm]];});
+      g.trunk=[[sp,lm],[sp,g.cards[2].y+g.ch/2]];g.trunk2=[[W-sp,g.cards[0].y+g.ch/2],[W-sp,dm]];}
     return g;}
-  function port(r,side){return side==='l'?[r.x,r.y+r.h/2]:side==='r'?[r.x+r.w,r.y+r.h/2]:side==='t'?[r.x+r.w/2,r.y]:[r.x+r.w/2,r.y+r.h];}
+  function poly(pts,c,sw,d){return '<path d="M'+pts.map(function(p){return K.f(p[0])+' '+K.f(p[1]);}).join('L')+'" fill="none" stroke="'+c+'" stroke-width="'+sw+'"'+(d?' stroke-dasharray="'+d+'"':'')+' stroke-linejoin="round"/>';}
+  function along(pts,f){var L=[],tot=0,i;for(i=1;i<pts.length;i++){var l=Math.abs(pts[i][0]-pts[i-1][0])+Math.abs(pts[i][1]-pts[i-1][1]);L.push(l);tot+=l;}
+    var d=f*tot;for(i=0;i<L.length;i++){if(d<=L[i]||i===L.length-1){var r=L[i]?d/L[i]:0;return [pts[i][0]+(pts[i+1][0]-pts[i][0])*r,pts[i][1]+(pts[i+1][1]-pts[i][1])*r];}d-=L[i];}}
   function draw(T,g){var o='',n=live(T),slow=T>=D.slow-1e-9,re=n<3,lb=g.lb,db=g.db;
     o+=K.rich(0,14,[['유입 트래픽: ',null,0],[re?'재분배 중':'균등 분배',re?C.redText:C.blueText,1]],{fs:13});
-    /* wires first, cards and boxes over them */
-    g.cards.forEach(function(c,j){var a=port(lb,g.nw?'b':'r'),b=port(c,g.nw?'t':'l'),ok=alive(j,T);
-      if(g.nw){b=[c.x+c.w*(j+1)/4,c.y];}
-      o+=K.line(a[0],a[1],b[0],b[1],ok?C.edge:C.faint,{sw:1.5,d:ok?null:'4 3'});
-      var d=port(c,g.nw?'b':'r'),e=port(db,g.nw?'t':'l');if(!g.nw)o+=K.line(d[0],d[1],e[0],e[1],ok?(slow?C.amberCell:C.edge):C.rule,{sw:1.4,d:ok?null:'4 3'});
-      if(ok){var sp=g.nw?0:1;for(var k=0;k<3;k++){var f=((T*0.55+k/3+j*.13)%1);o+=K.dot(a[0]+(b[0]-a[0])*f,a[1]+(b[1]-a[1])*f,3.5,C.blue,.9);}
-        if(!g.nw){var f2=((T*(slow?.18:.55)+j*.21)%1);o+=K.dot(d[0]+(e[0]-d[0])*f2,d[1]+(e[1]-d[1])*f2,3.5,slow?C.amber:C.blue,.9);}
-        var mx=a[0]+(b[0]-a[0])*.5,my=a[1]+(b[1]-a[1])*.5;if(!g.nw)o+=K.text(mx,my-6,Math.round(100/n)+'%',{fs:12,c:C.blueText,a:'middle',w:700,halo:1});}
-      else{var xx=a[0]+(b[0]-a[0])*.35,yy=a[1]+(b[1]-a[1])*.35;o+=K.ring(xx,yy,8,'#fff',C.red,1.8)+K.line(xx-3.5,yy-3.5,xx+3.5,yy+3.5,C.red,{sw:1.8})+K.line(xx-3.5,yy+3.5,xx+3.5,yy-3.5,C.red,{sw:1.8});}});
-    if(g.nw){var dt=port(db,'t');g.cards.forEach(function(c,j){if(alive(j,T))o+=K.line(c.x+c.w*(j+1)/4,c.y+c.h,dt[0],dt[1],slow?C.amberCell:C.edge,{sw:1.2});});}
+    o+=poly(g.trunk,C.edge,1.5)+poly(g.trunk2,slow?C.amberCell:C.edge,1.4);
+    g.cards.forEach(function(c,j){var ok=alive(j,T),pi=g.inp[j],po=g.out[j],br=g.nw?pi.slice(2):pi.slice(1),bo=g.nw?po.slice(0,2):po.slice(0,2);
+      o+=poly(j===1||g.nw?pi:br,ok?C.edge:C.faint,1.5,ok?null:'4 3');   /* the middle branch carries the LB stub */
+      o+=poly(j===1||g.nw?po:bo,ok?(slow?C.amberCell:C.edge):C.rule,1.4,ok?null:'4 3');
+      if(ok){for(var k=0;k<3;k++){var f=((T*0.45+k/3+j*.13)%1),q=along(pi,f);o+=K.dot(q[0],q[1],3.5,C.blue,.9);}
+        var f2=((T*(slow?.15:.45)+j*.21)%1),q2=along(po,f2);o+=K.dot(q2[0],q2[1],3.5,slow?C.amber:C.blue,.9);
+        if(!g.nw){var bx=(pi[2][0]+pi[3][0])/2;o+=K.text(bx,pi[3][1]-7,Math.round(100/n)+'%',{fs:12,c:C.blueText,a:'middle',w:700,halo:1});}}
+      else{var xx=(pi[2][0]+pi[3][0])/2,yy=pi[3][1];o+=K.ring(xx,yy,8,'#fff',C.red,1.8)+K.line(xx-3.5,yy-3.5,xx+3.5,yy+3.5,C.red,{sw:1.8})+K.line(xx-3.5,yy+3.5,xx+3.5,yy-3.5,C.red,{sw:1.8});}});
     /* LB */
     o+=K.rect(lb.x,lb.y,lb.w,lb.h,{r:8,fill:C.blueSoft,st:C.blue,sw:1.6})+K.text(lb.x+lb.w/2,lb.y+lb.h/2-2,'LB',{fs:15,c:C.blueText,a:'middle',w:700})+K.text(lb.x+lb.w/2,lb.y+lb.h/2+15,'로드 밸런서',{fs:11,c:C.muted,a:'middle'});
     var hist=[3];D.fail.slice().filter(function(x){return x!=null&&T>=x;}).forEach(function(){hist.push(hist[hist.length-1]-1);});
     if(!g.nw){o+=K.text(lb.x+lb.w/2,lb.y+lb.h+20,'정상 서버',{fs:12,c:C.muted,a:'middle'});
       o+=K.rich(lb.x+lb.w/2,lb.y+lb.h+38,hist.map(function(v,k){return [(k?' → ':'')+v,k===hist.length-1?(v<3?C.redText:C.greenText):C.muted,k===hist.length-1?1:0];}),{fs:13,a:'middle'});}
-    else o+=K.rich(lb.x+lb.w+8,lb.y+lb.h/2+5,[['정상 ',null,0],[String(n),n<3?C.redText:C.greenText,1]],{fs:12});
+    else o+=K.rich(lb.x+lb.w+10,lb.y+lb.h/2+5,[['정상 서버 ',null,0],[String(n),n<3?C.redText:C.greenText,1]],{fs:12});
     /* servers */
     g.cards.forEach(function(c,j){var ok=alive(j,T),L=load(j,T),hit=D.hit[j]!=null&&T>=D.hit[j]-1e-9,st=!ok?['제외',C.muted]:hit?['헬스체크 실패',C.redText]:L>=80?['포화 임박',C.amberText]:['정상',C.greenText];
       var col=!ok?C.faint:L>=100?C.red:L>=80?C.amber:C.green;

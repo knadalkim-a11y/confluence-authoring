@@ -1,5 +1,14 @@
 # Changes
 
+## 0.10.1 — fixes from the user's review of the comparison page
+
+- event-loop: the loop turned once per task (tasks take ~0.08 s, so it spun); it now turns at a
+  steady pace with a fading trail and freezes while the CPU task holds it.
+- percentile-comparison: dots popped into place; they now drop from the top onto their stacks,
+  percentile lines are drawn downwards and their labels fade in; the tail band fades in, no frame.
+- cluster-cascade: LB-to-server wires were diagonals of different slopes; they are now one trunk
+  with square branches (DB side too). On phones a spine runs down the edge so no wire crosses a card.
+
 ## 0.10.0 — all 18 article cases rebuilt after the reference demos
 
 - Every in-article case now runs on the live tier and was compared side by side with its

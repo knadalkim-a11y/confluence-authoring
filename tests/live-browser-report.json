@@ -1,14 +1,14 @@
 {
   "confluence_verified": false,
-  "tested_at_utc": "2026-10-03T23:14:23+00:00",
+  "tested_at_utc": "2026-10-04T00:03:58+00:00",
   "cases": [
     {
       "id": "traffic-patterns",
       "live": true,
       "checks": {
         "autoplay": [
-          3.667,
-          5.666
+          3.584,
+          5.583
         ],
         "height_715": 392,
         "samples_715": 6,
@@ -42,8 +42,8 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "e5e6c5a0934a2d43b38f313680945b900b4a23eb6041dbc21d060de0ec23b562",
-      "bytes": 47169,
+      "sha256": "8233d47bf2c06d66119590d21a6457afb36ba0b54310fb5582ddd077103e03b0",
+      "bytes": 47769,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -53,8 +53,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          4.479,
-          7.084
+          4.583,
+          7.082
         ],
         "height_715": 436,
         "samples_715": 6,
@@ -76,8 +76,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          3.017,
-          4.663
+          2.948,
+          4.594
         ],
         "height_715": 378,
         "samples_715": 6,
@@ -100,7 +100,7 @@
       "checks": {
         "autoplay": [
           0.57,
-          0.888
+          0.901
         ],
         "height_715": 442,
         "samples_715": 6,
@@ -146,7 +146,7 @@
       "checks": {
         "autoplay": [
           1.866,
-          2.951
+          2.908
         ],
         "height_715": 500,
         "samples_715": 6,
@@ -169,7 +169,7 @@
       "checks": {
         "autoplay": [
           0.86,
-          1.36
+          1.34
         ],
         "height_715": 258,
         "samples_715": 6,
@@ -191,20 +191,20 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.587,
-          0.906
+          0.573,
+          0.893
         ],
         "height_715": 404,
         "samples_715": 6,
         "dense_overlap_715": 24,
-        "height_360": 556,
+        "height_360": 512,
         "samples_360": 6,
         "dense_overlap_360": 24,
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "d239da2d140823c9c988f85077cb460ba83aa14f4968d5ba47a3fa229c9aae4d",
-      "bytes": 42927,
+      "sha256": "bd6c3f3060e2fbb6360b12873ebc6ce7e664aad2b6c4edf78b89702c62040923",
+      "bytes": 45259,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -214,8 +214,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.42,
-          0.67
+          0.43,
+          0.68
         ],
         "height_715": 422,
         "samples_715": 6,
@@ -226,8 +226,8 @@
         "dense_overlap_600": 25,
         "gallery_executes_live_macro": true
       },
-      "sha256": "603cff734b20f469e7aa09a4973664ddedd68c497a478b6a52b9a1f78e4797a9",
-      "bytes": 36456,
+      "sha256": "accdf6013484d45ab5be3d311c5ad0a7faf374f4225469ce685bcbb52c5e823c",
+      "bytes": 37953,
       "browser": "141.0.7390.37",
       "failures": [],
       "result": "PASS"
@@ -238,7 +238,7 @@
       "checks": {
         "autoplay": [
           0.896,
-          1.396
+          1.417
         ],
         "height_715": 268,
         "samples_715": 6,
@@ -260,7 +260,7 @@
       "live": true,
       "checks": {
         "autoplay": [
-          6.927,
+          7.091,
           11.05
         ],
         "height_715": 354,
@@ -307,7 +307,7 @@
       "checks": {
         "autoplay": [
           4.479,
-          6.979
+          7.083
         ],
         "height_715": 464,
         "samples_715": 6,
@@ -329,8 +329,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.717,
-          1.117
+          0.733,
+          1.133
         ],
         "height_715": 364,
         "samples_715": 6,
@@ -352,8 +352,8 @@
       "live": true,
       "checks": {
         "autoplay": [
-          0.306,
-          0.472
+          0.299,
+          0.465
         ],
         "height_715": 332,
         "samples_715": 6,
@@ -376,7 +376,7 @@
       "checks": {
         "autoplay": [
           4.423,
-          6.994
+          6.891
         ],
         "height_715": 268,
         "samples_715": 6,
@@ -399,7 +399,7 @@
       "checks": {
         "autoplay": [
           4.013,
-          6.346
+          6.253
         ],
         "height_715": 354,
         "samples_715": 6,
