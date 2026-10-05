@@ -1,4 +1,4 @@
-# Status — v0.11.0 motion and wiring as shared parts with gates
+# Status — v0.12.0 motion math in the kit (design phase 1 of 3)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -61,6 +61,15 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.12.0 design phase 1 (docs/design/motion-concept-architecture.md)
+
+Kit motion math added; scenes' presentation motion moved onto it. The existing speed gate failed two
+visuals on the first curve choice (diagram token 561 px/s, thread-pool queue 537 px/s); fixed by making
+inOut the symmetric smoothstep. Actual results: unit tests OK (1 new: closed forms, spring vs numeric
+integration within 0.002); browser_live 18/18 default and 18/18 NanumGothic; 15/15 examples with --check
+under both fonts; browser_monitoring and browser_smoke rc 0. Visible change is small by design; phase 2
+(cue-based state transitions) is where transitions stop snapping. Not verified: the user's judgement.
 
 ## v0.11.0 generality pass (why: per-case fixes do not reach the next visual)
 

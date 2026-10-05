@@ -92,6 +92,10 @@ equal the shared scenario functions, verdicts absent before their event), captio
 no-queue variant, static fallback equals the Node render of the same code, inert data,
 validator rejects foreign/modified scripts, determinism, two-instance isolation.
 
+Motion math (v0.12.0): `K.tween(T,t0,dur,curve)` with `K.CURVE` out/in/inOut/linear and `K.DUR`, closed-form
+`K.spring`/`K.pop` (emphasis only, never a data position), `K.approach` (exact target after `settle`), `K.stagger`,
+`K.wave`/`K.saw`, `K.mix`. Data interpolation stays linear on the model; only presentation uses curves.
+
 `tests/test_live_runtime.py` also checks the kit parts (`K.ortho` never leaves a diagonal,
 `K.at`, `K.ease`) and that the cascade and diagram scenes draw every connector as an orthogonal
 `K.wire` at 720/600/360 px. `visual_gates.MOTION_JS` (all live visuals): token speed <= 480 px/s,

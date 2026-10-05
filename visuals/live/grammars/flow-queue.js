@@ -81,7 +81,7 @@ CA_GRAMMARS.flowQueue.chainDraw=function(K,g,st){
   /* tokens (not in the final/static scene: a frozen token reads as a glitch in print) */
   if(!st.final)st.tokens.forEach(function(k){var a=k[0],s=k[1],rej=k[2],tx=rej||st.tail(a)>1e-6?bx:qs,d=tx-x0,ta=a-d/v;
     if(T>=ta&&T<a)o+=K.token(x0+(T-ta)*v,my,'a'+a,g.c?3.6:4.2,C.blue,K.clamp((T-ta)*v/14));
-    if(rej&&T>=a&&T<a+0.35){var r=(T-a)/0.35;o+=K.token(bx-2-r*8,my-6-r*20,'x'+a,3.6,C.red,1-r);}
+    if(rej&&T>=a&&T<a+0.35){var r=K.tween(T,a,.35,'out');o+=K.token(bx-2-r*8,my-6-r*20,'x'+a,3.6,C.red,1-K.tween(T,a,.35,'in'));}
     if(s!=null){var sx=g.sx[g.o.queueAt]+g.nodeW,ex=g.end-4;if(T>=s&&T<s+(ex-sx)/v)o+=K.token(sx+(T-s)*v,my,'s'+s,g.c?3.4:4,C.blue,K.clamp((ex-sx-(T-s)*v)/12));}});
   /* stages */
   st.stages.forEach(function(sg,j){var x=g.sx[j],w=g.nodeW,hot=sg.state==='hot',ok=sg.state==='ok';

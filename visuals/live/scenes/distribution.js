@@ -17,15 +17,15 @@ CA_SCENES['distribution']=function(D,K,GR){
   function draw(T,g){var o='';
     G.forEach(function(gr,i){var c=g.cols[i],seq=order(gr),k=shown(gr,T),rows=[],tailOn=D.tail&&T>=D.tail.t-1e-9&&D.tail.shares[gr.label]>0;
       o+=K.text(c.x0,c.top+16,gr.label,{fs:15,c:C.ink,w:700})+K.text(c.x1,c.top+16,'요청 '+K.grp(gr.stats.n)+'건 · 세로: 요청 수',{fs:11,c:C.muted,a:'end'});
-      if(tailOn){var tx=c.X(D.tail.at),fo=K.clamp((T-D.tail.t)/.6);o+=K.rect(tx,c.lab+4,c.px1-tx,c.base-c.lab-4,{r:2,fill:C.redSoft,op:fo});}   /* fades in, no frame */
+      if(tailOn){var tx=c.X(D.tail.at),fo=K.tween(T,D.tail.t,.6,'out');o+=K.rect(tx,c.lab+4,c.px1-tx,c.base-c.lab-4,{r:2,fill:C.redSoft,op:fo});}   /* fades in, no frame */
       o+=K.line(c.px0,c.base,c.px1,c.base,C.edge,{sw:1.2});
       [0,D.max/2,D.max].forEach(function(v,j){o+=K.text(c.X(v),c.base+18,num(v)+(j===2?D.unit:''),{fs:11,c:C.muted,a:j===0?'start':j===2?'end':'middle'});});
       /* each dot drops from the top onto its stack (gravity: slow start, fast landing) */
-      seq.slice(0,k).forEach(function(d,ix){var v=gr.values[d[0]],hot=tailOn&&v>=D.tail.at,y1=c.base-c.r-1-d[1]*c.step,t0=ix/gr.stats.n*TD,y0=c.lab-6,f=K.clamp((T-t0)/Math.max(.45,(y1-y0)/K.M.speed));   /* peak speed 2x the shared pace */
-        o+=K.token(c.X(v),y0+(y1-y0)*f*f,'g'+i+'.'+ix,c.r,hot?C.red:C.blue,.35+.65*Math.min(1,f*3));});
+      seq.slice(0,k).forEach(function(d,ix){var v=gr.values[d[0]],hot=tailOn&&v>=D.tail.at,y1=c.base-c.r-1-d[1]*c.step,t0=ix/gr.stats.n*TD,y0=c.lab-6,f=K.tween(T,t0,Math.max(.45,(y1-y0)/K.M.speed),'in');   /* falls: accelerates, lands (peak ~1.7x the shared pace) */
+        o+=K.token(c.X(v),y0+(y1-y0)*f,'g'+i+'.'+ix,c.r,hot?C.red:C.blue,.35+.65*Math.min(1,f*3));});
       D.markers.forEach(function(m){if(T<m[3]-1e-9)return;var v=gr.stats[m[0]],x=c.X(v),s=m[1]+' '+num(v)+D.unit,w=K.tw(s,12),right=x+4+w>c.px1,x0=right?x-4-w:x+4,r=0;
         while(rows[r]&&rows[r].some(function(q){return x0<q[1]+6&&x0+w>q[0]-6;}))r++;(rows[r]=rows[r]||[]).push([x0,x0+w]);var ly=c.lab+r*g.rh;
-        var gr2=K.clamp((T-m[3])/.5),e=1-(1-gr2)*(1-gr2);   /* the line is drawn downwards, then the label fades in */
+        var e=K.tween(T,m[3],.5,'out');   /* the line is drawn downwards, then the label fades in */
         o+=K.line(x,ly+4,x,ly+4+(c.base-ly-4)*e,PAL[m[2]][0],{d:'4 3',sw:1.5});
         o+=K.text(right?x-4:x+4,ly,s,{fs:12,c:PAL[m[2]][1],a:right?'end':'start',w:700,halo:1}).replace('<text ','<text opacity="'+K.f(Math.min(1,.15+e))+'" ');});
       if(tailOn){var lb=D.tail.labels[gr.label],tx2=c.X(D.tail.at),mid=(tx2+c.px1)/2,lw=K.tw(lb,13);

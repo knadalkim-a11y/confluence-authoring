@@ -71,12 +71,43 @@ var CA_KIT=(function(){
   /* token: a moving dot; id must stay the same while one thing moves (a new trip = a new id). */
   function token(x,y,id,r,c,op){return dot(x,y,r,c,op).replace('<circle ','<circle data-token="'+esc(id)+'" ');}
   /* ease: 0..1 over dur seconds from t0 (smooth start and end); for anything that appears or changes state */
+  /* Motion math (v0.12, docs/design/motion-concept-architecture.md L1). Closed forms only: the value at T
+     never depends on earlier frames, so seek, print, the Node static scene and model checks keep working.
+     Two kinds of time math exist in scenes and stay apart:
+       data interpolation (load, progress, a series between samples) follows the model, linear, untouched;
+       presentation (appear, leave, switch state, move) uses the curves and durations below. */
+  function bez(x1,y1,x2,y2){function b(t,a,c){return 3*a*t*(1-t)*(1-t)+3*c*t*t*(1-t)+t*t*t;}
+    return function(u){if(u<=0)return 0;if(u>=1)return 1;var lo=0,hi=1,t=u;for(var i=0;i<24;i++){if(b(t,x1,x2)<u)lo=t;else hi=t;t=(lo+hi)/2;}return b(t,y1,y2);};}
+  /* out: arrive and settle (entrances); in: leave and accelerate (exits, falling); inOut: move from rest to rest */
+  /* inOut is the symmetric smoothstep (peak speed 1.5x the average): moving things keep the shared pace;
+     a steeper inOut (0.4,0,0.2,1 peaks ~2.4x) pushed diagram tokens past the speed gate */
+  var CURVE={linear:function(u){return u;},out:bez(0,0,.2,1),in:bez(.4,0,1,1),inOut:function(u){u=clamp(u);return u*u*(3-2*u);}};
+  /* default durations in seconds (design doc, section 4) */
+  var DUR={enter:.4,exit:.25,color:.25,emph:.4,settle:.4,stagger:.06};
+  /* tween: progress 0..1 of a presentation change that starts at t0 and lasts dur, shaped by a curve */
+  function tween(T,t0,dur,curve){var u=dur>0?clamp((T-t0)/dur):(T>=t0?1:0);return (CURVE[curve||'out']||CURVE.out)(u);}
+  /* spring: step response of a damped spring, 0 at t<=0, overshoots then settles at 1. zeta < 1 bounces.
+     For emphasis only (a box that pops when its step starts), never for a position that shows data. */
+  function spring(t,zeta,freq){if(t<=0)return 0;var z=zeta==null?.6:zeta,w=2*Math.PI*(freq||2.2);if(z>=1)return 1-Math.exp(-w*t)*(1+w*t);
+    var wd=w*Math.sqrt(1-z*z);return 1-Math.exp(-z*w*t)*(Math.cos(wd*t)+z*w/wd*Math.sin(wd*t));}
+  /* pop: emphasis that rises with the spring and returns to rest: 0 -> peak -> 0 within ~dur */
+  function pop(T,t0,dur){var t=T-t0,d=dur||DUR.emph;if(t<=0||t>=d)return 0;return Math.sin(Math.PI*t/d)*(.7+.3*spring(t,.5,1/d));}
+  /* approach: a shown value gliding from `from` to `to` (a counter, a gauge); exact `to` after `settle` s */
+  function approach(from,to,t,settle){var st=settle||DUR.settle;if(t<=0)return from;if(t>=st)return to;return to+(from-to)*Math.exp(-5.3*t/st);}
+  /* stagger: start time of item i of n inside a group that starts at t0; spread capped at `total` seconds */
+  function stagger(t0,i,n,step,total){var s=step==null?DUR.stagger:step;if(total!=null&&n>1)s=Math.min(s,total/(n-1));return t0+i*s;}
+  /* wave / saw: periodic motion for states that last (waiting); never decorative constant motion */
+  function wave(t,amp,freq,phase){return amp*Math.sin(2*Math.PI*freq*t+(phase||0));}
+  function saw(t,period){return ((t%period)+period)%period/period;}
+  /* mix: colour between two #rrggbb values */
+  function mix(a,b,u){u=clamp(u);var p=function(h,i){return parseInt(h.slice(1+2*i,3+2*i),16);},o='#';
+    for(var i=0;i<3;i++){var v=Math.round(p(a,i)+(p(b,i)-p(a,i))*u);o+=(v<16?'0':'')+v.toString(16);}return o;}
   /* tag: mark the first circle of an svg string as token `id` (rings, dots drawn by other helpers) */
   function tag(svg,id){return svg.replace('<circle ','<circle data-token="'+esc(id)+'" ');}
   /* follow: a marker that rides on the data (a line's head); it may jump when the data jumps, so the
      speed limit does not apply - the data, not the animation, sets its pace */
   function follow(svg){return svg.replace('<circle ','<circle data-follow="1" ');}
-  function ease(T,t0,dur){var u=clamp((T-t0)/(dur||M.fade));return u*u*(3-2*u);}
-  return {M:M,ortho:ortho,wire:wire,plen:plen,at:at,token:token,tag:tag,follow:follow,ease:ease,C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
+  function ease(T,t0,dur){return tween(T,t0,dur||M.fade,'inOut');}
+  return {CURVE:CURVE,DUR:DUR,tween:tween,spring:spring,pop:pop,approach:approach,stagger:stagger,wave:wave,saw:saw,mix:mix,M:M,ortho:ortho,wire:wire,plen:plen,at:at,token:token,tag:tag,follow:follow,ease:ease,C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
 })();
 var CA_GRAMMARS={},CA_SCENES={};

@@ -119,6 +119,34 @@ class LiveRuntimeTests(unittest.TestCase):
    with self.subTest(key=key):self.assertGreaterEqual(contrast(C[key],'#fff'),4.5)
   for kind,bg,fg in re.findall(r"(\w+):\['(#[0-9a-f]{3,6})','(#[0-9a-f]{3,6})'\]",kit.split('var PILL')[1].split(';')[0]):
    with self.subTest(pill=kind):self.assertGreaterEqual(contrast(fg,bg),4.5)
+ def test_motion_math_closed_forms(self):
+  """Curves start at 0 and end at 1, monotonic; spring equals a numerically integrated damped spring;
+  approach reaches the model value exactly after `settle`; tween is a pure function of T (seek-safe)."""
+  import shutil,subprocess
+  kit=(ROOT/'visuals/live/kit.js').read_text(encoding='utf-8')
+  prog=kit+r"""
+var K=CA_KIT,o={};
+o.curves={};['linear','out','in','inOut'].forEach(function(c){var v=[];for(var i=0;i<=100;i++)v.push(K.CURVE[c](i/100));o.curves[c]=v;});
+var z=.6,f=2.2,w=2*Math.PI*f,x=0,v=0,dt=1e-5,num=[];for(var i=1;i<=100000;i++){var a=-w*w*(x-1)-2*z*w*v;v+=a*dt;x+=v*dt;if(i%10000===0)num.push([i*dt,x]);}
+o.spring=num.map(function(p){return [p[1],K.spring(p[0],z,f)];});
+o.approach=[K.approach(0,100,0),K.approach(0,100,.4),K.approach(0,100,.39),K.approach(5,7,10)];
+o.tween=[K.tween(1.2,1,.4,'out'),K.tween(1.2,1,.4,'out'),K.tween(0.5,1,.4),K.tween(9,1,.4)];
+o.pop=[K.pop(0,0,.4),K.pop(.4,0,.4),K.pop(.2,0,.4)];
+o.mix=[K.mix('#228be6','#fa5252',0),K.mix('#228be6','#fa5252',1)];
+o.stagger=[K.stagger(2,0,5),K.stagger(2,4,5,.1,.2)];
+process.stdout.write(JSON.stringify(o));"""
+  r=json.loads(subprocess.run([shutil.which('node'),'-e',prog],capture_output=True,text=True,check=True).stdout)
+  for c,v in r['curves'].items():
+   self.assertAlmostEqual(v[0],0,6);self.assertAlmostEqual(v[-1],1,6)
+   self.assertTrue(all(b>=a-1e-9 for a,b in zip(v,v[1:])),c)
+  self.assertGreater(r['curves']['out'][25],0.25);self.assertLess(r['curves']['in'][25],0.25)   # out arrives early, in leaves late
+  for num,closed in r['spring']:self.assertAlmostEqual(num,closed,delta=2e-3)
+  self.assertGreater(max(c for _,c in r['spring']+[[0,1]]),0.99)
+  a=r['approach'];self.assertEqual(a[0],0);self.assertEqual(a[1],100);self.assertGreater(a[2],99);self.assertLess(a[2],100);self.assertEqual(a[3],7)
+  t=r['tween'];self.assertEqual(t[0],t[1]);self.assertEqual(t[2],0);self.assertEqual(t[3],1)
+  self.assertEqual(r['pop'][0],0);self.assertEqual(r['pop'][1],0);self.assertGreater(r['pop'][2],0.9)
+  self.assertEqual(r['mix'],['#228be6','#fa5252']);self.assertEqual(r['stagger'],[2,2.2])
+
  def test_kit_motion_parts(self):
   """K.ortho never leaves a diagonal step; K.at walks a polyline at constant distance; K.ease is 0..1."""
   import random,shutil,subprocess

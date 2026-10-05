@@ -1,5 +1,14 @@
 # Changes
 
+## 0.12.0 — motion math in the kit (design doc phase 1)
+
+- `docs/design/motion-concept-architecture.md`: reviewed design (choreography layer, concept vocabulary);
+  decision 1 approved (kinds own default choreography; specs pick a motion level, not cues).
+- Kit: easing set `K.CURVE` (out for entrances, in for exits, symmetric inOut for moves), `K.DUR`, `K.tween`,
+  closed-form `K.spring`/`K.pop`, `K.approach`, `K.stagger`, `K.wave`/`K.saw`, `K.mix`. All pure in T.
+- Scenes: presentation motion moved onto the shared curves; data interpolation left on the model.
+- The 0.11 speed gate caught the first inOut choice (peak ~2.4x average: 561 and 537 px/s); inOut is smoothstep.
+
 ## 0.11.0 — motion and wiring become shared parts with gates (not per-case fixes)
 
 The three problems the user found by eye (#10 spin, #2 abrupt entry, #9 crooked wires) were each

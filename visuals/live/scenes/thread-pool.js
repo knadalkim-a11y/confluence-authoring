@@ -12,9 +12,9 @@ CA_SCENES['thread-pool']=function(D,K,GR){
      Response times are in the status line and the data table, not in a second chart. */
   function geom(W){var g=FQ.geom(W,30);g.H=g.bottom+12;return g;}
   function draw(T,g){var st=state(T),i,slow=T>=P.slow_start&&T<P.recovery;
-    var cells=[],flash=[];for(i=0;i<P.workers;i++){var r=st.act[i];cells.push(r?{hot:false,progress:K.clamp((T-r.s)/r.svc),appear:K.clamp((T-r.s)/0.12)}:null);
-      flash.push(0);J.forEach(function(x){if(x.slot===i&&T>=x.e&&T<x.e+0.2&&!r)flash[i]=Math.max(flash[i],1-(T-x.e)/0.2);});}
-    var queue=st.qd.map(function(r){var pos=0;J.forEach(function(p){if(p.a<r.a-1e-9)pos+=T<p.s?1:K.clamp((p.s+SHIFT-T)/SHIFT);});return pos;});
+    var cells=[],flash=[];for(i=0;i<P.workers;i++){var r=st.act[i];cells.push(r?{hot:false,progress:K.clamp((T-r.s)/r.svc),appear:K.tween(T,r.s,.2,'out')}:null);
+      flash.push(0);J.forEach(function(x){if(x.slot===i&&T>=x.e&&T<x.e+0.2&&!r)flash[i]=Math.max(flash[i],1-K.tween(T,x.e,.2,'in'));});}
+    var queue=st.qd.map(function(r){var pos=0;J.forEach(function(p){if(p.a<r.a-1e-9)pos+=T<p.s?1:1-K.tween(T,p.s,SHIFT,'inOut');});return pos;});
     var tr=Math.max(TR,g.px/K.M.speed),transit=[];J.forEach(function(r){if(T>=r.a-tr&&T<r.a)transit.push({id:r.i,p:(T-(r.a-tr))/tr,target:r.s>r.a+1e-9?r.ahead:null});});
     return FQ.draw(K,g,{T:T,inflowLabel:D.labels.inflow,poolLabel:D.labels.pool,used:st.n,slots:P.workers,cells:cells,flash:flash,queue:queue,queueIds:st.qd.map(function(r){return r.i;}),
       queueCount:st.qd.length,queueLabel:'대기 '+st.qd.length+'건',transit:transit,depLabel:D.labels.dependency,depValue:K.num(svcAt(T))+'초',depSlow:slow});}

@@ -18,7 +18,7 @@ CA_SCENES['eventloop']=function(D,K,GR){
     /* queue: oldest nearest the loop */
     /* a queued request's slot = requests ahead of it; when one leaves, the rest close up over SH seconds */
     var SH=.2,W0=TK.filter(function(t){return t[3]==='normal'||t[3]==='callback';});
-    function ahead(t,T){var n=0;W0.forEach(function(p){if(p[0]<t[0]-1e-9)n+=T<p[1]?(T>=p[0]?1:0):K.clamp((p[1]+SH-T)/SH);});return n;}
+    function ahead(t,T){var n=0;W0.forEach(function(p){if(p[0]<t[0]-1e-9)n+=T<p[1]?(T>=p[0]?1:0):1-K.tween(T,p[1],SH,'inOut');});return n;}
     s.q.forEach(function(t){var x=g.bx-16-ahead(t,T)*13;if(x>8)o+=K.token(x,cy,'q'+t[0],5,C.blue);});
     if(s.q.length>Math.floor((g.bx-24)/13))o+=K.text(10,cy-12,'+'+s.q.length,{fs:11,c:C.blueText,w:700});
     /* arrivals slide in at the shared pace */
@@ -32,7 +32,7 @@ CA_SCENES['eventloop']=function(D,K,GR){
     if(busy&&!cpu){var a2=ang+Math.PI*.9;o+=K.token(cx+g.r*Math.cos(a2),cy+6+g.r*Math.sin(a2),'rotor2',4.5,C.blue,.85);}
     if(cpu){var w=g.bw-20;o+=K.rect(cx-w/2,cy-20,w,48,{r:6,fill:C.red,st:C.redText})+K.text(cx,cy-1,'CPU 작업 '+K.num(s.act[2]-s.act[1],1)+'s',{fs:13,c:'#fff',a:'middle',w:700})+K.text(cx,cy+20,D.cpu_label,{fs:11,c:'#fff',a:'middle'});}
     /* I/O down to the pool and back */
-    IO.forEach(function(x){if(T>=x[0]&&T<x[2]){var down=T<x[1],f3=down?K.clamp((T-x[0])/.25):1;o+=K.token(cx+8,g.by+g.bh+(g.lib.y-g.by-g.bh)*f3,'io'+x[0],4.5,C.amber);}});
+    IO.forEach(function(x){if(T>=x[0]&&T<x[2]){var down=T<x[1],f3=down?K.tween(T,x[0],.25,'inOut'):1;o+=K.token(cx+8,g.by+g.bh+(g.lib.y-g.by-g.bh)*f3,'io'+x[0],4.5,C.amber);}});
     o+=K.rect(g.lib.x,g.lib.y,g.lib.w,g.lib.h,{r:6,fill:C.paper2,st:C.edge})+K.text(cx,g.lib.y+20,'OS / libuv 스레드 풀',{fs:12,c:C.muted,a:'middle'});
     /* responses leave right */
     TK.forEach(function(t){if(t[3]!=='normal'&&t[3]!=='callback')return;var dr=(g.W-g.bx-g.bw-20)/K.M.speed,f4=(T-t[2])/dr;if(f4>=0&&f4<1)o+=K.token(g.bx+g.bw+8+(g.W-g.bx-g.bw-20)*f4,cy,'r'+t[2],5,C.amber,1-f4*.6);});
