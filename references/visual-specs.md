@@ -30,6 +30,7 @@ specs it cannot render well.
 | an idea side by side: without vs with, before vs after, two viewpoints | `concept` `"form": "compare"` | columns enter in turn |
 | what something is made of, top to bottom (a context window, layers, an organisation) | `concept` `"form": "stack"` | bands settle bottom-up |
 | who sends what to whom, in order (an API call, a tool call, a hand-off) | `concept` `"form": "sequence"` | messages drawn one by one |
+| an idea whose shape none of the rows above fit: things inside a boundary, chosen vs not chosen, a parent and its children, a loop back, content that changes as it crosses a boundary, assumptions each side makes | `compose` (a tree of layout containers and parts, §4) | each top-level part enters in turn, or your `steps` |
 | a mechanism none of these express (discrete workers, retries, routing, cycles) | custom live scene, see `live-runtime.md` (thread-pool, cfs, cascade, eventloop, timeout are examples) | animated |
 
 Deliberately not offered: pie/donut, 3D, dual y-axes, KPI gauge tiles, decorative motion.
@@ -40,11 +41,11 @@ scripts); `"play"` animates a kind that is static by default (bars grow once).
 
 | Field | Rule |
 |---|---|
-| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` · `diagram` · `distribution` · `concept` |
+| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` · `diagram` · `distribution` · `concept` · `compose` |
 | `title` | Accessible name (≤ 120 chars). The page heading usually says it too. |
 | `claim` | The one-sentence takeaway (≤ 120). Shown under a static figure; use it as the last caption of an animated one. |
 | `source` | Where the numbers come from. Required. |
-| `data_kind` | `measured` · `estimate` · `example`; for `diagram` and `concept`: `current` (현재 구조) · `proposed` (제안안) · `example`. Required; shown in the picture or notes so illustrative numbers or a proposal are never mistaken for the real thing. |
+| `data_kind` | `measured` · `estimate` · `example`; for `diagram`, `concept` and `compose`: `current` (현재 구조) · `proposed` (제안안) · `example`. Required; shown in the picture or notes so illustrative numbers or a proposal are never mistaken for the real thing. |
 | `motion` | `auto` (default) · `play` · `none` |
 | `captions` | `[{"at": time or event, "text": "…"}]`. One claim each, 25–45 chars (hard limit 50 after placeholders). Bind to model events, not guessed times. The build fails if two captions are too close to be read at the default speed. |
 
@@ -185,9 +186,10 @@ unknown events are build errors that list what is available. Never type a comput
   already name the phases) or rename with `"status_labels": {"late": "감지 공백"}`.
 - Static kinds print "예시 데이터" / "추정값" in the picture when `data_kind` is not `measured`.
 
-### `concept` — ideas, not numbers (v0.15.0)
+### `concept` — ideas, not numbers (v0.15.0; presets of `compose` since v0.16.0)
 
-Three forms that recur in hand-made explanation figures (docs/design/motion-concept-architecture.md §10). All use
+The spec below is unchanged; the drawing is the `compose` engine (compare = `split`, stack = `stack`,
+sequence = `lifelines`). Three forms that recur in hand-made explanation figures (docs/design/motion-concept-architecture.md §10). All use
 the role tones; all animate by default (each unit enters in turn) and settle into the final scene.
 
 ```json
@@ -208,6 +210,66 @@ the role tones; all animate by default (each unit enters in turn) and settle int
 - sequence: 2-4 actors (name ≤ 10), 1-8 messages in order (text ≤ 24; `style: "dashed"` = reply), numbered.
 - Not for numbers (use a chart kind), not for a system's structure (use `diagram`), not for metaphors (seesaw,
   explosion): those stay prose or a custom scene.
+
+### `compose` — build the figure from parts (v0.16.0)
+
+When the idea does not fit a preset, compose it. A figure is one tree: layout containers hold parts and other
+containers; every part works in every container. Pick containers by how the reader should scan the idea, then
+add only the parts that carry the claim.
+
+```json
+{"kind": "compose", "data_kind": "example", "title": "…", "claim": "…", "source": "…",
+ "root": {"layout": "row", "items": [
+   {"layout": "column", "id": "cands", "label": "스킬 후보", "items": [
+     {"id": "rv", "name": "코드 리뷰", "state": "muted"}, {"id": "ts", "name": "테스트 작성", "state": "muted"}]},
+   {"layout": "stack", "frame": "solid", "label": "컨텍스트 윈도우", "free": "남은 공간", "items": [
+     {"id": "ins", "name": "코드 리뷰 스킬", "state": "selected"}, {"name": "대화 기록", "tone": "amber", "size": 2}]}]},
+ "links": [{"from": "rv", "to": "ins", "label": "주입"}],
+ "steps": [{"show": ["cands"], "caption": "쓸 수 있는 스킬은 여럿이다"},
+           {"set": {"rv": "selected"}, "caption": "필요한 스킬만 고른다"},
+           {"show": ["ins", "L0"], "caption": "고른 스킬만 창에 들어간다"}]}
+```
+
+Containers (`layout`, nest up to 4 deep):
+
+| layout | holds | use it for |
+|---|---|---|
+| `row` | 1-5 parts side by side; `sep` (≤ 8, e.g. "경계") draws a dashed boundary between neighbours | a chain, a before→after pair of things, two sides of a boundary |
+| `column` | 1-7 parts top to bottom; `bracket` (≤ 12) side label | a list, a vertical flow, a parent above its children |
+| `grid` | 2-12 parts, `cols` 2-4 | many peers (modules, teams) |
+| `stack` | 2-7 elements as touching bands (`size` 1-3), `bracket`, `free` (empty band on top) | what something is made of |
+| `split` | 2-3 containers with dashed dividers, `arrow` (≤ 10) between them | without vs with, before vs after, two viewpoints |
+| `lifelines` | 2-4 actors + `messages` (as `concept` sequence) | who sends what to whom |
+
+Any container: `id`, `label` (≤ 18), `tone`, `frame` (`"solid"` a group, `"dashed"` a boundary), `note` (≤ 40,
+under it), `banner` (≤ 40, a tinted bar under it: the consequence), `span` (≤ 24, an arrow over its width: one
+operation across all of it), `grow` (1-3 width share in a row).
+
+Elements: `id` (needed to link or step), `name` (≤ 16; 18 in a stack), `sub` (≤ 22), `shape` (`box` · `pill` ·
+`cylinder` storage · `doc` file/document), `tone` (inherits the container's), `state` (`normal` · `selected` ·
+`muted` not chosen / idle · `error` · `ok`), `code` (≤ 5 lines × 30 chars: the data itself, e.g. a row, JSON),
+`badge` (`{"text": ≤ 10, "kind": ok|bad|warn|info}`), `bubble` (≤ 26: what this side assumes), `size`, `grow`.
+
+Links: `{from, to}` element ids, `label` (≤ 14), `style` (`flow` request/data, default, a dot travels it once ·
+`reply` dashed answer · `hidden` a dependency the code does not show · `fail` broken, with ✕ · `none` explicitly
+no connection), `via` (`left`/`right`: loop around the side, e.g. retry), `id` (default `L0`, `L1`, … in order).
+
+Steps (optional, 1-6): `show` (ids of elements, containers = all inside, links, lifeline messages `<id>.m<k>`),
+`set` (`{id: state}`: a state change, animated), `caption` (≤ 60; the step lasts until it can be read). Without
+`steps` each top-level part enters in turn (a stack bottom-up). Parts never shown by a step are there from the start.
+
+What the engine does for you, so the spec never carries coordinates:
+- Rows give elements their natural width and containers the rest; gaps grow to fit link labels. A row that does
+  not fit first narrows its gaps (labels wrap at spaces), then wraps into evenly filled lines (a chain continues
+  in snake order), and only then folds into a column. Splits stack on phones; framed containers in a row share a height.
+- Links are orthogonal: straight when the boxes face each other, one elbow in the gap between the two branches
+  otherwise (a parent and its children get a trunk and a bus), around the side when the direct path would cross
+  a box (on phones a side gutter is made for it). Labels go to the first place that clears every box and label.
+- Gates for every part: text stays in its box, no line through another box, boxes and frames nest (never half
+  overlap), no one-frame colour switch on a state change, token pace, plus all the shared gates.
+
+Not for numbers (use a chart kind), and not for metaphors (tangled lines, a seesaw): say those in prose. Keep
+one claim per figure; if it needs more than ~12 elements, split it.
 
 ### `diagram` — components, connections, and the path through them
 

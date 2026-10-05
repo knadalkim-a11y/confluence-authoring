@@ -12,7 +12,7 @@ import choreo
 from monitoring_cases import (finite, fluid_tokens, first_reach, interp, token_speed, paced_rate, caption_walls,
                               caption_need, nice_max, grp, DEFAULT_SPEED)
 
-KINDS = ('flow', 'trend', 'bars', 'share', 'timeline', 'diagram', 'distribution', 'concept')
+KINDS = ('flow', 'trend', 'bars', 'share', 'timeline', 'diagram', 'distribution', 'concept', 'compose')
 DATA_KINDS = {'measured': '측정값', 'estimate': '추정값', 'example': '예시 데이터'}
 DIAGRAM_KINDS = {'current': '현재 구조', 'proposed': '제안안', 'example': '예시'}   # a diagram states a structure, not numbers
 CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫'
@@ -113,7 +113,7 @@ def common(spec):
     claim = text(spec.get('claim'), 'claim', 2, 120)
     source = text(spec.get('source'), 'source (where the numbers come from)', 2, 400)
     data_kind = spec.get('data_kind')
-    if kind in ('diagram', 'concept'):
+    if kind in ('diagram', 'concept', 'compose'):
         need(data_kind in DIAGRAM_KINDS, f'data_kind must be one of {list(DIAGRAM_KINDS)} (say whether this is the current structure or a proposal)')
     else:
         need(data_kind in DATA_KINDS, f'data_kind must be one of {list(DATA_KINDS)} (say whether numbers are real)')
@@ -824,107 +824,341 @@ def distribution_data(spec):
                 checks=checks, live=live, numeric={g['label']: g['stats'] for g in groups}, title=title)
 
 
-# ---------------------------------------------------------------- concept
+# ---------------------------------------------------------------- compose
+# Composition engine (docs/design/motion-concept-architecture.md, section 12): a figure is a tree of layout
+# containers and parts. Containers nest; every part (element, connector, annotation) works in every container.
+# The scene (visuals/live/scenes/compose.js) lays the tree out at the column width and routes connectors
+# orthogonally; each part registers its boxes and text for the shared gates. Earlier fixed forms (concept
+# compare / stack / sequence) are presets that expand into a tree here.
+LAYOUTS = ('row', 'column', 'grid', 'stack', 'split', 'lifelines')
+SHAPES = ('box', 'pill', 'cylinder', 'doc')
+STATES = ('normal', 'selected', 'muted', 'error', 'ok')
+LINK_STYLES = ('flow', 'reply', 'hidden', 'fail', 'none')
+BADGES = ('ok', 'bad', 'warn', 'info')
+STEP_MIN = 1.0      # model seconds per step (rate 0.5: 1.6 s on screen at the default 1.25x)
+COMPOSE_RATE = 0.5
+HOLD = 1.0          # settled tail after the last step: the last connector's dot finishes inside it
+
+
+def compose_tree(root, ids):
+    """Validate and normalise the layout tree. Returns (tree, elements in document order, containers)."""
+    elems, conts, path = [], [], []
+    tone = lambda v, nm: v if v is None or v in ROLE_TONES else need(False, f'{nm}: one of {list(ROLE_TONES)}')
+
+    def take_id(n, nm, auto):
+        i = n.get('id')
+        if i is None:
+            i = auto
+        else:
+            need(isinstance(i, str) and NODE_ID.match(i), f'{nm}.id: letters, digits, _ or - (max 24), starting with a letter')
+        need(i not in ids, f'{nm}.id: "{i}" used twice')
+        ids[i] = nm
+        return i
+
+    def element(n, nm, in_stack=False, in_life=False):
+        only(n, ('id', 'name', 'sub', 'shape', 'tone', 'state', 'code', 'badge', 'bubble', 'size', 'grow'), nm)
+        e = dict(t='e', id=take_id(n, nm, f'e{len(elems)}'), name=text(n.get('name'), f'{nm}.name', 1, 18 if in_stack else 16),
+                 sub=text(n['sub'], f'{nm}.sub', 1, 28 if in_stack else 22) if n.get('sub') else '')
+        shp = n.get('shape', 'box'); need(shp in SHAPES, f'{nm}.shape: one of {list(SHAPES)}')
+        st = n.get('state', 'normal'); need(st in STATES, f'{nm}.state: one of {list(STATES)}')
+        code = n.get('code') or []
+        if isinstance(code, str):
+            code = code.split('\n')
+        need(isinstance(code, list) and len(code) <= 5 and all(isinstance(c, str) and len(c) <= 30 for c in code),
+             f'{nm}.code: up to 5 lines of at most 30 characters (a JSON or code fragment)')
+        bd = n.get('badge')
+        if bd is not None:
+            only(bd, ('text', 'kind'), f'{nm}.badge')
+            need(bd.get('kind', 'info') in BADGES, f'{nm}.badge.kind: one of {list(BADGES)}')
+            bd = dict(text=text(bd.get('text'), f'{nm}.badge.text', 1, 10), kind=bd.get('kind', 'info'))
+        size = n.get('size', 1); need(size in (1, 2, 3), f'{nm}.size: 1, 2 or 3 (relative height in a stack)')
+        grow = n.get('grow', 1); need(grow in (1, 2, 3), f'{nm}.grow: 1, 2 or 3 (relative width in a row)')
+        e.update(shape=shp, tone=tone(n.get('tone'), f'{nm}.tone') or (path[-1] if path else 'blue'), sts=[st], code=code,
+                 badge=bd, bubble=text(n['bubble'], f'{nm}.bubble', 1, 26) if n.get('bubble') else '', size=size, grow=grow)
+        need(not (in_life and (code or bd or n.get('bubble'))), f'{nm}: lifeline actors take a name and tone only')
+        elems.append(e)
+        return e
+
+    def node(n, nm, depth):
+        need(isinstance(n, dict), f'{nm}: object required')
+        if 'layout' not in n:
+            return element(n, nm)
+        need(depth <= 4, f'{nm}: containers nest at most 4 deep')
+        L = n.get('layout'); need(L in LAYOUTS, f'{nm}.layout: one of {list(LAYOUTS)}')
+        only(n, ('layout', 'id', 'items', 'label', 'tone', 'frame', 'note', 'banner', 'span', 'sep', 'bracket', 'free', 'arrow', 'cols', 'messages', 'grow'), nm)
+        c = dict(t='c', L=L, id=take_id(n, nm, f'k{len(conts)}'))
+        conts.append(c)
+        ct = tone(n.get('tone'), f'{nm}.tone')
+        fr = n.get('frame'); need(fr in (None, False, 'solid', 'dashed'), f'{nm}.frame: "solid" (a group) or "dashed" (a boundary)')
+        bn = n.get('banner')
+        if bn is not None:
+            if isinstance(bn, str):
+                bn = dict(text=bn)
+            only(bn, ('text', 'tone'), f'{nm}.banner')
+            bn = dict(text=text(bn.get('text'), f'{nm}.banner.text', 1, 40), tone=tone(bn.get('tone'), f'{nm}.banner.tone') or 'red')
+        grow = n.get('grow', 1); need(grow in (1, 2, 3), f'{nm}.grow: 1, 2 or 3')
+        c.update(label=text(n['label'], f'{nm}.label', 1, 18) if n.get('label') else '', tone=ct or (path[-1] if path else 'gray'),
+                 frame=fr or '', note=text(n['note'], f'{nm}.note', 1, 40) if n.get('note') else '', banner=bn,
+                 span=text(n['span'], f'{nm}.span', 1, 24) if n.get('span') else '', grow=grow)
+        for k, allowed in (('sep', ('row',)), ('bracket', ('column', 'stack')), ('free', ('stack',)), ('arrow', ('split',)),
+                           ('cols', ('grid',)), ('messages', ('lifelines',))):
+            need(n.get(k) is None or L in allowed, f'{nm}.{k}: only for layout {" / ".join(allowed)}')
+        c['sep'] = text(n['sep'], f'{nm}.sep', 1, 8) if n.get('sep') else ''
+        c['bracket'] = text(n['bracket'], f'{nm}.bracket', 1, 12) if n.get('bracket') else ''
+        c['free'] = text(n['free'], f'{nm}.free', 1, 14) if n.get('free') else ''
+        c['arrow'] = text(n['arrow'], f'{nm}.arrow', 1, 10) if n.get('arrow') else ''
+        items = n.get('items')
+        lim = {'row': (1, 5), 'column': (1, 7), 'grid': (2, 12), 'stack': (2, 7), 'split': (2, 3), 'lifelines': (2, 4)}[L]
+        need(isinstance(items, list) and lim[0] <= len(items) <= lim[1], f'{nm}.items: {lim[0]}-{lim[1]} for a {L}')
+        if L == 'grid':
+            cols = n.get('cols', 3); need(cols in (2, 3, 4), f'{nm}.cols: 2, 3 or 4'); c['cols'] = cols
+        path.append(c['tone'] if ct else (path[-1] if path else 'blue'))
+        if L in ('stack', 'lifelines'):
+            c['kids'] = [element(x if isinstance(x, dict) else need(False, f'{nm}.items[{i}]: object'), f'{nm}.items[{i}]', L == 'stack', L == 'lifelines')
+                         for i, x in enumerate(items)]
+            need(all('layout' not in x for x in items), f'{nm}.items: a {L} holds elements only')
+        else:
+            c['kids'] = [node(x, f'{nm}.items[{i}]', depth + 1) for i, x in enumerate(items)]
+        if L == 'split':
+            for i, k in enumerate(c['kids']):
+                need(k['t'] == 'c', f'{nm}.items[{i}]: each side of a split is a container (e.g. a column with a label)')
+        path.pop()
+        if L == 'lifelines':
+            msgs = n.get('messages'); need(isinstance(msgs, list) and 1 <= len(msgs) <= 8, f'{nm}.messages: 1-8, in order')
+            loc = {k['id']: i for i, k in enumerate(c['kids'])}; mo = []
+            for k, m in enumerate(msgs):
+                mm = f'{nm}.messages[{k}]'; only(m, ('from', 'to', 'text', 'style'), mm)
+                need(m.get('from') in loc and m.get('to') in loc, f'{mm}: from/to must be ids of this lifeline\'s actors ({", ".join(loc)})')
+                stl = m.get('style', 'solid'); need(stl in ('solid', 'dashed'), f'{mm}.style: solid (request) or dashed (reply)')
+                mo.append(dict(a=loc[m['from']], b=loc[m['to']], text=text(m.get('text'), f'{mm}.text', 1, 24), dashed=stl == 'dashed', mark=CIRCLED[k], key=f'{c["id"]}.m{k}'))
+            c['msgs'] = mo
+        return c
+
+    tree = node(root, 'root', 0)
+    need(len(elems) <= 24, f'compose: {len(elems)} elements; at most 24 (split the idea into two figures)')
+    return tree, elems, conts
+
+
+def compose_build(spec, root, links, steps, table_head=None, extra_rows=None):
+    """Shared body of the compose kind and its presets: validation, default choreography, captions, checks."""
+    kind, title, claim, source, data_kind, motion = common(spec)
+    ids = {}
+    tree, elems, conts = compose_tree(root, ids)
+    E = {e['id']: e for e in elems}
+    C = {c['id']: c for c in conts}
+    under = {}   # container id -> element ids beneath it
+
+    def collect(n):
+        if n['t'] == 'e':
+            return [n['id']]
+        out = [i for k in n['kids'] for i in collect(k)]
+        under[n['id']] = out
+        return out
+    collect(tree)
+    lk = []
+    for k, l in enumerate(links or []):
+        nm = f'links[{k}]'; only(l, ('id', 'from', 'to', 'label', 'style', 'via', 'token'), nm)
+        a, b = l.get('from'), l.get('to')
+        need(a in E and b in E and a != b, f'{nm}: from/to must be two different element ids ({", ".join(E)})')
+        st = l.get('style', 'flow'); need(st in LINK_STYLES, f'{nm}.style: one of {list(LINK_STYLES)} (flow = request/data, reply = answer, hidden = a dependency not visible in code, fail = broken, none = explicitly no connection)')
+        via = l.get('via'); need(via in (None, 'left', 'right'), f'{nm}.via: left or right (route around the side, e.g. a loop back)')
+        lid = l.get('id', f'L{k}'); need(isinstance(lid, str) and NODE_ID.match(lid) and lid not in ids, f'{nm}.id: unique letters/digits')
+        ids[lid] = nm
+        tok = l.get('token', st == 'flow'); need(isinstance(tok, bool), f'{nm}.token: true or false')
+        lk.append(dict(id=lid, a=a, b=b, label=text(l['label'], f'{nm}.label', 1, 14) if l.get('label') else '', style=st, via=via or '', token=tok))
+    need(len(lk) <= 16, 'links: at most 16')
+    lifeline_msgs = [m for c in conts if c['L'] == 'lifelines' for m in c['msgs']]
+
+    # --- steps: what appears and changes when ---------------------------------------------------------------
+    live = motion != 'none'
+    show, sets, caps = {}, [], []
+    if steps is not None:
+        need(isinstance(steps, list) and 1 <= len(steps) <= 6, 'steps: 1-6, in order')
+        units = []
+        for k, st in enumerate(steps):
+            nm = f'steps[{k}]'; only(st, ('show', 'set', 'caption'), nm)
+            sh = st.get('show') or []
+            need(isinstance(sh, list) and all(x in ids for x in sh), f'{nm}.show: ids of elements, containers, links or lifeline messages ({", ".join(list(ids)[:12])}...)')
+            se = st.get('set') or {}
+            need(isinstance(se, dict) and all(x in E and v in STATES for x, v in se.items()), f'{nm}.set: {{element id: state}}, states {list(STATES)}')
+            need(sh or se, f'{nm}: show something or set a state')
+            units.append(dict(show=sh, set=se, caption=text(st['caption'], f'{nm}.caption', 2, 60) if st.get('caption') else ''))
+    else:
+        units = []
+        if tree['L'] == 'lifelines':
+            units.append(dict(show=[tree['id']], set={}, caption=''))
+            units += [dict(show=[m['key']], set={}, caption='') for m in tree['msgs']]
+        else:
+            kids = tree['kids'][::-1] if tree['L'] == 'stack' else tree['kids']   # a stack is built from the ground up
+            units = [dict(show=[k['id']], set={}, caption='') for k in kids]
+            if tree['L'] == 'stack':
+                units[0]['show'] = [tree['id']] + units[0]['show']
+    # step lengths: long enough for the step's caption at the default speed (captions bind to steps)
+    base = 0.4 if steps is None and tree['L'] == 'stack' else STEP_MIN   # bands of one stack follow each other quickly
+    lens = [max(base, caption_need(u['caption']) * COMPOSE_RATE * DEFAULT_SPEED) if u['caption'] else base for u in units]
+    t0s = [round(sum(lens[:k]), 4) for k in range(len(units))]
+    for k, u in enumerate(units):
+        for x in u['show']:
+            if x in E or any(x == l['id'] for l in lk) or any(x == m['key'] for m in lifeline_msgs):
+                show.setdefault(x, t0s[k])
+            if x in C:
+                show.setdefault(x, t0s[k])
+                for i in under[x]:
+                    show.setdefault(i, t0s[k])
+    for e in elems:              # not listed anywhere: there from the start (context)
+        show.setdefault(e['id'], 0.0)
+    for c in conts:              # a frame or annotation appears with its first element
+        show.setdefault(c['id'], min([show[i] for i in under[c['id']]] or [0.0]))
+        show[c['id']] = min(show[c['id']], min([show[i] for i in under[c['id']]] or [show[c['id']]]))
+    for c in conts:              # messages not listed follow their lifelines one after another
+        for k, m in enumerate(c.get('msgs', [])):
+            show.setdefault(m['key'], show[c['id']] + 0.4 + 0.5 * k)
+    for l in lk:                 # a connector is drawn once both ends are there
+        show.setdefault(l['id'], max(show[l['a']], show[l['b']]) + 0.35)
+        show[l['id']] = max(show[l['id']], max(show[l['a']], show[l['b']]) + 0.35)
+    for k, u in enumerate(units):
+        for x, v in u['set'].items():
+            E[x]['sts'].append(v)
+            sets.append((x, len(E[x]['sts']) - 1, t0s[k] + 0.25))
+        if u['caption']:
+            caps.append([t0s[k], '', u['caption']])
+    end = round(max(sum(lens), max(show.values()) + 0.6) + HOLD + 0.35, 4)
+    rate = [[0, COMPOSE_RATE]] if live else [[0, 1]]
+    cues = []
+    if live:
+        order = sorted(set(list(E) + list(C)), key=lambda i: show[i])
+        for i in order:
+            cues += choreo.levels(i, 'on', [1], [show[i]], rate)
+        for i in sorted([l['id'] for l in lk] + [m['key'] for m in lifeline_msgs], key=lambda i: show[i]):
+            cues.append(choreo.cue(i, 'reveal', show[i], 0.5, 0, 1, 'inOut', rate))
+        for x, lvl, t in sets:
+            cues.append(choreo.cue(x, 'act', t, 0.3, lvl - 1, lvl, 'inOut', rate))
+        cues = choreo.validate(cues, end)
+    captions = ([[0.0, '', claim]] if not caps or caps[0][0] > 0 else []) + caps if live else [[end, '', (caps[-1][2] if caps else claim)]]
+    if not live:
+        for e in elems:
+            e['sts'] = [e['sts'][-1]]
+    marks = [CIRCLED[i] if i < len(CIRCLED) else f'{i + 1}.' for i in range(len(captions))]
+    for c, m in zip(captions, marks):
+        c[1] = m if len(captions) > 1 else ''
+    data = dict(scene='compose', tree=tree, links=lk, time=dict(unit='', end=end), cues=cues, captions=captions, rate=rate,
+                labels=dict(data_kind=DIAGRAM_KINDS[data_kind]), show={k: round(v, 4) for k, v in show.items()})
+    # accessible table: every part in reading order, then connectors and steps
+    names = {e['id']: e['name'] for e in elems}
+    rows = list(extra_rows) if extra_rows is not None else None
+    if rows is None:
+        rows = []
+
+        def walk(n, trail):
+            if n['t'] == 'e':
+                st = n['sts']
+                desc = ' · '.join(x for x in (n['sub'], n['badge']['text'] if n['badge'] else '', ' / '.join(n['code']),
+                                              ('상태 ' + ' → '.join(STATE_KO[s] for s in st)) if st != ['normal'] else '',
+                                              ('말풍선: ' + n['bubble']) if n['bubble'] else '') if x)
+                rows.append([' · '.join(trail) or '요소', n['name'], desc or '-'])
+                return
+            lab = n['label'] or ''
+            for k in n['kids']:
+                walk(k, trail + ([lab] if lab else []))
+            for m in n.get('msgs', []):
+                rows.append([m['mark'], f'{n["kids"][m["a"]]["name"]} → {n["kids"][m["b"]]["name"]}', m['text'] + (' (응답)' if m['dashed'] else '')])
+            for nm_, v in (('설명', n['note']), ('강조', n['banner']['text'] if n['banner'] else ''), ('범위', n['span']), ('경계', n['sep']), ('괄호', n['bracket'])):
+                if v:
+                    rows.append([(lab or '묶음') + ' · ' + nm_, v, '-'])
+        walk(tree, [])
+        for l in lk:
+            rows.append(['연결', f'{names[l["a"]]} → {names[l["b"]]}', (l['label'] or '-') + ('' if l['style'] == 'flow' else f' ({LINK_KO[l["style"]]})')])
+        if steps is not None:
+            for k, u in enumerate(units):
+                what = ', '.join(names.get(x) or C.get(x, {}).get('label') or x for x in u['show'])
+                ch = ', '.join(f'{names[x]} → {STATE_KO[v]}' for x, v in u['set'].items())
+                rows.append([f'단계 {CIRCLED[k]}', ' / '.join(v for v in (what, ch) if v), u['caption'] or '-'])
+    n_s = len(units)
+    samples = [round(min(end, t0s[k] + lens[k] * 0.7), 4) for k in range(n_s)][:5] + [end]
+    while len(samples) < 6:
+        samples.append(end)
+    checks = dict(end=end, samples=samples, annotations=[], expect=None, resize_at=round(end / 2, 4), choreo=live)
+    return dict(data=data, aria=f'{title}. {claim}', notes=f'출처: {source} ({DIAGRAM_KINDS[data_kind]}). 개념도이며 수치를 나타내지 않습니다.',
+                table=(table_head or ['묶음', '요소', '설명'], rows), checks=checks, live=live,
+                numeric=dict(elements=len(elems), containers=len(conts), links=len(lk), steps=len(units)), title=title)
+
+
+STATE_KO = {'normal': '보통', 'selected': '선택', 'muted': '흐림', 'error': '오류', 'ok': '정상'}
+LINK_KO = {'flow': '흐름', 'reply': '응답', 'hidden': '숨은 의존', 'fail': '실패', 'none': '연결 없음'}
+
+
+def compose_data(spec):
+    """Kind "compose": {root: layout tree, links: [...], steps: [...]}; see references/visual-specs.md."""
+    common(spec)
+    only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'root', 'links', 'steps'), 'compose spec')
+    need(isinstance(spec.get('root'), dict) and 'layout' in spec['root'], 'root: a layout container ({"layout": "row", "items": [...]})')
+    return compose_build(spec, spec['root'], spec.get('links'), spec.get('steps'))
+
+
+# ---------------------------------------------------------------- concept (presets on the compose engine)
 CONCEPT_FORMS = ('compare', 'stack', 'sequence')
 
 
 def concept_data(spec):
-    """Concept figures (docs/design/motion-concept-architecture.md, section 10): ideas, not numbers.
-    compare  - 2-3 columns side by side (without/with, before/after, two viewpoints), items as role-coloured boxes;
-    stack    - bands stacked top to bottom (a context window, layers, an organisation), optional side bracket;
-    sequence - 2-4 actors with lifelines and numbered messages between them (a call, a hand-off).
-    Animated by default: each column / band / message enters in turn (default choreography, scripts/choreo.py)."""
+    """Concept figures (docs/design/motion-concept-architecture.md, section 10), now presets of the compose engine:
+    compare  - 2-3 columns side by side (without/with, before/after, two viewpoints) -> split of labelled columns;
+    stack    - bands stacked top to bottom (a context window, layers) with an optional side bracket -> stack;
+    sequence - 2-4 actors with lifelines and numbered messages (a call, a hand-off) -> lifelines.
+    The spec stays as before; only the drawing moved to the shared engine."""
     kind, title, claim, source, data_kind, motion = common(spec)
     form = spec.get('form'); need(form in CONCEPT_FORMS, f'form: one of {CONCEPT_FORMS}')
     base = ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'form')
     tone = lambda v, nm, d: (v if v is not None else d) if (v is None or v in ROLE_TONES) else need(False, f'{nm}: one of {list(ROLE_TONES)}')
-    data = dict(scene='concept', form=form)
     rows = []
     if form == 'compare':
         only(spec, base + ('columns', 'arrow'), 'concept spec (compare)')
         cols = spec.get('columns'); need(isinstance(cols, list) and 2 <= len(cols) <= 3, 'columns: 2-3 (e.g. 경계 없음 / 경계 있음)')
-        out = []
+        parts = []
         for i, c in enumerate(cols):
             nm = f'columns[{i}]'; only(c, ('label', 'tone', 'items', 'note'), nm)
             items = c.get('items'); need(isinstance(items, list) and 1 <= len(items) <= 6, f'{nm}.items: 1-6')
+            ct = tone(c.get('tone'), f'{nm}.tone', ['gray', 'blue', 'green'][i])
             its = []
             for j, it in enumerate(items):
                 only(it, ('name', 'sub', 'tone'), f'{nm}.items[{j}]')
-                its.append(dict(name=text(it.get('name'), f'{nm}.items[{j}].name', 1, 16), sub=text(it['sub'], f'{nm}.items[{j}].sub', 1, 22) if it.get('sub') else '',
-                                tone=tone(it.get('tone'), f'{nm}.items[{j}].tone', None)))
-            ct = tone(c.get('tone'), f'{nm}.tone', ['gray', 'blue', 'green'][i])
-            for it in its:
-                it['tone'] = it['tone'] or ct
-            out.append(dict(label=text(c.get('label'), f'{nm}.label', 1, 14), tone=ct, items=its, note=text(c['note'], f'{nm}.note', 1, 40) if c.get('note') else ''))
-            rows += [[out[-1]['label'], it['name'], it['sub']] for it in its]
-        data.update(columns=out, arrow=text(spec['arrow'], 'arrow', 1, 10) if spec.get('arrow') else '')
-        units = [[i, len(c['items'])] for i, c in enumerate(out)]
+                text(it.get('name'), f'{nm}.items[{j}].name', 1, 16)
+                its.append(dict(id=f'c{i}_{j}', name=it['name'], tone=tone(it.get('tone'), f'{nm}.items[{j}].tone', ct), **({'sub': text(it['sub'], f'{nm}.items[{j}].sub', 1, 22)} if it.get('sub') else {})))
+                rows.append([c.get('label'), it['name'], it.get('sub') or ''])
+            parts.append(dict(layout='column', id=f'col{i}', label=text(c.get('label'), f'{nm}.label', 1, 14), tone=ct, items=its,
+                              **({'note': text(c['note'], f'{nm}.note', 1, 40)} if c.get('note') else {})))
+        root = dict(layout='split', items=parts, **({'arrow': text(spec['arrow'], 'arrow', 1, 10)} if spec.get('arrow') else {}))
+        root['id'] = 'split'
     elif form == 'stack':
         only(spec, base + ('layers', 'bracket', 'free'), 'concept spec (stack)')
         lys = spec.get('layers'); need(isinstance(lys, list) and 2 <= len(lys) <= 7, 'layers: 2-7, listed top to bottom')
-        out = []
+        bands = []
         for i, l in enumerate(lys):
             nm = f'layers[{i}]'; only(l, ('name', 'sub', 'tone', 'size'), nm)
-            size = l.get('size', 1); need(size in (1, 2, 3), f'{nm}.size: 1, 2 or 3 (relative height)')
-            out.append(dict(name=text(l.get('name'), f'{nm}.name', 1, 18), sub=text(l['sub'], f'{nm}.sub', 1, 28) if l.get('sub') else '',
-                            tone=tone(l.get('tone'), f'{nm}.tone', 'blue'), size=size))
-            rows.append([f'{i + 1}', out[-1]['name'], out[-1]['sub']])
-        data.update(layers=out, bracket=text(spec['bracket'], 'bracket', 1, 12) if spec.get('bracket') else '',
-                    free=text(spec['free'], 'free', 1, 14) if spec.get('free') else '')
-        units = [[0, len(out)]]
+            text(l.get('name'), f'{nm}.name', 1, 18)
+            bands.append(dict(id=f'l{i}', name=l['name'], tone=tone(l.get('tone'), f'{nm}.tone', 'blue'), size=l.get('size', 1),
+                              **({'sub': text(l['sub'], f'{nm}.sub', 1, 28)} if l.get('sub') else {})))
+            rows.append([f'{i + 1}', l['name'], l.get('sub') or ''])
+        root = dict(layout='stack', id='stack', items=bands, **{k: spec[k] for k in ('bracket', 'free') if spec.get(k)})
     else:
         only(spec, base + ('actors', 'messages'), 'concept spec (sequence)')
         acts = spec.get('actors'); need(isinstance(acts, list) and 2 <= len(acts) <= 4, 'actors: 2-4')
-        ids, out = {}, []
+        actors = []
         for i, a in enumerate(acts):
             nm = f'actors[{i}]'; only(a, ('id', 'name', 'tone'), nm)
-            aid = a.get('id'); need(isinstance(aid, str) and NODE_ID.match(aid) and aid not in ids, f'{nm}.id: unique letters/digits')
-            ids[aid] = i; out.append(dict(id=aid, name=text(a.get('name'), f'{nm}.name', 1, 10), tone=tone(a.get('tone'), f'{nm}.tone', ['gray', 'blue', 'purple', 'green'][i])))
+            text(a.get('name'), f'{nm}.name', 1, 10)
+            actors.append(dict(id=a.get('id'), name=a['name'], tone=tone(a.get('tone'), f'{nm}.tone', ['gray', 'blue', 'purple', 'green'][i])))
         msgs = spec.get('messages'); need(isinstance(msgs, list) and 1 <= len(msgs) <= 8, 'messages: 1-8, in order')
-        mo = []
+        nmap = {a['id']: a['name'] for a in actors}
         for k, m in enumerate(msgs):
-            nm = f'messages[{k}]'; only(m, ('from', 'to', 'text', 'style'), nm)
-            need(m.get('from') in ids and m.get('to') in ids, f'{nm}: from/to must be actor ids ({", ".join(ids)})')
-            st = m.get('style', 'solid'); need(st in ('solid', 'dashed'), f'{nm}.style: solid (request) or dashed (reply)')
-            mo.append(dict(a=ids[m['from']], b=ids[m['to']], text=text(m.get('text'), f'{nm}.text', 1, 24), dashed=st == 'dashed', mark=CIRCLED[k]))
-            rows.append([CIRCLED[k], f'{out[ids[m["from"]]]["name"]} → {out[ids[m["to"]]]["name"]}', mo[-1]['text']])
-        data.update(actors=out, messages=mo)
-        units = [[k, 1] for k in range(len(mo))]
-    live = motion != 'none'
-    rate = [[0, 0.5]] if live else [[0, 1]]   # one unit (a column, a message) ~1.6 s at the default 1.25x
-    step = 0.4 if form == 'stack' else 1.0
-    n = len(units) if form != 'stack' else len(data['layers'])
-    end = round(n * step + 0.5, 4)
-    cues = []
-    if live:   # each unit enters in turn; items inside a column follow 0.06 s apart (stagger, wall seconds)
-        if form == 'compare':
-            for i, cnt in units:
-                cues += choreo.levels(f'h{i}', 'on', [1], [i * step], rate)
-                for j in range(cnt):
-                    cues += choreo.levels(f'c{i}.{j}', 'on', [1], [i * step + 0.12 + j * 0.06 * rate[0][1]], rate)
-                if i:
-                    cues += choreo.levels(f'd{i}', 'on', [1], [i * step - 0.2], rate)
-        elif form == 'stack':
-            for k in range(n):   # bottom band first: a stack is built from the ground up
-                cues += choreo.levels(f'l{n - 1 - k}', 'on', [1], [k * step], rate)
-            if data['bracket']:
-                cues += choreo.levels('br', 'on', [1], [n * step], rate)
-        else:
-            for k in range(n):
-                cues += choreo.levels(f'm{k}', 'on', [1], [k * step], rate)
-        cues = choreo.validate(cues, end)
-    data.update(time=dict(unit='', end=end, step=step), cues=cues, captions=[[0.0 if live else end, '', claim]], rate=rate,
-                labels=dict(data_kind=DIAGRAM_KINDS[data_kind]))
-    samples = [round(min(end, k * step + 0.6), 4) for k in range(n)][:5] + [end]
-    while len(samples) < 6:
-        samples.append(end)
-    checks = dict(end=end, samples=samples, annotations=[], expect=None, resize_at=round(end / 2, 4), choreo=live)
+            rows.append([CIRCLED[k], f'{nmap.get(m.get("from"), "?")} → {nmap.get(m.get("to"), "?")}', m.get('text', '')])
+        root = dict(layout='lifelines', id='life', items=actors, messages=msgs)
     head = {'compare': ['구분', '항목', '설명'], 'stack': ['순서(위→아래)', '층', '설명'], 'sequence': ['순서', '방향', '메시지']}[form]
-    return dict(data=data, aria=f'{title}. {claim}', notes=f'출처: {source} ({DIAGRAM_KINDS[data_kind]}). 개념도이며 수치를 나타내지 않습니다.',
-                table=(head, rows), checks=checks, live=live, numeric=dict(form=form, units=len(rows)), title=title)
+    out = compose_build(spec, root, [], None, head, rows)
+    out['numeric'] = dict(form=form, units=len(rows))
+    return out
 
 
-BUILDERS = dict(flow=flow_data, trend=trend_data, bars=bars_data, share=share_data, timeline=timeline_data, diagram=diagram_data, distribution=distribution_data, concept=concept_data)
+BUILDERS = dict(flow=flow_data, trend=trend_data, bars=bars_data, share=share_data, timeline=timeline_data, diagram=diagram_data, distribution=distribution_data, concept=concept_data, compose=compose_data)
 
 
 def build(spec):

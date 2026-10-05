@@ -1,5 +1,27 @@
 # Changes
 
+## 0.16.0 — composition engine (design phase 4)
+
+- New kind `compose`: a figure is one tree of layout containers (`row`, `column`, `grid`, `stack`, `split`,
+  `lifelines`, nesting up to 4 deep) and parts that work in every container: elements (`box`, `pill`,
+  `cylinder`, `doc`; states `normal`/`selected`/`muted`/`error`/`ok`; `sub`, `code` lines, `badge`, `bubble`),
+  container frames and annotations (`frame` solid/dashed, `label`, `note`, `banner`, `span`, `bracket`, `sep`),
+  and links (`flow`/`reply`/`hidden`/`fail`/`none`, labels, `via`). `steps` show parts, change states (animated
+  cues) and bind captions; without steps each top-level part enters in turn.
+- Layout is measured, not templated: natural widths for elements, rows narrow their gaps, then wrap into even
+  lines (snake order for a chain), then fold; splits size sides by need; links route orthogonally from the
+  laid-out boxes (elbow in the gap between branches, shared trunk for fan-out, around the side when a box is in the
+  way, side gutter on phones); labels take the first free place.
+- `concept` compare/stack/sequence are now presets that expand into a compose tree; `visuals/live/scenes/concept.js`
+  is removed (one implementation). Their spec is unchanged.
+- New gate `LAYOUT_JS` for every visual: a link with `data-ends` may not run through another box; boxes and frames
+  nest or stay apart. Shown to fail a forced bad route; it found a real defect (stack bands overlapping by a few px).
+- Examples: mcp-tool-call, tool-approval, prompt-caching, multi-agent. Unit tests: compose validation, steps/state
+  cues, static layout invariants at 715/600/360 px for every compose example.
+- Evaluation (design doc §12): dev set (9 weak/missed figures from the v0.15.1 test) rebuilt; held-out set (8
+  topics fixed before implementation, specs written once): first try 4/8 gates, judged good 3 / flawed 5 / missed 0;
+  the 5 flaws were engine rules, fixed in the engine, 8/8 after (no longer independent).
+
 ## 0.15.1 — fixes from an external-topic test
 
 - 21 figures built from the gist of kciter.so sections (design doc §11): 18/21 first build, 21/21 after fixes.

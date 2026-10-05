@@ -32,6 +32,17 @@ BOX_JS = """(root)=>{const bad=[];for(const s of """ + VISIBLE + """){const soli
    if(a.left<b.left-0.5||a.right>b.right+0.5||a.top<b.top-0.5||a.bottom>b.bottom+0.5)bad.push([t.textContent.slice(0,20),'sticks out of its box'])}
   else for(const e of solid){const b=e.getBoundingClientRect(),w=Math.min(a.right,b.right)-Math.max(a.left,b.left),h=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
    if(w>1&&h>1){bad.push([t.textContent.slice(0,20),'sits on box '+e.dataset.solid]);break}}}}return bad}"""
+# Layout parts (compose and any kind that tags them): a connector with data-ends may not run through a box other
+# than its two ends; boxes (data-solid) and frames (data-frame) either nest or stay apart - never half overlap.
+LAYOUT_JS = """(root)=>{const bad=[];for(const s of """ + VISIBLE + """){const R=e=>e.getBoundingClientRect(),
+ sol=[...s.querySelectorAll('[data-solid]')].map(e=>[e.dataset.solid,R(e)]),fr=[...s.querySelectorAll('[data-frame]')].map(e=>['frame '+e.dataset.frame,R(e)]);
+ for(const w of s.querySelectorAll('polyline[data-ends]')){const ends=w.dataset.ends.split(' '),q=w.getAttribute('points').trim().split(/[\\s,]+/).map(Number),m=w.getScreenCTM();
+  const P=[];for(let i=0;i+1<q.length;i+=2){const p=new DOMPoint(q[i],q[i+1]).matrixTransform(m);P.push([p.x,p.y])}
+  for(let i=1;i<P.length;i++){const x0=Math.min(P[i-1][0],P[i][0]),x1=Math.max(P[i-1][0],P[i][0]),y0=Math.min(P[i-1][1],P[i][1]),y1=Math.max(P[i-1][1],P[i][1]);
+   for(const [id,b] of sol){if(ends.includes(id))continue;if(x1>b.left+1&&x0<b.right-1&&y1>b.top+1&&y0<b.bottom-1){bad.push(['line '+ends.join('>'),'runs through box '+id]);break}}}}
+ const all=sol.concat(fr),inside=(a,b)=>a.left>=b.left-0.5&&a.right<=b.right+0.5&&a.top>=b.top-0.5&&a.bottom<=b.bottom+0.5;
+ for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){const a=all[i][1],b=all[j][1],w=Math.min(a.right,b.right)-Math.max(a.left,b.left),h=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
+  if(w>1&&h>1&&!inside(a,b)&&!inside(b,a))bad.push([all[i][0],'half overlaps '+all[j][0]])}}return bad.slice(0,5)}"""
 # Motion, stepped at 30 frames per wall second (playback rate included) through the whole timeline:
 #  tokens - dots drawn with K.token keep an id while they move; the distance one id covers between two
 #           frames is its speed in CSS px per second; above MOTION_MAX the reader cannot follow it;
@@ -76,7 +87,7 @@ def figure_problems(page) -> list[str]:
     body = page.locator('body')
     found = [('text outside the figure', page.locator('svg').first.evaluate(FIGURE_BOX_JS)),
              ('overlapping text', body.evaluate(OVERLAP_JS)['bad']), ('text painted over', body.evaluate(COVER_JS)),
-             ('low contrast', body.evaluate(CONTRAST_JS)), ('box text', body.evaluate(BOX_JS))]
+             ('low contrast', body.evaluate(CONTRAST_JS)), ('box text', body.evaluate(BOX_JS)), ('layout', body.evaluate(LAYOUT_JS))]
     return [f'figure.svg: {what} {v}' for what, v in found if v]
 
 
@@ -138,6 +149,8 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
                 if cov: fail(f'{width}px T={t:g}: text painted over by a later shape {cov[:3]}')
                 box = root.evaluate(BOX_JS)   # text belonging to a box stays inside it; free labels stay off boxes
                 if box: fail(f'{width}px T={t:g}: {box[:3]}')
+                lay = root.evaluate(LAYOUT_JS)   # connectors around boxes, boxes and frames nest
+                if lay: fail(f'{width}px T={t:g}: layout {lay[:3]}')
                 bad = root.evaluate(CONTRAST_JS)
                 if bad: fail(f'{width}px T={t:g}: text below 4.5:1 contrast {bad[:3]}')
                 mf = page.evaluate(MINFONT_JS, 'svg[data-ca-static]')
@@ -161,7 +174,7 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
         if live:   # Confluence columns are rarely exactly 715 px: the same dense sweep at 600 px
             page.set_viewport_size({'width': 800, 'height': 1000}); page.set_content(wrap(fragment, 600)); page.wait_for_timeout(250)
             for k in range(0, 25):
-                t = end * k / 24; seek(t); o = root.evaluate(OVERLAP_JS); bx = root.evaluate(BOX_JS)
+                t = end * k / 24; seek(t); o = root.evaluate(OVERLAP_JS); bx = root.evaluate(BOX_JS) + root.evaluate(LAYOUT_JS)
                 if o['bad'] or o['out'] or bx: fail(f'600px T={t:.2f}: overlapping/clipped text {(o["bad"] or o["out"] or bx)[:3]}'); break
             rec['checks']['dense_overlap_600'] = 25
         if live:   # motion: token speed and wire shape over the whole timeline, at 715 and 360 px

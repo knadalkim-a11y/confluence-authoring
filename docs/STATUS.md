@@ -1,4 +1,4 @@
-# Status — v0.15.0 design phase 3 (concept vocabulary: role tones, concept kind, boundaries)
+# Status — v0.16.0 design phase 4 (composition engine: compose kind, concept forms as presets)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -17,7 +17,8 @@ situation at the quality of the live tier. Monitoring cases are validation mater
   before/after, funnel), `share` (composition and its change; no pie charts), `timeline`
   (dates, numbers or `HH:MM` clock times, durations, incident legends), `diagram` (components
   in layers, connections, groups; with `steps` the path a request, document or approval takes,
-  e.g. an AI agent call or RAG; `current` / `proposed` shown in the picture). Static or
+  e.g. an AI agent call or RAG; `current` / `proposed` shown in the picture), `concept` (presets) and
+  `compose` (a nested tree of layout containers and parts for any other idea). Static or
   animated is chosen by situation; `motion: "none"` gives a no-script figure.
 - Every recipe in `recipes/` names the kinds that usually fit it (status, architecture,
   design, incident, comparison, tutorial, weekly report, handoff).
@@ -61,6 +62,19 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.16.0 composition engine
+
+`compose` kind (`visuals/live/scenes/compose.js`, `visual_spec.compose_data`); concept forms are presets of it and
+`concept.js` is gone. New layout gate (no link through another box; boxes and frames nest). Evaluation in design
+doc §12: dev set 9 figures rebuilt (judged: 5 missed→comparable, 2 weak→comparable, b01 missed→weak (tangle
+metaphor out of scope), b03 stays weak). Held-out 8 topics, specs written once after the engine: first try gates
+4/8, judged good 3 / flawed 5 / missed 0; the 5 flaws were engine rules (label placement, tree routing, phone
+height and edge room), fixed in the engine with the specs unchanged, 8/8 after (that second number is not an
+independent result). All judgements are mine, not the user's.
+Actual results (2026-10-05, Chromium 141): unit 120 OK; examples 22/22 with --check; compose examples 7/7 under
+--font NanumGothic; browser_live 18/18 default and 18/18 NanumGothic; browser_monitoring and
+browser_smoke pass; browser_diagram_layout SKIP (no CSS layout case). Local review page: dist/compose-compare.html.
 
 ## v0.15.1 external-topic test
 

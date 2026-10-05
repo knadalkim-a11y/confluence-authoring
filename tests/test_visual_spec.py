@@ -116,11 +116,74 @@ class VisualSpecTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn('예시 데이터', node_static(build(load(name))['data'])['svg'])
 
+    def test_compose(self):
+        """compose kind: a layout tree of containers and parts; steps show parts, change states and bind captions."""
+        info = build(load('tool-approval.json')); d = info['data']
+        self.assertEqual(d['scene'], 'compose'); self.assertTrue(info['checks']['choreo'])
+        el = {}
+        def walk(n):
+            if n['t'] == 'e': el[n['id']] = n
+            else: [walk(k) for k in n['kids']]
+        walk(d['tree'])
+        self.assertEqual(el['del']['sts'], ['normal', 'ok'])                      # a state change from a step
+        acts = [c for c in d['cues'] if c[1] == 'act']
+        self.assertEqual([(c[0], c[5], c[6]) for c in acts], [('del', 0, 1)])
+        self.assertTrue(all(c[2] + c[3] <= d['time']['end'] + 1e-6 for c in d['cues']))
+        self.assertEqual([c[2] for c in d['captions']][:1] + [len(d['captions'])], ['모든 호출은 먼저 권한 검사를 지난다', 4])
+        self.assertLess(d['show']['gate'], d['show']['L0'])                       # a link is drawn after both ends are there
+        rows = info['table'][1]
+        self.assertTrue(any(r[0] == '연결' for r in rows) and any(r[0].startswith('단계') for r in rows))
+        static = load('tool-approval.json'); static['motion'] = 'none'
+        st = build(static); self.assertEqual(st['data']['cues'], [])
+        walk(st['data']['tree']); self.assertEqual(el['del']['sts'], ['ok'])     # the static figure shows the final state
+        base = load('multi-agent.json')
+        for mut in (lambda s: s['root'].update(layout='circle'), lambda s: s['root']['items'][0].update(state='blinking'),
+                    lambda s: s['links'].append({'from': 'or', 'to': 'ghost'}), lambda s: s['links'].append({'from': 'or', 'to': 'or'}),
+                    lambda s: s['root']['items'][0].update(id='s1'), lambda s: s['root'].update(sep='x'),
+                    lambda s: s['root']['items'][0].update(code=['x' * 31]), lambda s: s['steps'][0].update(show=['nope']),
+                    lambda s: s['steps'][0].update(set={'or': 'gone'}), lambda s: s['links'][0].update(style='zigzag'),
+                    lambda s: s['root']['items'][1].update(layout='split'), lambda s: s.update(root={'name': 'x'})):
+            spec = copy.deepcopy(base); mut(spec)
+            with self.assertRaises(SpecError): build(spec)
+
+    def test_compose_layout_static(self):
+        """Every compose figure at 715/600/360 px (the Node static render): connectors are orthogonal and never run
+        through a box other than their ends; boxes and frames nest or stay apart; nothing leaves the figure."""
+        import re
+        from live_scene import node_static
+        names = [f for f in EXAMPLES if build(json.loads(f.read_text(encoding='utf-8')))['data']['scene'] == 'compose']
+        self.assertGreaterEqual(len(names), 7)
+        num = lambda m, k: float(re.search(k + r'="([-\d.]+)"', m).group(1))
+        for f in names:
+            data = build(json.loads(f.read_text(encoding='utf-8')))['data']
+            for w in (715, 600, 360):
+                with self.subTest(f=f.name, w=w):
+                    svg = node_static(data, w)['svg']
+                    boxes = [(m.group(1), num(m.group(0), 'x'), num(m.group(0), 'y'), num(m.group(0), 'width'), num(m.group(0), 'height'))
+                             for m in re.finditer(r'<rect data-(?:solid|frame)="([^"]+)"[^>]*>', svg)]
+                    solid = {b[0]: b for b in boxes if re.search(r'<rect data-solid="%s"' % re.escape(b[0]), svg)}
+                    for b in boxes:
+                        self.assertTrue(-0.5 <= b[1] and b[1] + b[3] <= w + 0.5, b)
+                    for i, a in enumerate(boxes):
+                        for b in boxes[i + 1:]:
+                            ow = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1]); oh = min(a[2] + a[4], b[2] + b[4]) - max(a[2], b[2])
+                            ins = lambda p, q: p[1] >= q[1] - .5 and p[1] + p[3] <= q[1] + q[3] + .5 and p[2] >= q[2] - .5 and p[2] + p[4] <= q[2] + q[4] + .5
+                            if ow > 1 and oh > 1: self.assertTrue(ins(a, b) or ins(b, a), (a, b))
+                    for m in re.finditer(r'<polyline data-ends="(\S+) (\S+)" data-wire="1" points="([^"]+)"', svg):
+                        q = [float(x) for x in m.group(3).split()]; pts = list(zip(q[::2], q[1::2]))
+                        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+                            self.assertTrue(abs(x0 - x1) < .6 or abs(y0 - y1) < .6, m.group(0))
+                            for k, b in solid.items():
+                                if k in (m.group(1), m.group(2)): continue
+                                hit = max(x0, x1) > b[1] + 1 and min(x0, x1) < b[1] + b[3] - 1 and max(y0, y1) > b[2] + 1 and min(y0, y1) < b[2] + b[4] - 1
+                                self.assertFalse(hit, (m.group(1), m.group(2), k))
+
     def test_concept(self):
-        """concept kind: three forms, role tones, default choreography that settles before the end."""
-        for name, form, units in (('rag-before-after.json', 'compare', 2), ('agent-context-window.json', 'stack', 5), ('agent-tool-call.json', 'sequence', 8)):
+        """concept kind: three forms, now presets drawn by the compose engine (split / stack / lifelines),
+        default choreography that settles before the end."""
+        for name, form, root in (('rag-before-after.json', 'compare', 'split'), ('agent-context-window.json', 'stack', 'stack'), ('agent-tool-call.json', 'sequence', 'lifelines')):
             info = build(load(name)); d = info['data']
-            self.assertEqual((d['scene'], d['form']), ('concept', form))
+            self.assertEqual((d['scene'], d['tree']['L'], info['numeric']['form']), ('compose', root, form))
             self.assertTrue(info['live'] and info['checks']['choreo'])
             self.assertTrue(d['cues'] and all(c[2] + c[3] <= d['time']['end'] + 1e-6 for c in d['cues']))
             self.assertEqual(info['data']['labels']['data_kind'], '예시')

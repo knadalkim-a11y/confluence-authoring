@@ -1,0 +1,104 @@
+{
+ "kind": "compose",
+ "data_kind": "example",
+ "source": "예시: 일반적인 구조를 단순화",
+ "title": "오케스트레이터와 하위 에이전트",
+ "claim": "오케스트레이터가 일을 나눠 주고 결과를 모은다.",
+ "root": {
+  "layout": "column",
+  "items": [
+   {
+    "id": "or",
+    "name": "오케스트레이터",
+    "tone": "purple",
+    "state": "selected"
+   },
+   {
+    "layout": "row",
+    "frame": "dashed",
+    "label": "하위 에이전트 (병렬)",
+    "tone": "blue",
+    "items": [
+     {
+      "id": "s1",
+      "name": "검색",
+      "tone": "blue"
+     },
+     {
+      "id": "s2",
+      "name": "코드 분석",
+      "tone": "blue"
+     },
+     {
+      "id": "s3",
+      "name": "테스트",
+      "tone": "blue"
+     }
+    ]
+   },
+   {
+    "id": "rp",
+    "name": "최종 보고",
+    "shape": "doc",
+    "tone": "green"
+   }
+  ]
+ },
+ "links": [
+  {
+   "from": "or",
+   "to": "s1"
+  },
+  {
+   "from": "or",
+   "to": "s2",
+   "label": "작업 분배"
+  },
+  {
+   "from": "or",
+   "to": "s3"
+  },
+  {
+   "from": "s1",
+   "to": "rp",
+   "style": "reply"
+  },
+  {
+   "from": "s2",
+   "to": "rp",
+   "label": "결과 취합",
+   "style": "reply"
+  },
+  {
+   "from": "s3",
+   "to": "rp",
+   "style": "reply"
+  }
+ ],
+ "steps": [
+  {
+   "show": [
+    "or"
+   ],
+   "caption": "큰 일을 받은 오케스트레이터가 쪼갠다"
+  },
+  {
+   "show": [
+    "k1",
+    "L0",
+    "L1",
+    "L2"
+   ],
+   "caption": "하위 에이전트들이 동시에 일한다"
+  },
+  {
+   "show": [
+    "rp",
+    "L3",
+    "L4",
+    "L5"
+   ],
+   "caption": "결과를 모아 한 번에 보고한다"
+  }
+ ]
+}
