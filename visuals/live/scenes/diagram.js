@@ -173,7 +173,7 @@ CA_SCENES['diagram']=function(D,K,GR){
       S[s.cur].paths.forEach(function(r,ri){var legs=[],tot=0;
         r.forEach(function(i,k){if(k){var a=g.E[r[k-1]].pts,b=g.E[i].pts,z=a[a.length-1];tot+=Math.hypot(b[0][0]-z[0],b[0][1]-z[1]);}   /* through the box, unseen */
           legs.push([tot,K.plen(g.E[i].pts),i]);tot+=K.plen(g.E[i].pts);});
-        var t0=s.cur+.2,dur=Math.min(.75,Math.max(.6,tot/K.M.speed)),d=K.ease(T,t0,dur)*tot;if(T<t0)return;   /* leaves with the new step's rise (0.8 of the old step's fall), arrives before the next step */
+        var t0=s.cur+K.wall(D.rate,s.cur,.2),dur=Math.min(.75,Math.max(.6,tot/K.M.speed)),d=K.ease(T,t0,dur)*tot;if(T<t0)return;   /* leaves with the new step's rise (0.8 of the old step's fall), arrives before the next step */
         legs.forEach(function(L,k){if(d<L[0]-1e-9||d>L[0]+L[1]+1e-9)return;var a=K.at(g.E[L[2]].pts,d-L[0]);
           o+=K.token(a.x,a.y,'s'+s.cur+'r'+ri+'k'+k,5,C.blue).replace('/>',' stroke="#fff" stroke-width="2"/>');});});}
     g.groups.forEach(function(gr,k){var q=g.gl[k];o+=attr(K.text(q[0],q[1],gr.label,{fs:12,c:C.text,a:q[2],w:700,plate:1}),'data-free="1"');});

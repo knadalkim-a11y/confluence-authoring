@@ -269,7 +269,12 @@ def flow_data(spec):
         captions = [[end, '', claim]]
     rate = paced_rate(captions, end, base) if live else [[0, 1]]
     t = lanes[0]['S']['t']
-    data = dict(scene='flow', time=dict(unit=tu, end=end), inflow=sched, unit=unit, speed=token_speed(peak, unit, rate), labels=labels,
+    cues = []   # the bottleneck heats up when a queue forms and cools when it drains (choreo.py)
+    for i, l in enumerate(lanes):
+        ts_, vs_ = choreo.switches(l['S']['t'], [q > 1e-6 for q in l['S']['q']], rate)
+        cues += choreo.levels(f'q{i}', 'act', vs_, ts_, rate)
+    cues = choreo.validate(cues, end)
+    data = dict(scene='flow', time=dict(unit=tu, end=end), cues=cues, inflow=sched, unit=unit, speed=token_speed(peak, unit, rate), labels=labels,
                 captions=captions, rate=rate, callouts=callouts, t=t,
                 axes=dict(wait_max=nice_max(max(max(l['S']['q']) / l['stages'][l['b']]['capacity'] for l in lanes) or 1)),
                 lanes=[dict(name=l['name'], tone=l['tone'], b=l['b'], limit=l['limit'], peak_q=max(l['S']['q']),
@@ -299,7 +304,7 @@ def flow_data(spec):
     while len(samples) < 6:
         samples = sorted(set(samples + [round(end * (len(samples) + 1) / 7, 4)]))
     samples = samples[:5] + [end] if end not in samples[:6] else samples[:6]   # the final state is always gated
-    checks = dict(end=end, samples=samples, annotations=[[a, round(b, 6)] for a, b in ann if 0 < b < end], expect=expect, resize_at=round(end / 2, 4))
+    checks = dict(end=end, samples=samples, annotations=[[a, round(b, 6)] for a, b in ann if 0 < b < end], expect=expect, resize_at=round(end / 2, 4), choreo=True)
     table = (head, rows)
     numeric = dict(lanes=[dict(name=l['name'], queue_end=l['S']['q'][-1], served_end=l['S']['srv'][-1], rejected_end=l['S']['rej'][-1]) for l in lanes],
                    events={k: v for k, v in events.items() if v is not None}, unit=unit)
@@ -433,7 +438,13 @@ def trend_data(spec):
     if not captions:
         captions = [[end, '', claim]]
     rate = paced_rate(captions, end, [[0, end / 12]]) if live else [[0, 1]]
-    data = dict(scene='trend', time=dict(unit=tu, end=end), groups=groups, thresholds=thresholds, events=ev_marks, ticks=ticks,
+    # a reveal at the very end gets a short settle after the axis ends, so it enters instead of snapping
+    reveals = [e[0] for e in ev_marks] + [x[0] for x in notes_on] + [b[1] for b in bands] + [e[0] for g in groups for e in g['events']] \
+        + [x[0] for g in groups for x in g['pill'] + g['note']] + [ln[0] for ln in ((log or {}).get('lines') or [])]
+    r_end = [r for t0, r in rate if end >= t0 - 1e-9][-1]
+    settle = round(0.5 * r_end, 4) if live and any(t > end - 0.5 * r_end for t in reveals) else 0.0
+    fin = end + settle
+    data = dict(scene='trend', time=dict(unit=tu, end=end, settle=settle), groups=groups, thresholds=thresholds, events=ev_marks, ticks=ticks,
                 bands=bands, annotations=notes_on, between=between, stream=stream, log=log,
                 captions=captions, rate=rate, labels=dict(data_kind=DATA_KINDS[data_kind]))
     def expect(T):
@@ -444,7 +455,8 @@ def trend_data(spec):
     samples = sorted({round(x, 4) for x in [0.05 * end] + [c[0] + 0.03 * end for c in captions if c[0] + 0.03 * end < end] + [end]})
     while len(samples) < 6:
         samples = sorted(set(samples + [round(end * (len(samples) + 1) / 7, 4)]))
-    checks = dict(end=end, samples=samples[:6] if end in samples[:6] else samples[:5] + [end], annotations=ann, expect=expect, resize_at=round(end / 2, 4))
+    samples = [x if x < end - 1e-9 else fin for x in samples]
+    checks = dict(end=fin, samples=samples[:6] if fin in samples[:6] else samples[:5] + [fin], annotations=ann, expect=expect, resize_at=round(end / 2, 4), choreo=True)
     notes = f'출처: {source} ({DATA_KINDS[data_kind]}). 가로축은 {tu} 단위 시간입니다.'
     head = ['시각'] + [f'{p["label"]} · {s["name"]}' for g in groups for p in g['panels'] for s in p['series']]
     grid = sorted({x for g in groups for p in g['panels'] for s in p['series'] for x in s['t']})
@@ -711,22 +723,22 @@ def diagram_data(spec):
     # default choreography (choreo.py): step k starts at k; the old step falls back first, the new one
     # rises as that fall is 80% through; the last 0.5 s settles everything into the final (static) scene
     end = float(n) + 0.5 if n else 1.0
+    rate = [[0, 0.25]] if live else [[0, 1]]   # one step ~3.2 s at the default 1.25x
     cues = []
     if n:
         times = list(range(n + 1))
         used = lambda i, k: any(i in steps[j]['edges'] for j in range(k))
         for i in range(len(edges)):
             seq = [2 if i in steps[k]['edges'] else 1 if used(i, k) else 0 for k in range(n)] + [1 if used(i, n) else 0]
-            cues += choreo.levels(f'e{i}', 'level', seq, times)
+            cues += choreo.levels(f'e{i}', 'level', seq, times, rate)
         for nid in {x for st in steps for x in st['nodes']}:
             seq = [1 if nid in steps[k]['nodes'] else 0 for k in range(n)] + [0]
-            lv = choreo.levels(f'n:{nid}', 'act', seq, times)
-            cues += lv + [choreo.cue(f'n:{nid}', 'pop', c[2], 0.4, 0, 1, 'linear') for c in lv if c[6] > c[5]]
+            lv = choreo.levels(f'n:{nid}', 'act', seq, times, rate)
+            cues += lv + [choreo.cue(f'n:{nid}', 'pop', c[2], 0.4, 0, 1, 'linear', rate) for c in lv if c[6] > c[5]]
         for l in range(n):
-            cues += choreo.levels(f'l{l}', 'on', [2 if l == k else 1 if l < k else 0 for k in range(n)] + [1], times)
+            cues += choreo.levels(f'l{l}', 'on', [2 if l == k else 1 if l < k else 0 for k in range(n)] + [1], times, rate)
         cues = choreo.validate(cues, end)
     captions = [[0.0 if live else end, '', claim]]
-    rate = [[0, 0.25]] if live else [[0, 1]]   # one step ~3.2 s at the default 1.25x
     dm = text(spec.get('dashed_means', '비동기·선택'), 'dashed_means', 1, 14)
     data = dict(scene='diagram', time=dict(unit='', end=end, steps=n), cues=cues, layers=out, edges=edges, groups=groups, steps=steps, highlight=hl, dashed_means=dm,
                 types={k: v for k, v in NODE_TYPES.items() if v and any(n['type'] == k for x in out for n in x['nodes'])},

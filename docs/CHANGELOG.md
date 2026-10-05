@@ -1,5 +1,20 @@
 # Changes
 
+## 0.14.0 — choreography for trend, flow, cascade, thread-pool (design phase 2 done)
+
+- Cue durations are seconds on screen, converted through each case's rate map (`choreo.cue(..., rate)`,
+  `K.wall`). Correction: the 0.13.0 diagram transition was about 1.6 s on screen, not 0.5 s.
+- trend: reveals at one moment enter in sequence (event line drops in, label, annotations, bands, log);
+  pills and notes swap (old out, then new in); a reveal at the very end gets a settle tail.
+- cascade: card warn / health-check / removed levels and DB slowing are cues; status words swap; two alarm
+  pulses on failure; shares and DB latency glide (`K.approach`).
+- flow: queue onset/drain (from the model) blends the bottleneck, gauge, queue box and spare pill;
+  thread-pool: dependency slow/recover blends, and its dots keep their phase through the speed change.
+- The gate now also fails a keyed element that appears fully opaque in one frame. It found and we fixed:
+  fast-opacity event lines, a reveal at the final frame, the queue box/label popping in, a rising label
+  crossing a value label, and duplicate flow token ids (same arrival time; two lanes sharing ids).
+- Annotation timing gate: present within 0.6 s on screen of its event (still absent before it).
+
 ## 0.13.0 — choreography layer (design phase 2), diagram first
 
 - `scripts/choreo.py` builds and validates cues (duration range per property role, no overlap, continuity,

@@ -1,4 +1,4 @@
-# Status — v0.13.0 choreography layer started (design phase 2 of 3: diagram migrated)
+# Status — v0.14.0 design phase 2 done (choreography: diagram, trend, flow, cascade, thread-pool)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -61,6 +61,17 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.14.0 design phase 2 done
+
+Durations moved to seconds on screen (a 0.13.0 claim corrected: the diagram transition was ~1.6 s on screen,
+not 0.5 s). trend, flow, cascade and thread-pool now use cues and fades; the gate also fails one-frame
+appearances. Defects the gate found are listed in docs/CHANGELOG.md 0.14.0 (including duplicate flow token ids).
+Actual results: unit tests OK; browser_live 18/18 default and 18/18 NanumGothic with no warnings; examples
+15/15 with --check under both fonts; browser_monitoring and browser_smoke rc 0. Frame sheets (local):
+dist/cascade-before-after.png, dist/trend-reveal-before-after.png. Not migrated: bars, share, timeline
+(static by default), distribution (its own fades since 0.10.1, not keyed), cfs, eventloop, timeout.
+Not verified: the user's judgement of the motion.
 
 ## v0.13.0 design phase 2, diagram first
 

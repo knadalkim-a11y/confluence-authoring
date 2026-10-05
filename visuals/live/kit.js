@@ -44,8 +44,8 @@ var CA_KIT=(function(){
   function path(d,fill,op){return '<path d="'+d+'" fill="'+fill+'"'+(op!=null?' opacity="'+op+'"':'')+'/>';}
   function arrow(x,y,c){return '<path d="M'+f(x-6)+' '+f(y-4)+'L'+f(x)+' '+f(y)+'L'+f(x-6)+' '+f(y+4)+'" fill="none" stroke="'+c+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>';}
   /* Thick utilisation gauge with a percentage label below (green < 100%, red at the limit). */
-  function gauge(x,y,w,frac,hot,o){o=o||{};var fr=clamp(frac),c=hot?C.red:C.green,s=rect(x,y,w,6,{r:3,fill:C.rule})+rect(x,y,w*fr,6,{r:3,fill:c});
-    if(!o.noLabel)s+=text(x+w/2,y+22,Math.round(fr*100)+'%',{fs:o.fs||13,c:hot?C.redText:C.greenText,a:'middle',w:700});return s;}
+  function gauge(x,y,w,frac,hot,o){o=o||{};var fr=clamp(frac),h=typeof hot==='number'?clamp(hot):hot?1:0,c=mix(C.green,C.red,h),s=rect(x,y,w,6,{r:3,fill:C.rule})+rect(x,y,w*fr,6,{r:3,fill:c});   /* hot: boolean or a 0..1 heat that blends */
+    if(!o.noLabel)s+=text(x+w/2,y+22,Math.round(fr*100)+'%',{fs:o.fs||13,c:mix(C.greenText,C.redText,h),a:'middle',w:700});return s;}
   function num(v,d){return Number(v).toFixed(d==null?1:d);}
   /* Integer with thousands separators, locale independent. */
   function grp(v){var n=Math.round(v),s=String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',');return (n<0?'-':'')+s;}
@@ -99,6 +99,15 @@ var CA_KIT=(function(){
   /* wave / saw: periodic motion for states that last (waiting); never decorative constant motion */
   function wave(t,amp,freq,phase){return amp*Math.sin(2*Math.PI*freq*t+(phase||0));}
   function saw(t,period){return ((t%period)+period)%period/period;}
+  /* wall: a duration in seconds on screen (at 1x) as model time at t, from the case's rate map; kinds whose
+     model time is minutes or days take their presentation durations through this */
+  function wall(rate,t,sec){var r=1;(rate||[]).forEach(function(x){if(t>=x[0]-1e-9)r=x[1];});return sec*r;}
+  /* enter: wrap an svg fragment that appears at progress u (opacity, a short rise of dy px); key = data-k for
+     the gate, which fails a keyed element that shows up fully opaque in one frame */
+  function enter(svg,u,key,dy){u=clamp(u);return '<g data-k="'+esc(key)+'" opacity="'+f(u)+'"'+(dy&&u<1?' transform="translate(0 '+f((1-u)*dy)+')"':'')+'>'+svg+'</g>';}
+  /* swap: replacing one content with another at t0: the old one leaves (first half, in), then the new one
+     enters (second half, out); never both at once, so two labels never overlap */
+  function swap(T,t0,dur){var h=dur/2;if(T<t0)return {old:true,u:1};if(T<t0+h)return {old:true,u:1-CURVE.in((T-t0)/h)};return {old:false,u:CURVE.out(clamp((T-t0-h)/h))};}
   /* mix: colour between two #rrggbb values */
   function mix(a,b,u){u=clamp(u);var p=function(h,i){return parseInt(h.slice(1+2*i,3+2*i),16);},o='#';
     for(var i=0;i<3;i++){var v=Math.round(p(a,i)+(p(b,i)-p(a,i))*u);o+=(v<16?'0':'')+v.toString(16);}return o;}
@@ -108,6 +117,6 @@ var CA_KIT=(function(){
      speed limit does not apply - the data, not the animation, sets its pace */
   function follow(svg){return svg.replace('<circle ','<circle data-follow="1" ');}
   function ease(T,t0,dur){return tween(T,t0,dur||M.fade,'inOut');}
-  return {CURVE:CURVE,DUR:DUR,tween:tween,spring:spring,pop:pop,approach:approach,stagger:stagger,wave:wave,saw:saw,mix:mix,M:M,ortho:ortho,wire:wire,plen:plen,at:at,token:token,tag:tag,follow:follow,ease:ease,C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
+  return {wall:wall,enter:enter,swap:swap,CURVE:CURVE,DUR:DUR,tween:tween,spring:spring,pop:pop,approach:approach,stagger:stagger,wave:wave,saw:saw,mix:mix,M:M,ortho:ortho,wire:wire,plen:plen,at:at,token:token,tag:tag,follow:follow,ease:ease,C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
 })();
 var CA_GRAMMARS={},CA_SCENES={};

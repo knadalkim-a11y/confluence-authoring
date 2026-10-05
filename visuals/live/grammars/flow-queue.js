@@ -31,13 +31,13 @@ CA_GRAMMARS.flowQueue={
       if(c){o+=K.rect(cx,cy,g.cw,g.ch,{r:5,fill:c.hot?C.redSoft:C.blue,st:c.hot?C.red:C.blueText,op:.35+.65*c.appear});
         o+=K.rect(cx+4,cy+g.ch-7,(g.cw-8)*c.progress,3,{r:1.5,fill:c.hot?C.red:'#fff'});}
       else{o+=K.rect(cx,cy,g.cw,g.ch,{r:5,fill:C.paper,st:C.edge});if(st.flash[i])o+=K.rect(cx,cy,g.cw,g.ch,{r:5,fill:'none',st:C.green,sw:1.6,op:st.flash[i]});}}
-    var c0=g.px+g.pw,c1=g.dbx,sp=g.conn/3,v=st.depSlow?6:42,off=(st.T*v)%sp;
-    o+=K.line(c0,g.my,c1,g.my,st.depSlow?C.redRail:C.rail,{sw:1.5});
-    for(i=0;i<3;i++){var dx=c0+off+i*sp;if(dx<c1-2)o+=K.token(dx,g.my,'dep'+(i-Math.floor(st.T*v/sp)),2.4,st.depSlow?C.red:C.blue,.8);}
+    var c0=g.px+g.pw,c1=g.dbx,sp=g.conn/3,ds=typeof st.depSlow==='number'?st.depSlow:st.depSlow?1:0,dist=st.depDist!=null?st.depDist:st.T*(st.depSlow?6:42),off=dist%sp;   /* dist: travelled so far, so a speed change never jumps */
+    o+=K.line(c0,g.my,c1,g.my,K.mix(C.rail,C.redRail,ds),{sw:1.5});
+    for(i=0;i<3;i++){var dx=c0+off+i*sp;if(dx<c1-2)o+=K.token(dx,g.my,'dep'+(i-Math.floor(dist/sp)),2.4,K.mix(C.blue,C.red,ds),.8);}
     o+=K.arrow(c1-2,g.my,C.faint);
-    o+=K.rect(g.dbx,g.py,g.dbw,g.ph,{r:8,fill:st.depSlow?C.redSoft:C.paper,st:st.depSlow?C.red:C.green,sw:1.6});
+    o+=K.rect(g.dbx,g.py,g.dbw,g.ph,{r:8,fill:K.mix('#ffffff',C.redSoft,ds),st:K.mix(C.green,C.red,ds),sw:1.6}).replace('<rect ','<rect data-k="dep" ');
     o+=K.text(g.dbx+g.dbw/2,g.my-6,st.depLabel,{fs:g.nw?13:15,c:C.ink,a:'middle',w:700});
-    o+=K.text(g.dbx+g.dbw/2,g.my+14,(g.nw?'':'응답 ')+st.depValue,{fs:13,c:st.depSlow?C.redText:C.greenText,a:'middle',w:700});
+    o+=K.text(g.dbx+g.dbw/2,g.my+14,(g.nw?'':'응답 ')+st.depValue,{fs:13,c:K.mix(C.greenText,C.redText,ds),a:'middle',w:700});
     return o;}
 };
 /* Stage chain (rate models): [lead rail] -> stage -> ... -> [tail rail]. A queue sits in the
@@ -71,26 +71,29 @@ CA_GRAMMARS.flowQueue.chainDraw=function(K,g,st){
   for(i=0;i<pts.length;i+=2){if(pts[i+1]-pts[i]>2){o+=K.line(pts[i],my,pts[i+1]-2,my,C.rail,{sw:1.5});if(i>0||g.o.lead)o+=K.arrow(pts[i+1]-2,my,C.faint);}}
   /* queue area */
   var busy=st.q>1e-6,showBox=st.boxAlways||busy,bx=g.qx0,bw=g.qx1-g.qx0,by=my-g.boxH/2;
-  if(showBox)o+=K.rect(bx,by,bw,g.boxH,{r:6,fill:st.qHot?'#fff':C.paper2,st:st.qHot?C.red:C.edge,sw:st.qHot?1.4:1,d:st.qHot&&!g.o.slots?'4 3':null});
+  var qh=typeof st.qHot==='number'?st.qHot:st.qHot?1:0;   /* queue heat 0..1 */
+  var kp=st.idp||'',qs=st.boxAlways||st.qShow==null?1:Math.max(.001,st.qShow);   /* a queue box that forms fades in with the queue's cue */
+  if(showBox)o+=K.rect(bx,by,bw,g.boxH,{r:6,fill:K.mix(C.paper2,'#ffffff',qh),st:K.mix(C.edge,C.red,qh),sw:1+.4*qh,d:qh>.5&&!g.o.slots?'4 3':null,op:qs}).replace('<rect ','<rect data-k="'+kp+'qbox" ');
   if(g.o.slots){var n=Math.round(st.q);for(i=0;i<g.o.slots;i++){var cx=g.qx1-5-(i+1)*(g.cell+3)+3;
       o+=i<n?K.rect(cx,my-g.cell/2,g.cell,g.cell,{r:4,fill:C.amberCell,st:C.amber}):K.rect(cx,my-g.cell/2,g.cell,g.cell,{r:4,fill:C.paper,st:C.edge});}}
   else if(busy){var cap=g.rows*g.cols,dots=Math.min(cap,Math.ceil(st.q/st.unit-1e-6));
-    for(i=0;i<dots;i++){var col=Math.floor(i/g.rows),row=i%g.rows;o+=K.dot(g.qx1-4-g.pitch/2-col*g.pitch,by+4+g.pitch/2+row*g.pitch,g.c?3.8:4.6,st.qHot?C.red:C.amber);}}
-  if(busy&&st.qLabel)o+=K.text(bx+bw/2,by-8,st.qLabel,{fs:g.c?12:13,c:st.qHot?C.redText:C.amberText,a:'middle',w:700,halo:1});
+    for(i=0;i<dots;i++){var col=Math.floor(i/g.rows),row=i%g.rows;o+=K.dot(g.qx1-4-g.pitch/2-col*g.pitch,by+4+g.pitch/2+row*g.pitch,g.c?3.8:4.6,K.mix(C.amber,C.red,qh));}}
+  if(busy&&st.qLabel)o+=K.enter(K.text(bx+bw/2,by-8,st.qLabel,{fs:g.c?12:13,c:K.mix(C.amberText,C.redText,qh),a:'middle',w:700,halo:1}),st.final||st.qShow==null?1:st.qShow,kp+'qlab');   /* the count enters with the queue, even where the box is always drawn */
   if(st.limitLabel)o+=K.line(bx,by-4,bx,by+g.boxH+4,C.red,{d:'3 3',sw:1.2})+K.text(bx+4,by-7,st.limitLabel,{fs:11,c:C.redText,w:700});
   /* tokens (not in the final/static scene: a frozen token reads as a glitch in print) */
-  if(!st.final)st.tokens.forEach(function(k){var a=k[0],s=k[1],rej=k[2],tx=rej||st.tail(a)>1e-6?bx:qs,d=tx-x0,ta=a-d/v;
-    if(T>=ta&&T<a)o+=K.token(x0+(T-ta)*v,my,'a'+a,g.c?3.6:4.2,C.blue,K.clamp((T-ta)*v/14));
-    if(rej&&T>=a&&T<a+0.35){var r=K.tween(T,a,.35,'out');o+=K.token(bx-2-r*8,my-6-r*20,'x'+a,3.6,C.red,1-K.tween(T,a,.35,'in'));}
-    if(s!=null){var sx=g.sx[g.o.queueAt]+g.nodeW,ex=g.end-4;if(T>=s&&T<s+(ex-sx)/v)o+=K.token(sx+(T-s)*v,my,'s'+s,g.c?3.4:4,C.blue,K.clamp((ex-sx-(T-s)*v)/12));}});
+  if(!st.final)st.tokens.forEach(function(k,ti){var a=k[0],s=k[1],rej=k[2],   /* ids by list position: arrivals can share a time */
+    tx=rej||st.tail(a)>1e-6?bx:qs,d=tx-x0,ta=a-d/v;
+    if(T>=ta&&T<a)o+=K.token(x0+(T-ta)*v,my,(st.idp||'')+'a'+ti,g.c?3.6:4.2,C.blue,K.clamp((T-ta)*v/14));
+    if(rej&&T>=a&&T<a+0.35){var r=K.tween(T,a,.35,'out');o+=K.token(bx-2-r*8,my-6-r*20,(st.idp||'')+'x'+ti,3.6,C.red,1-K.tween(T,a,.35,'in'));}
+    if(s!=null){var sx=g.sx[g.o.queueAt]+g.nodeW,ex=g.end-4;if(T>=s&&T<s+(ex-sx)/v)o+=K.token(sx+(T-s)*v,my,(st.idp||'')+'s'+ti,g.c?3.4:4,C.blue,K.clamp((ex-sx-(T-s)*v)/12));}});
   /* stages */
-  st.stages.forEach(function(sg,j){var x=g.sx[j],w=g.nodeW,hot=sg.state==='hot',ok=sg.state==='ok';
-    o+=K.rect(x,g.y0,w,g.nh,{r:8,fill:hot?C.hotPaper:C.paper,st:hot?C.red:ok?C.green:C.edge,sw:hot||ok?1.6:1.2});
-    o+=K.text(x+w/2,my+(sg.sub?-4:5),sg.name,{fs:g.c?12:15,c:hot?C.redText:C.ink,a:'middle',w:700});
-    if(sg.sub)o+=K.text(x+w/2,my+15,sg.sub,{fs:g.c?11:12,c:hot?C.redText:ok?C.greenText:C.muted,a:'middle',w:700});
+  st.stages.forEach(function(sg,j){var x=g.sx[j],w=g.nodeW,ok=sg.state==='ok',ht=typeof sg.state==='number'?sg.state:sg.state==='hot'?1:0,hot=ht>.5;   /* state: 'hot' | 'ok' | a 0..1 heat */
+    o+=K.rect(x,g.y0,w,g.nh,{r:8,fill:K.mix('#ffffff',C.hotPaper,ht),st:ok?C.green:K.mix(C.edge,C.red,ht),sw:ok?1.6:1.2+.4*ht}).replace('<rect ','<rect data-k="'+(st.idp||'')+'sg'+j+'" ');
+    o+=K.text(x+w/2,my+(sg.sub?-4:5),sg.name,{fs:g.c?12:15,c:K.mix(C.ink,C.redText,ht),a:'middle',w:700});
+    if(sg.sub)o+=K.text(x+w/2,my+15,sg.sub,{fs:g.c?11:12,c:ok?C.greenText:K.mix(C.muted,C.redText,ht),a:'middle',w:700});
     if(sg.limit)o+=K.text(x+w/2,g.y0+g.nh+17,sg.limit,{fs:g.c?11:13,c:C.muted,a:'middle'});
     o+=K.gauge(x+4,g.y0+g.nh+(sg.limit?25:10),w-8,sg.frac,sg.gaugeHot,{fs:g.c?12:13});
-    if(sg.pill)o+=K.pill(x+w/2,g.top+10,sg.pill[0],sg.pill[1]);});
+    if(sg.pill)o+=K.enter(K.pill(x+w/2,g.top+10,sg.pill[0],sg.pill[1]),sg.pillU==null?1:sg.pillU,(st.idp||'')+'pl'+j);});
   /* Over a dot grid the pill may cover dots (they are a mass); over buffer slots it goes below so the
      reader can still count the occupied cells. */
   if(st.centrePill)o+=K.pill(bx+bw/2,g.o.slots?by+g.boxH+14:my,st.centrePill[0],st.centrePill[1],{fs:12});

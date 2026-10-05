@@ -429,7 +429,7 @@ def pool_live_data(p):
       jobs=[[round(j['arrive'],6),round(j['start'],6),round(j['end'],6),j['slot'],j['service']] for j in jobs],
       series=dict(dt=dt,active=active,queued_smooth=smooth),
       events=dict(t_queue=t_queue,t_queue_max=t_qmax,q_max=q_max,t_drain=t_drain,max_job=max_job),
-      captions=captions,rate=rate_map,
+      captions=captions,rate=rate_map,cues=__import__('choreo').validate(__import__('choreo').levels('dep','act',[1,0],[s0,s1],rate_map),h),
       axes=dict(stack_max=stack_max,response_max=rmax,response_ticks=[0,rmax/2,rmax],hot_response=max(1.0,ns*3),x_step=2 if h<=16 else 5),
       labels=dict(inflow=f'유입 {f1(rate)}건/s',pool='스레드 풀',dependency='DB',slow_band=f'DB 지연 {fg(s0)}–{fg(s1)}초'))
     aria=(f'스레드 {w}칸 풀에 초당 {f1(rate)}건이 들어온다. {fg(s0)}초에 처리 시간이 {fg(ns)}초에서 {fg(ss)}초로 늘자 '
@@ -819,8 +819,24 @@ def cascade_live_data(p):
     if f:caps.append((f[0][0],f'서버 {f[0][1]+1}이 헬스체크에 실패해 빠지고, 몫이 남은 서버로 간다.'))
     if len(f)>1:caps.append((f[1][0],'빠진 서버의 몫이 남은 서버를 더 빨리 쓰러뜨린다 — 도미노.'))
     step=10   # ship every 10th sample (0.1 s); the scene interpolates
+    # choreography (scripts/choreo.py): each status change of a server card, the DB slowing, the LB re-routing
+    import choreo
+    st=[];cues=[]
+    for j in range(3):
+        stop=m['fail'][j] if m['fail'][j] is not None else m['H']
+        tw=next((t for t,L in zip(m['ts'],m['loads']) if L[j]>=80 and t<stop),None)
+        ch=[[0.0,0]]+([[tw,1]] if tw is not None else [])+([[m['hit'][j],2]] if m['hit'][j] is not None else [])+([[m['fail'][j],3]] if m['fail'][j] is not None else [])
+        st.append(ch)
     d=_custom('cascade',caps,m['H'],[[0,.9],[m['slow'],.6]],ts=m['ts'][::step],loads=[[round(x,2) for x in L] for L in m['loads'][::step]],
-              hit=m['hit'],fail=m['fail'],slow=m['slow'],end_h=m['H'],healthy=m['healthy'][::step])
+              hit=m['hit'],fail=m['fail'],slow=m['slow'],end_h=m['H'],healthy=m['healthy'][::step],st=st)
+    cues=[]   # durations are on-screen seconds, resolved through the paced rate map
+    for j in range(3):
+        stop=m['fail'][j] if m['fail'][j] is not None else m['H']
+        tw=next((t for t,L in zip(m['ts'],m['loads']) if L[j]>=80 and t<stop),None)
+        for prop,t in (('level',tw),('act',m['hit'][j]),('on',m['fail'][j])):
+            if t is not None:cues+=choreo.levels(f'c{j}',prop,[1],[t],d['rate'])
+    cues+=choreo.levels('db','act',[1],[m['slow']],d['rate'])
+    d['cues']=choreo.validate(cues,m['H'])
     order=', '.join(f'{fmt(t)}초에 서버 {j+1}' for t,j in f)
     aria=(f"로드 밸런서 뒤 서버 3대와 DB. {fmt(m['slow'])}초에 DB가 느려지자 서버 부하가 오르고, 포화된 서버가 헬스체크에서 빠진다({order}). "
           "빠진 서버의 몫이 남은 서버로 넘어가 연쇄적으로 무너진다.")
@@ -908,7 +924,7 @@ def live_checks(case_id,p):
         def ex(T):
             i=min(len(ts)-1,int(round(T/.01)));return dict(state={'healthy':m['healthy'][i]},stats=[])
         sm=([.5,m['slow']+.8]+[t+.3 for t in fl][:3]+[m['H']-.4,m['H']])[:5]+[m['H']]
-        return dict(expect=ex,samples=sm,annotations=[['재분배 중',fl[0]]] if fl else [],end=m['H'],resize_at=m['H']/2)
+        return dict(expect=ex,samples=sm,annotations=[['재분배 중',fl[0]]] if fl else [],end=m['H'],resize_at=m['H']/2,choreo=True)
     if case_id=='event-loop':
         d=eventloop_live_data(p)[0];tk=d['tasks'];a_,b_,h=d['a'],d['b'],d['end_h']
         ex=lambda T:dict(state=dict(zip(('queued','done'),_loop_state(tk,T))),stats=[])
@@ -917,7 +933,7 @@ def live_checks(case_id,p):
         data=pool_live_data(p)[0];ev=data['events'];jobs=pool_model(p);mj=jobs[ev['max_job']]
         samples=[.5,p['slow_start']+.6,(ev['t_queue'] or 5)+.5,ev['t_queue_max'] or 9,p['recovery']+1.5,p['horizon']]
         notes=[]   # the scene has no verdict labels any more; queue and response times are live state
-        return dict(expect=_probe_pool(p),samples=samples,annotations=notes,end=p['horizon'],resize_at=6.0)
+        return dict(expect=_probe_pool(p),samples=samples,annotations=notes,end=p['horizon'],resize_at=6.0,choreo=True)
     spec={'pipeline-bottleneck':pipeline_spec,'bounded-queue':bounded_spec,'cpu-latency':lambda q:cpu_spec(q)[0],
           'slow-degradation':lambda q:slow_spec(q)[0],'postmortem-timeline':lambda q:postmortem_spec(q)[0],
           **{k:(lambda f:lambda q:f(q)[0])(f) for k,(f,_) in SPEC_CASES.items()}}[case_id](p)

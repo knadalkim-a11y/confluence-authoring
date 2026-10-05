@@ -2,7 +2,7 @@
    or two variants side by side. All numbers (queue, served, rejected, token times) come from
    the Python fluid model in data (visual_spec.flow_data); this file maps state at T. */
 CA_SCENES['flow']=function(D,K,GR){
-  var L=D.labels,C=K.C,FQ=GR.flowQueue,TP=GR.timePanels,end=D.time.end,t=D.t,lanes=D.lanes,two=lanes.length>1;
+  var L=D.labels,C=K.C,FQ=GR.flowQueue,TP=GR.timePanels,end=D.time.end,t=D.t,lanes=D.lanes,two=lanes.length>1,CH=CA_CHOREO(D.cues,K);
   var per=(L.rate_unit.split('/')[1]||'');
   function at(a,T){return Math.max(0,TP.at(t,a,T));}
   function rateIn(T){var r=D.inflow[0][1];D.inflow.forEach(function(x){if(T>=x[0]-1e-9)r=x[1];});return r;}
@@ -18,14 +18,14 @@ CA_SCENES['flow']=function(D,K,GR){
       /* one lane: a history strip keeps the story visible after the queue drains (print/no-JS) */
       c.hist=!two&&l.peak_q>1e-6&&l.q[l.q.length-1]<1e-6;   /* only when the picture would otherwise hide a drained backlog */c.h=c.bottom+(two?4+30+34:0)+(c.hist?70:0);g.lanes.push(c);y+=c.h+(two?18:0);});
     g.H=Math.max.apply(null,g.lanes.map(function(c){return c.y+c.h;}))+18;return g;}
-  function lane(c,i,T){var l=lanes[i],qv=at(l.q,T),hot=qv>1e-6,o='',multi=l.stages.length>1,rin=rateIn(T),sr=served(l,T);
+  function lane(c,i,T){var l=lanes[i],qv=at(l.q,T),hot=qv>1e-6,ht=CH.v('q'+i,'act',T,hot?1:0),o='',multi=l.stages.length>1,rin=rateIn(T),sr=served(l,T);
     var st=l.stages.map(function(s,j){var isB=j===l.b,flow=j<l.b?rin:sr;
       return {name:c.c?s.short:s.name,sub:multi?'':K.grp(s.cap)+(per?'/'+per:''),limit:multi?(c.c?'':'한도 ')+K.grp(s.cap)+(c.c?'':L.rate_unit):'',
-        frac:flow/s.cap,gaugeHot:isB&&hot,state:multi&&isB&&hot?'hot':null,pill:multi&&hot&&!isB?[L.spare,'ok']:null};});   /* the red bottleneck box says "limit" by itself */
+        frac:flow/s.cap,gaugeHot:isB?ht:0,state:multi&&isB?ht:null,pill:multi&&hot&&!isB?[L.spare,'ok']:null,pillU:ht};});   /* heat blends; the spare pill enters with it */   /* the red bottleneck box says "limit" by itself */
     var cp=null;D.callouts.forEach(function(x){if(x[0]===i&&T>=x[1]-1e-9)cp=[x[2],x[3]];});
     if(two)o+=K.text(0,c.top-8,l.name,{fs:13,c:l.tone==='bad'?C.redText:l.tone==='good'?C.greenText:C.ink,w:700});
-    o+=FQ.chainDraw(K,c,{T:T,final:T>=end-1e-9,q:qv,unit:D.unit,tokens:l.tokens,tail:function(x){return at(l.q,x);},v:D.speed,
-      qLabel:l.limit?'':K.grp(qv)+L.count_unit+' 대기',qHot:!l.limit&&hot,boxAlways:two,limitLabel:l.limit?L.limit_tag.replace('{limit}',K.grp(l.limit)):'',
+    o+=FQ.chainDraw(K,c,{idp:'L'+i+'.',T:T,final:T>=end-1e-9,q:qv,unit:D.unit,tokens:l.tokens,tail:function(x){return at(l.q,x);},v:D.speed,
+      qLabel:l.limit?'':K.grp(qv)+L.count_unit+' 대기',qHot:l.limit?0:ht,qShow:ht,boxAlways:two,limitLabel:l.limit?L.limit_tag.replace('{limit}',K.grp(l.limit)):'',
       centrePill:cp,stages:st});
     if(two){var ry=c.bottom+4,w=qv/cap(l),rej=at(l.rej,T),ot=null;D.inflow.forEach(function(x){if(ot===null&&x[1]>cap(l))ot=x[0];});
       var over=ot===null||T<=ot?0:at(l.inc,T)-at(l.inc,ot);

@@ -37,7 +37,7 @@ BOX_JS = """(root)=>{const bad=[];for(const s of """ + VISIBLE + """){const soli
 #           frames is its speed in CSS px per second; above MOTION_MAX the reader cannot follow it;
 #  wires  - connectors drawn with K.wire may not contain a diagonal segment;
 #  snaps  - an element keyed with data-k whose colour (any channel > 128/255) or width (> 0.6 px) jumps in one
-#           frame: a state change without a transition (docs/design/motion-concept-architecture.md, section 5);
+#           frame, or that appears already >= 80% opaque: a state change without a transition (docs/design/motion-concept-architecture.md, section 5);
 #  loose  - a dot that moves without K.token (its speed would go unchecked). Markers drawn with K.follow
 #           ride on the data (a line's head) and are exempt: a jump in the data is information.
 # Measured on the article demos before choosing what to gate: their frames also contain large instant
@@ -58,7 +58,8 @@ MOTION_JS = """([maxv])=>{const L=root=>root.__caLive;const root=document.queryS
    const near=gone.map(b=>Math.hypot(a[0]-b[0],a[1]-b[1])).sort((x,y)=>x-y)[0];if(near<20){loose.push([a[2],+T.toFixed(2),+near.toFixed(1)]);break}}
   /* snaps: an element keyed with data-k (choreographed kinds) whose colour or line width jumps in one frame */
   const hx=c=>/^#[0-9a-f]{6}$/i.test(c||'')?[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)):null;
-  const kk={};for(const e of svg.querySelectorAll('[data-k]'))kk[e.dataset.k]=[e.getAttribute('stroke'),e.getAttribute('fill'),+(e.getAttribute('stroke-width')||0)];
+  const kk={};for(const e of svg.querySelectorAll('[data-k]'))kk[e.dataset.k]=[e.getAttribute('stroke'),e.getAttribute('fill'),+(e.getAttribute('stroke-width')||0),e.hasAttribute('opacity')?+e.getAttribute('opacity'):1];
+  if(pk&&snaps.length<8)for(const k in kk)if(!(k in pk)&&kk[k][3]>=0.8){snaps.push([k,+T.toFixed(2),'appears at opacity '+kk[k][3]]);}
   if(pk&&snaps.length<8)for(const k in kk){if(!(k in pk))continue;for(const i of [0,1]){const a=hx(kk[k][i]),b=hx(pk[k][i]);
     if(a&&b&&Math.max(...a.map((v,j)=>Math.abs(v-b[j])))>128){snaps.push([k,+T.toFixed(2),pk[k][i]+'>'+kk[k][i]]);break}}
    if(Math.abs(kk[k][2]-pk[k][2])>0.6&&snaps.length<8)snaps.push([k,+T.toFixed(2),'width '+pk[k][2]+'>'+kk[k][2]])}
@@ -175,9 +176,11 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
                     fail(msg) if checks.get('choreo') else rec.setdefault('warnings', []).append(msg)
         if live:
             page.set_viewport_size({'width': 800, 'height': 1000}); page.set_content(wrap(fragment, 715)); page.wait_for_timeout(200)
+            rmap = data.get('rate') or [[0, 1]]
             for label, at in checks.get('annotations', []):
+                r_at = [r for t0, r in rmap if at >= t0 - 1e-9][-1] if any(at >= t0 - 1e-9 for t0, _ in rmap) else 1
                 seek(max(0, at - 0.012 * end)); before = root.locator('svg[data-ca-live]').inner_html()
-                seek(min(end, at + 0.012 * end)); after = root.locator('svg[data-ca-live]').inner_html()
+                seek(min(end, at + max(0.012 * end, 0.6 * r_at))); after = root.locator('svg[data-ca-live]').inner_html()   # an entrance may take up to 0.6 s on screen
                 if label in before: fail(f'"{label}" shown before its time {at:g}')
                 if label not in after: fail(f'"{label}" missing after its time {at:g}')
             root.locator('[data-a="end"]').click()
