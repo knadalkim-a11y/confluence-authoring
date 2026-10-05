@@ -27,6 +27,9 @@ specs it cannot render well.
 | what the parts of a system are and how they connect (architecture, data pipeline, ownership, current vs proposed) | `diagram` | static |
 | the path a request, document or approval takes through those parts (AI agent call, RAG, approval process, failure propagation) | `diagram` with `steps` | animated, one step at a time; the step list stays in the picture |
 | how values spread, and what the average hides (latency, durations, any per-item measure) | `distribution` | dots arrive, then mean / P50 / P95 / P99 one at a time |
+| an idea side by side: without vs with, before vs after, two viewpoints | `concept` `"form": "compare"` | columns enter in turn |
+| what something is made of, top to bottom (a context window, layers, an organisation) | `concept` `"form": "stack"` | bands settle bottom-up |
+| who sends what to whom, in order (an API call, a tool call, a hand-off) | `concept` `"form": "sequence"` | messages drawn one by one |
 | a mechanism none of these express (discrete workers, retries, routing, cycles) | custom live scene, see `live-runtime.md` (thread-pool, cfs, cascade, eventloop, timeout are examples) | animated |
 
 Deliberately not offered: pie/donut, 3D, dual y-axes, KPI gauge tiles, decorative motion.
@@ -37,11 +40,11 @@ scripts); `"play"` animates a kind that is static by default (bars grow once).
 
 | Field | Rule |
 |---|---|
-| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` · `diagram` · `distribution` |
+| `kind` | `flow` · `trend` · `bars` · `share` · `timeline` · `diagram` · `distribution` · `concept` |
 | `title` | Accessible name (≤ 120 chars). The page heading usually says it too. |
 | `claim` | The one-sentence takeaway (≤ 120). Shown under a static figure; use it as the last caption of an animated one. |
 | `source` | Where the numbers come from. Required. |
-| `data_kind` | `measured` · `estimate` · `example`; for `diagram`: `current` (현재 구조) · `proposed` (제안안) · `example`. Required; shown in the picture or notes so illustrative numbers or a proposal are never mistaken for the real thing. |
+| `data_kind` | `measured` · `estimate` · `example`; for `diagram` and `concept`: `current` (현재 구조) · `proposed` (제안안) · `example`. Required; shown in the picture or notes so illustrative numbers or a proposal are never mistaken for the real thing. |
 | `motion` | `auto` (default) · `play` · `none` |
 | `captions` | `[{"at": time or event, "text": "…"}]`. One claim each, 25–45 chars (hard limit 50 after placeholders). Bind to model events, not guessed times. The build fails if two captions are too close to be read at the default speed. |
 
@@ -182,6 +185,30 @@ unknown events are build errors that list what is available. Never type a comput
   already name the phases) or rename with `"status_labels": {"late": "감지 공백"}`.
 - Static kinds print "예시 데이터" / "추정값" in the picture when `data_kind` is not `measured`.
 
+### `concept` — ideas, not numbers (v0.15.0)
+
+Three forms that recur in hand-made explanation figures (docs/design/motion-concept-architecture.md §10). All use
+the role tones; all animate by default (each unit enters in turn) and settle into the final scene.
+
+```json
+{"kind": "concept", "form": "compare", "data_kind": "example", "arrow": "검색 추가",
+ "columns": [{"label": "모델만 사용", "tone": "red", "items": [{"name": "그럴듯한 추측", "sub": "출처 없음"}], "note": "…"},
+             {"label": "검색 + 모델", "tone": "blue", "items": [{"name": "근거를 붙인 답변", "tone": "green"}]}]}
+{"kind": "concept", "form": "stack", "bracket": "컨텍스트 창", "free": "남은 공간",
+ "layers": [{"name": "시스템 프롬프트", "sub": "역할·규칙", "tone": "blue"}, {"name": "이전 대화", "tone": "amber", "size": 3}]}
+{"kind": "concept", "form": "sequence", "actors": [{"id": "user", "name": "직원"}, {"id": "agent", "name": "에이전트", "tone": "purple"}],
+ "messages": [{"from": "user", "to": "agent", "text": "남은 연차 알려줘"}, {"from": "agent", "to": "user", "text": "11일", "style": "dashed"}]}
+```
+
+- compare: 2-3 columns, 1-6 items each (name ≤ 16, sub ≤ 22), optional `note` (≤ 40) and `arrow` label (≤ 10)
+  between columns. Columns sit side by side on wide screens and stack on phones (or when the arrow label would
+  need too wide a gap). Keep ≤ 4 items per column with 3 columns, or phones exceed the height budget.
+- stack: 2-7 bands listed top to bottom (name ≤ 18, sub ≤ 28, `size` 1-3 relative height), optional `bracket`
+  (side label ≤ 12) and `free` (an empty dashed band on top, ≤ 14). Name and sub share a line when there is room.
+- sequence: 2-4 actors (name ≤ 10), 1-8 messages in order (text ≤ 24; `style: "dashed"` = reply), numbered.
+- Not for numbers (use a chart kind), not for a system's structure (use `diagram`), not for metaphors (seesaw,
+  explosion): those stay prose or a custom scene.
+
 ### `diagram` — components, connections, and the path through them
 
 ```json
@@ -206,7 +233,10 @@ unknown events are build errors that list what is available. Never type a comput
   runs in a lane outside every box, so both ends must be first (lane above / left) or both last
   (lane below / right) in their layers; the build says which to move. Two-way pairs are drawn
   as parallel lines. `style: "dashed"` with `dashed_means` (default "비동기·선택") for the legend.
-- `groups` draw a boundary around consecutive layers (network, team, "야간 배치").
+- `groups` draw a boundary around consecutive layers (network, team, "야간 배치"); with `"tone"` it is a
+  coloured dashed boundary (trust zone, 사내망). Components take a role colour from their type (system blue,
+  person gray, ai purple, data green, external gray dashed); `"tone"` on a component overrides it
+  (`blue` · `green` · `amber` · `purple` · `red` · `gray`).
 - `steps` (≤ 6, text ≤ 40 chars): each is a `path` along existing connections (direction
   matters) or `paths` for routes at the same time. The step number rides on the first
   connection's label; the numbered step list sits under the diagram in every mode, so print,

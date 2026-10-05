@@ -12,6 +12,11 @@ var CA_KIT=(function(){
     green:'#40c057',greenText:'#237032',greenSoft:'#ebfbee',greenPill:'#d3f9d8',
     purple:'#845ef7',purpleText:'#7048e8',purpleSoft:'#f3f0ff',
     paper:'#fff',paper2:'#f8f9fa',hotPaper:'#fff5f5'};
+  /* Role tones for boxes in structure and concept figures: [soft fill, border, text]. A light fill with a
+     border of the same hue tells roles apart at a glance; text on these fills uses ink/text or the *Text
+     colour (all >= 4.5:1 on the fill). */
+  var TONE={blue:['#e7f5ff','#74c0fc','#1864ab'],green:['#ebfbee','#69db7c','#2b8a3e'],amber:['#fff9db','#fcc419','#a85a00'],
+    purple:['#f3f0ff','#9775fa','#6741d9'],red:['#fff5f5','#ffa8a8','#c92a2a'],gray:['#f8f9fa','#ced4da','#495057']};
   /* Pill kinds: [background, text]; every pair >= 4.5:1. */
   var PILL={ok:['#d3f9d8','#237032'],warn:['#fff3bf','#a85a00'],hot:['#e03131','#fff'],info:['#e7f5ff','#1864ab'],bad:['#ffe3e3','#c92a2a'],purple:['#f3f0ff','#6741d9']};
   function f(v){return Math.round(v*10)/10;}
@@ -117,6 +122,6 @@ var CA_KIT=(function(){
      speed limit does not apply - the data, not the animation, sets its pace */
   function follow(svg){return svg.replace('<circle ','<circle data-follow="1" ');}
   function ease(T,t0,dur){return tween(T,t0,dur||M.fade,'inOut');}
-  return {wall:wall,enter:enter,swap:swap,CURVE:CURVE,DUR:DUR,tween:tween,spring:spring,pop:pop,approach:approach,stagger:stagger,wave:wave,saw:saw,mix:mix,M:M,ortho:ortho,wire:wire,plen:plen,at:at,token:token,tag:tag,follow:follow,ease:ease,C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
+  return {TONE:TONE,wall:wall,enter:enter,swap:swap,CURVE:CURVE,DUR:DUR,tween:tween,spring:spring,pop:pop,approach:approach,stagger:stagger,wave:wave,saw:saw,mix:mix,M:M,ortho:ortho,wire:wire,plen:plen,at:at,token:token,tag:tag,follow:follow,ease:ease,C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
 })();
 var CA_GRAMMARS={},CA_SCENES={};

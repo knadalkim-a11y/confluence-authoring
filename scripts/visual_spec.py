@@ -12,7 +12,7 @@ import choreo
 from monitoring_cases import (finite, fluid_tokens, first_reach, interp, token_speed, paced_rate, caption_walls,
                               caption_need, nice_max, grp, DEFAULT_SPEED)
 
-KINDS = ('flow', 'trend', 'bars', 'share', 'timeline', 'diagram', 'distribution')
+KINDS = ('flow', 'trend', 'bars', 'share', 'timeline', 'diagram', 'distribution', 'concept')
 DATA_KINDS = {'measured': '측정값', 'estimate': '추정값', 'example': '예시 데이터'}
 DIAGRAM_KINDS = {'current': '현재 구조', 'proposed': '제안안', 'example': '예시'}   # a diagram states a structure, not numbers
 CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫'
@@ -113,7 +113,7 @@ def common(spec):
     claim = text(spec.get('claim'), 'claim', 2, 120)
     source = text(spec.get('source'), 'source (where the numbers come from)', 2, 400)
     data_kind = spec.get('data_kind')
-    if kind == 'diagram':
+    if kind in ('diagram', 'concept'):
         need(data_kind in DIAGRAM_KINDS, f'data_kind must be one of {list(DIAGRAM_KINDS)} (say whether this is the current structure or a proposal)')
     else:
         need(data_kind in DATA_KINDS, f'data_kind must be one of {list(DATA_KINDS)} (say whether numbers are real)')
@@ -636,6 +636,7 @@ def timeline_data(spec):
 
 
 # ---------------------------------------------------------------- diagram
+ROLE_TONES = ('blue', 'green', 'amber', 'purple', 'red', 'gray')   # visuals/live/kit.js K.TONE
 NODE_TYPES = {'system': '', 'person': '', 'ai': 'AI·에이전트', 'data': '데이터', 'external': '외부 서비스'}
 NODE_ID = re.compile(r'^[A-Za-z][A-Za-z0-9_-]{0,23}$')
 
@@ -657,12 +658,13 @@ def diagram_data(spec):
         row = []
         for j, nd in enumerate(nodes):
             nm = f'layers[{i}].nodes[{j}]'
-            only(nd, ('id', 'name', 'sub', 'type'), nm)
+            only(nd, ('id', 'name', 'sub', 'type', 'tone'), nm)
             nid = nd.get('id'); need(isinstance(nid, str) and NODE_ID.match(nid), f'{nm}.id: letters, digits, _ or - (max 24), starting with a letter')
             need(nid not in where, f'{nm}.id: "{nid}" used twice')
             tp = nd.get('type', 'system'); need(tp in NODE_TYPES, f'{nm}.type: one of {list(NODE_TYPES)}')
+            tone = nd.get('tone'); need(tone is None or tone in ROLE_TONES, f'{nm}.tone: one of {list(ROLE_TONES)}')
             where[nid] = (i, j)
-            row.append(dict(id=nid, name=text(nd.get('name'), f'{nm}.name', 1, 14), sub=text(nd['sub'], f'{nm}.sub', 1, 18) if nd.get('sub') else '', type=tp))
+            row.append(dict(id=nid, name=text(nd.get('name'), f'{nm}.name', 1, 14), sub=text(nd['sub'], f'{nm}.sub', 1, 18) if nd.get('sub') else '', type=tp, tone=tone or ''))
         out.append(dict(label=text(ly['label'], f'layers[{i}].label', 1, 14) if ly.get('label') else '', nodes=row))
     need(sum(len(x['nodes']) for x in out) <= 14, 'diagram: at most 14 components; split it into two diagrams')
     edges, seen = [], set()
@@ -689,12 +691,13 @@ def diagram_data(spec):
     need(len(edges) <= 24, 'edges: at most 24 connections')
     groups = []
     for k, gp in enumerate(spec.get('groups') or []):
-        only(gp, ('label', 'layers'), f'groups[{k}]')
+        only(gp, ('label', 'layers', 'tone'), f'groups[{k}]')
+        gt = gp.get('tone'); need(gt is None or gt in ROLE_TONES, f'groups[{k}].tone: one of {list(ROLE_TONES)} (a boundary, e.g. 신뢰 영역)')
         rg = gp.get('layers')
         need(isinstance(rg, list) and len(rg) == 2 and all(isinstance(x, int) for x in rg) and 0 <= rg[0] <= rg[1] < len(out),
              f'groups[{k}].layers: [first, last] layer indexes (0-based)')
         need(all(rg[1] < g['a'] or rg[0] > g['b'] for g in groups), f'groups[{k}]: groups may not overlap')
-        groups.append(dict(label=text(gp.get('label'), f'groups[{k}].label', 1, 16), a=rg[0], b=rg[1]))
+        groups.append(dict(label=text(gp.get('label'), f'groups[{k}].label', 1, 16), a=rg[0], b=rg[1], tone=gt or ''))
     need(len(groups) <= 3, 'groups: at most 3')
     hl = spec.get('highlight') or []
     need(isinstance(hl, list) and all(x in where for x in hl), 'highlight: list of component ids')
@@ -821,7 +824,107 @@ def distribution_data(spec):
                 checks=checks, live=live, numeric={g['label']: g['stats'] for g in groups}, title=title)
 
 
-BUILDERS = dict(flow=flow_data, trend=trend_data, bars=bars_data, share=share_data, timeline=timeline_data, diagram=diagram_data, distribution=distribution_data)
+# ---------------------------------------------------------------- concept
+CONCEPT_FORMS = ('compare', 'stack', 'sequence')
+
+
+def concept_data(spec):
+    """Concept figures (docs/design/motion-concept-architecture.md, section 10): ideas, not numbers.
+    compare  - 2-3 columns side by side (without/with, before/after, two viewpoints), items as role-coloured boxes;
+    stack    - bands stacked top to bottom (a context window, layers, an organisation), optional side bracket;
+    sequence - 2-4 actors with lifelines and numbered messages between them (a call, a hand-off).
+    Animated by default: each column / band / message enters in turn (default choreography, scripts/choreo.py)."""
+    kind, title, claim, source, data_kind, motion = common(spec)
+    form = spec.get('form'); need(form in CONCEPT_FORMS, f'form: one of {CONCEPT_FORMS}')
+    base = ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'form')
+    tone = lambda v, nm, d: (v if v is not None else d) if (v is None or v in ROLE_TONES) else need(False, f'{nm}: one of {list(ROLE_TONES)}')
+    data = dict(scene='concept', form=form)
+    rows = []
+    if form == 'compare':
+        only(spec, base + ('columns', 'arrow'), 'concept spec (compare)')
+        cols = spec.get('columns'); need(isinstance(cols, list) and 2 <= len(cols) <= 3, 'columns: 2-3 (e.g. 경계 없음 / 경계 있음)')
+        out = []
+        for i, c in enumerate(cols):
+            nm = f'columns[{i}]'; only(c, ('label', 'tone', 'items', 'note'), nm)
+            items = c.get('items'); need(isinstance(items, list) and 1 <= len(items) <= 6, f'{nm}.items: 1-6')
+            its = []
+            for j, it in enumerate(items):
+                only(it, ('name', 'sub', 'tone'), f'{nm}.items[{j}]')
+                its.append(dict(name=text(it.get('name'), f'{nm}.items[{j}].name', 1, 16), sub=text(it['sub'], f'{nm}.items[{j}].sub', 1, 22) if it.get('sub') else '',
+                                tone=tone(it.get('tone'), f'{nm}.items[{j}].tone', None)))
+            ct = tone(c.get('tone'), f'{nm}.tone', ['gray', 'blue', 'green'][i])
+            for it in its:
+                it['tone'] = it['tone'] or ct
+            out.append(dict(label=text(c.get('label'), f'{nm}.label', 1, 14), tone=ct, items=its, note=text(c['note'], f'{nm}.note', 1, 40) if c.get('note') else ''))
+            rows += [[out[-1]['label'], it['name'], it['sub']] for it in its]
+        data.update(columns=out, arrow=text(spec['arrow'], 'arrow', 1, 10) if spec.get('arrow') else '')
+        units = [[i, len(c['items'])] for i, c in enumerate(out)]
+    elif form == 'stack':
+        only(spec, base + ('layers', 'bracket', 'free'), 'concept spec (stack)')
+        lys = spec.get('layers'); need(isinstance(lys, list) and 2 <= len(lys) <= 7, 'layers: 2-7, listed top to bottom')
+        out = []
+        for i, l in enumerate(lys):
+            nm = f'layers[{i}]'; only(l, ('name', 'sub', 'tone', 'size'), nm)
+            size = l.get('size', 1); need(size in (1, 2, 3), f'{nm}.size: 1, 2 or 3 (relative height)')
+            out.append(dict(name=text(l.get('name'), f'{nm}.name', 1, 18), sub=text(l['sub'], f'{nm}.sub', 1, 28) if l.get('sub') else '',
+                            tone=tone(l.get('tone'), f'{nm}.tone', 'blue'), size=size))
+            rows.append([f'{i + 1}', out[-1]['name'], out[-1]['sub']])
+        data.update(layers=out, bracket=text(spec['bracket'], 'bracket', 1, 12) if spec.get('bracket') else '',
+                    free=text(spec['free'], 'free', 1, 14) if spec.get('free') else '')
+        units = [[0, len(out)]]
+    else:
+        only(spec, base + ('actors', 'messages'), 'concept spec (sequence)')
+        acts = spec.get('actors'); need(isinstance(acts, list) and 2 <= len(acts) <= 4, 'actors: 2-4')
+        ids, out = {}, []
+        for i, a in enumerate(acts):
+            nm = f'actors[{i}]'; only(a, ('id', 'name', 'tone'), nm)
+            aid = a.get('id'); need(isinstance(aid, str) and NODE_ID.match(aid) and aid not in ids, f'{nm}.id: unique letters/digits')
+            ids[aid] = i; out.append(dict(id=aid, name=text(a.get('name'), f'{nm}.name', 1, 10), tone=tone(a.get('tone'), f'{nm}.tone', ['gray', 'blue', 'purple', 'green'][i])))
+        msgs = spec.get('messages'); need(isinstance(msgs, list) and 1 <= len(msgs) <= 8, 'messages: 1-8, in order')
+        mo = []
+        for k, m in enumerate(msgs):
+            nm = f'messages[{k}]'; only(m, ('from', 'to', 'text', 'style'), nm)
+            need(m.get('from') in ids and m.get('to') in ids, f'{nm}: from/to must be actor ids ({", ".join(ids)})')
+            st = m.get('style', 'solid'); need(st in ('solid', 'dashed'), f'{nm}.style: solid (request) or dashed (reply)')
+            mo.append(dict(a=ids[m['from']], b=ids[m['to']], text=text(m.get('text'), f'{nm}.text', 1, 24), dashed=st == 'dashed', mark=CIRCLED[k]))
+            rows.append([CIRCLED[k], f'{out[ids[m["from"]]]["name"]} → {out[ids[m["to"]]]["name"]}', mo[-1]['text']])
+        data.update(actors=out, messages=mo)
+        units = [[k, 1] for k in range(len(mo))]
+    live = motion != 'none'
+    rate = [[0, 0.5]] if live else [[0, 1]]   # one unit (a column, a message) ~1.6 s at the default 1.25x
+    step = 0.4 if form == 'stack' else 1.0
+    n = len(units) if form != 'stack' else len(data['layers'])
+    end = round(n * step + 0.5, 4)
+    cues = []
+    if live:   # each unit enters in turn; items inside a column follow 0.06 s apart (stagger, wall seconds)
+        if form == 'compare':
+            for i, cnt in units:
+                cues += choreo.levels(f'h{i}', 'on', [1], [i * step], rate)
+                for j in range(cnt):
+                    cues += choreo.levels(f'c{i}.{j}', 'on', [1], [i * step + 0.12 + j * 0.06 * rate[0][1]], rate)
+                if i:
+                    cues += choreo.levels(f'd{i}', 'on', [1], [i * step - 0.2], rate)
+        elif form == 'stack':
+            for k in range(n):   # bottom band first: a stack is built from the ground up
+                cues += choreo.levels(f'l{n - 1 - k}', 'on', [1], [k * step], rate)
+            if data['bracket']:
+                cues += choreo.levels('br', 'on', [1], [n * step], rate)
+        else:
+            for k in range(n):
+                cues += choreo.levels(f'm{k}', 'on', [1], [k * step], rate)
+        cues = choreo.validate(cues, end)
+    data.update(time=dict(unit='', end=end, step=step), cues=cues, captions=[[0.0 if live else end, '', claim]], rate=rate,
+                labels=dict(data_kind=DIAGRAM_KINDS[data_kind]))
+    samples = [round(min(end, k * step + 0.6), 4) for k in range(n)][:5] + [end]
+    while len(samples) < 6:
+        samples.append(end)
+    checks = dict(end=end, samples=samples, annotations=[], expect=None, resize_at=round(end / 2, 4), choreo=live)
+    head = {'compare': ['구분', '항목', '설명'], 'stack': ['순서(위→아래)', '층', '설명'], 'sequence': ['순서', '방향', '메시지']}[form]
+    return dict(data=data, aria=f'{title}. {claim}', notes=f'출처: {source} ({DIAGRAM_KINDS[data_kind]}). 개념도이며 수치를 나타내지 않습니다.',
+                table=(head, rows), checks=checks, live=live, numeric=dict(form=form, units=len(rows)), title=title)
+
+
+BUILDERS = dict(flow=flow_data, trend=trend_data, bars=bars_data, share=share_data, timeline=timeline_data, diagram=diagram_data, distribution=distribution_data, concept=concept_data)
 
 
 def build(spec):

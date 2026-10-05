@@ -1,0 +1,23 @@
+{
+  "kind": "concept", "form": "sequence",
+  "title": "에이전트가 도구를 호출해 답하는 순서",
+  "claim": "모델은 도구를 직접 실행하지 않는다. 에이전트가 실행하고 결과를 다시 건넨다.",
+  "source": "예시: 사내 에이전트 동작 설명용",
+  "data_kind": "example",
+  "actors": [
+    {"id": "user", "name": "직원", "tone": "gray"},
+    {"id": "agent", "name": "에이전트", "tone": "purple"},
+    {"id": "llm", "name": "LLM", "tone": "blue"},
+    {"id": "hr", "name": "근태 API", "tone": "green"}
+  ],
+  "messages": [
+    {"from": "user", "to": "agent", "text": "남은 연차 알려줘"},
+    {"from": "agent", "to": "llm", "text": "질문 + 도구 목록"},
+    {"from": "llm", "to": "agent", "text": "근태 조회 호출 요청", "style": "dashed"},
+    {"from": "agent", "to": "hr", "text": "남은 연차 조회"},
+    {"from": "hr", "to": "agent", "text": "11일", "style": "dashed"},
+    {"from": "agent", "to": "llm", "text": "조회 결과 전달"},
+    {"from": "llm", "to": "agent", "text": "답변 문장", "style": "dashed"},
+    {"from": "agent", "to": "user", "text": "남은 연차는 11일입니다", "style": "dashed"}
+  ]
+}

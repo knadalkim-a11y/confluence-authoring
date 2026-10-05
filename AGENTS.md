@@ -10,7 +10,7 @@ Monitoring reference cases also use scripts/monitoring_cases.py and reference_sc
 Generated gallery/macros come from that renderer; never hand-maintain a second demo
 implementation. Do not count planned catalog entries as implemented.
 
-Document visuals (v0.7.0+): new visuals go through the spec path (references/visual-specs.md,
+Document visuals (v0.7.0+; concept kind v0.15.0 for compare/stack/sequence ideas): new visuals go through the spec path (references/visual-specs.md,
 scripts/build_visual.py --check, examples/visuals/). Do not hand-write a scene a kind can express;
 extend the kind instead, with tests (tests/test_visual_spec.py) and the shared gates (scripts/visual_gates.py).
 

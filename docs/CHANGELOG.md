@@ -1,5 +1,18 @@
 # Changes
 
+## 0.15.0 — concept vocabulary (design phase 3)
+
+- Reference survey of all 61 kciter.so posts (design doc §10): interactive demos in 5 posts; the concept
+  demos tell roles apart with soft tinted boxes and use forms we did not have.
+- Role tones (`K.TONE`: blue, green, amber, purple, red, gray; soft fill + same-hue border). Diagram
+  components take a tone from their type or their own `tone`; a group with `tone` is a dashed boundary.
+- New kind `concept`: `compare` (columns, arrow label, notes), `stack` (bands, bracket, free space),
+  `sequence` (actors, lifelines, numbered messages). Default choreography: units enter in turn.
+- Examples: rag-before-after, agent-context-window, agent-tool-call; ai-agent-request shows its 사내망
+  boundary. Screenshot review found and fixed: an arrow label clipped by a column (gap now fits it, label
+  gated as free text), a message number wrapping alone, stack height over budget (bands share a fixed
+  budget; name and sub share a line when wide enough).
+
 ## 0.14.0 — choreography for trend, flow, cascade, thread-pool (design phase 2 done)
 
 - Cue durations are seconds on screen, converted through each case's rate map (`choreo.cue(..., rate)`,

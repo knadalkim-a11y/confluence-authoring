@@ -116,6 +116,36 @@ class VisualSpecTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIn('예시 데이터', node_static(build(load(name))['data'])['svg'])
 
+    def test_concept(self):
+        """concept kind: three forms, role tones, default choreography that settles before the end."""
+        for name, form, units in (('rag-before-after.json', 'compare', 2), ('agent-context-window.json', 'stack', 5), ('agent-tool-call.json', 'sequence', 8)):
+            info = build(load(name)); d = info['data']
+            self.assertEqual((d['scene'], d['form']), ('concept', form))
+            self.assertTrue(info['live'] and info['checks']['choreo'])
+            self.assertTrue(d['cues'] and all(c[2] + c[3] <= d['time']['end'] + 1e-6 for c in d['cues']))
+            self.assertEqual(info['data']['labels']['data_kind'], '예시')
+            frag, _ = make(load(name), 'ca-concept-test')
+            self.assertEqual(validate(frag), [], name)
+        self.assertEqual(len(build(load('agent-tool-call.json'))['table'][1]), 8)
+        bad = load('rag-before-after.json')
+        for mut, msg in ((lambda s: s.update(form='matrix'), 'form'), (lambda s: s['columns'].pop(), 'columns'),
+                         (lambda s: s['columns'][0].update(tone='pink'), 'tone'), (lambda s: s['columns'][0]['items'][0].update(name='x' * 17), 'name'),
+                         (lambda s: s.update(data_kind='measured'), 'data_kind')):
+            spec = copy.deepcopy(bad); mut(spec)
+            with self.assertRaises(SpecError, msg=msg): build(spec)
+        seq = load('agent-tool-call.json'); seq['messages'][0]['to'] = 'nobody'
+        with self.assertRaises(SpecError): build(seq)
+        st = load('agent-context-window.json'); st['layers'][0]['size'] = 4
+        with self.assertRaises(SpecError): build(st)
+        static = load('agent-tool-call.json'); static['motion'] = 'none'
+        info = build(static); self.assertFalse(info['live']); self.assertEqual(info['data']['cues'], [])
+
+    def test_diagram_tones(self):
+        spec = load('ai-agent-request.json'); d = build(spec)['data']
+        self.assertEqual(d['groups'][0]['tone'], 'blue')
+        spec['layers'][0]['nodes'][0]['tone'] = 'pink'
+        with self.assertRaises(SpecError): build(spec)
+
     def test_diagram(self):
         r = build(load('ai-agent-request.json'))
         self.assertTrue(r['live'])                                   # steps -> a walkthrough

@@ -1,4 +1,4 @@
-# Status — v0.14.0 design phase 2 done (choreography: diagram, trend, flow, cascade, thread-pool)
+# Status — v0.15.0 design phase 3 (concept vocabulary: role tones, concept kind, boundaries)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -61,6 +61,19 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.15.0 design phase 3
+
+Survey of all 61 kciter.so posts (design doc §10): interactive demos exist in 5 posts (58 demos); 229 figures
+from 17 image-heavy posts reviewed (mostly photos, screenshots, code). Built from that: role tones for diagram
+components and boundary groups, and the `concept` kind (compare, stack, sequence) with default choreography.
+Screenshot review (not the gates) found an arrow label clipped by a column, a message number wrapping alone and a
+stack over the height budget; fixed in the kind (the label is now gated as free text).
+Actual results: unit 117 OK; browser_live 18/18 default and NanumGothic; examples 18/18 with --check under both
+fonts (3 new concept examples); browser_monitoring and browser_smoke rc 0; example gallery built.
+DDD explainer rebuilt locally with 5 visuals (dist/ddd-ai/v2, before/after sheet dist/ddd-ai/ddd-before-after.png).
+Not verified: whether the concept figures reach the reference demos' quality (the user's call); the new examples
+were written by the same AI that built the kind, so they are weak evidence of first-try generality.
 
 ## v0.14.0 design phase 2 done
 
