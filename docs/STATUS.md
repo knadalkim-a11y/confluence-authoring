@@ -72,6 +72,8 @@ metaphor out of scope), b03 stays weak). Held-out 8 topics, specs written once a
 4/8, judged good 3 / flawed 5 / missed 0; the 5 flaws were engine rules (label placement, tree routing, phone
 height and edge room), fixed in the engine with the specs unchanged, 8/8 after (that second number is not an
 independent result). All judgements are mine, not the user's.
+User review (2026-10-05, dist/compose-compare.html): the engine-fixed figures explain better. This is an overall
+verdict on the comparison page, not a per-figure score.
 Actual results (2026-10-05, Chromium 141): unit 120 OK; examples 22/22 with --check; compose examples 7/7 under
 --font NanumGothic; browser_live 18/18 default and 18/18 NanumGothic; browser_monitoring and
 browser_smoke pass; browser_diagram_layout SKIP (no CSS layout case). Local review page: dist/compose-compare.html.
