@@ -36,13 +36,15 @@ BOX_JS = """(root)=>{const bad=[];for(const s of """ + VISIBLE + """){const soli
 #  tokens - dots drawn with K.token keep an id while they move; the distance one id covers between two
 #           frames is its speed in CSS px per second; above MOTION_MAX the reader cannot follow it;
 #  wires  - connectors drawn with K.wire may not contain a diagonal segment;
+#  snaps  - an element keyed with data-k whose colour (any channel > 128/255) or width (> 0.6 px) jumps in one
+#           frame: a state change without a transition (docs/design/motion-concept-architecture.md, section 5);
 #  loose  - a dot that moves without K.token (its speed would go unchecked). Markers drawn with K.follow
 #           ride on the data (a line's head) and are exempt: a jump in the data is information.
 # Measured on the article demos before choosing what to gate: their frames also contain large instant
 # changes (state switches, loop restarts), so "instant change" is not gated - it did not separate them from ours.
 MOTION_MAX = 480
 MOTION_JS = """([maxv])=>{const L=root=>root.__caLive;const root=document.querySelector('[data-ca-prefix]'),C=L(root),svg=root.querySelector('svg[data-ca-live]');
- const k=svg.getBoundingClientRect().width/svg.viewBox.baseVal.width,rate=C.rate||(()=>1);let T=0,prev=null,pd=null,loose=[],fast=[],wires=[],top=0,n=0,frames=0,ids=new Set();
+ const k=svg.getBoundingClientRect().width/svg.viewBox.baseVal.width,rate=C.rate||(()=>1);let T=0,prev=null,pd=null,loose=[],fast=[],snaps=[],pk=null,wires=[],top=0,n=0,frames=0,ids=new Set();
  while(true){C.seek(T);frames++;const cur={};
   for(const e of svg.querySelectorAll('[data-token]'))cur[e.dataset.token]=[+e.getAttribute('cx'),+e.getAttribute('cy')];
   if(prev)for(const id in cur){ids.add(id);if(!(id in prev))continue;const v=Math.hypot(cur[id][0]-prev[id][0],cur[id][1]-prev[id][1])*k*30;
@@ -54,8 +56,14 @@ MOTION_JS = """([maxv])=>{const L=root=>root.__caLive;const root=document.queryS
    /* moved = a dot appeared next to one that vanished in the same frame (an added dot in a grid is not motion) */
    const gone=pd.filter(b=>b[2]===a[2]&&!dots.some(c=>c[2]===b[2]&&Math.abs(c[0]-b[0])<0.05&&Math.abs(c[1]-b[1])<0.05));
    const near=gone.map(b=>Math.hypot(a[0]-b[0],a[1]-b[1])).sort((x,y)=>x-y)[0];if(near<20){loose.push([a[2],+T.toFixed(2),+near.toFixed(1)]);break}}
-  prev=cur;pd=dots;if(T>=C.end)break;T=Math.min(C.end,T+rate(T)/30)}
- return {max:Math.round(top),fast,wires,loose,tokens:ids.size,frames}}"""
+  /* snaps: an element keyed with data-k (choreographed kinds) whose colour or line width jumps in one frame */
+  const hx=c=>/^#[0-9a-f]{6}$/i.test(c||'')?[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)):null;
+  const kk={};for(const e of svg.querySelectorAll('[data-k]'))kk[e.dataset.k]=[e.getAttribute('stroke'),e.getAttribute('fill'),+(e.getAttribute('stroke-width')||0)];
+  if(pk&&snaps.length<8)for(const k in kk){if(!(k in pk))continue;for(const i of [0,1]){const a=hx(kk[k][i]),b=hx(pk[k][i]);
+    if(a&&b&&Math.max(...a.map((v,j)=>Math.abs(v-b[j])))>128){snaps.push([k,+T.toFixed(2),pk[k][i]+'>'+kk[k][i]]);break}}
+   if(Math.abs(kk[k][2]-pk[k][2])>0.6&&snaps.length<8)snaps.push([k,+T.toFixed(2),'width '+pk[k][2]+'>'+kk[k][2]])}
+  pk=kk;prev=cur;pd=dots;if(T>=C.end)break;T=Math.min(C.end,T+rate(T)/30)}
+ return {max:Math.round(top),fast,wires,loose,snaps,tokens:ids.size,frames}}"""
 MINFONT_JS = """(sel)=>{let m=99;for(const s of document.querySelectorAll(sel)){const r=s.getBoundingClientRect();if(!r.width)continue;const k=r.width/s.viewBox.baseVal.width;for(const t of s.querySelectorAll('text')){if(!t.textContent.trim())continue;m=Math.min(m,parseFloat(t.getAttribute('font-size'))*k)}}return m}"""
 FIGURE_BOX_JS = """(s)=>{const r=s.getBoundingClientRect();return [...s.querySelectorAll('text')].filter(e=>e.textContent.trim()).filter(e=>{const b=e.getBoundingClientRect();
  return b.left<r.left-1||b.right>r.right+1||b.top<r.top-1||b.bottom>r.bottom+1}).map(e=>e.textContent.slice(0,30))}"""
@@ -162,6 +170,9 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
                 if m['fast']: fail(f'{width}px: token faster than {MOTION_MAX}px/s {m["fast"][:3]}')
                 if m['wires']: fail(f'{width}px: diagonal wire segment {m["wires"][:2]}')
                 if m['loose']: fail(f'{width}px: a dot moves but is not drawn with K.token (speed unchecked) {m["loose"][:2]}')
+                if m['snaps']:   # choreographed kinds fail; others only warn while they migrate (design decision 2)
+                    msg = f'{width}px: colour or width switches in one frame {m["snaps"][:3]}'
+                    fail(msg) if checks.get('choreo') else rec.setdefault('warnings', []).append(msg)
         if live:
             page.set_viewport_size({'width': 800, 'height': 1000}); page.set_content(wrap(fragment, 715)); page.wait_for_timeout(200)
             for label, at in checks.get('annotations', []):

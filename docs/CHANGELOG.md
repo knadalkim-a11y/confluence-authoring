@@ -1,5 +1,15 @@
 # Changes
 
+## 0.13.0 — choreography layer (design phase 2), diagram first
+
+- `scripts/choreo.py` builds and validates cues (duration range per property role, no overlap, continuity,
+  settled before the final scene); `visuals/live/choreo.js` evaluates them, pure in T.
+- Diagram steps no longer switch in one frame: the old step fades back (0.25 s, in), the new path, boxes and
+  list item rise at 80% of that fade (0.3 s, out), a joining box pops once, the token leaves with the rise,
+  and the last 0.5 s settles into the final scene (diagram `end` = steps + 0.5).
+- Gate: keyed (`data-k`) colour or width jumping in one frame fails choreographed kinds, warns for the rest.
+  Checked: the same diagram with its cues removed fails; with cues it passes.
+
 ## 0.12.0 — motion math in the kit (design doc phase 1)
 
 - `docs/design/motion-concept-architecture.md`: reviewed design (choreography layer, concept vocabulary);

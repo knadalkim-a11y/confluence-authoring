@@ -6,7 +6,7 @@
    The step list stays in the picture (print/no-JS keep the story); playback highlights the
    current step and moves one token along its path. */
 CA_SCENES['diagram']=function(D,K,GR){
-  var C=K.C,LY=D.layers,E=D.edges,S=D.steps,n=S.length,end=D.time.end;
+  var C=K.C,LY=D.layers,E=D.edges,S=D.steps,n=S.length,end=D.time.end,CH=CA_CHOREO(D.cues,K);   /* default choreography from visual_spec */
   var LINE='#868e96',PAST='#4dabf7';
   var TY={system:{fill:'#fff',st:'#adb5bd'},person:{fill:'#fff',st:'#adb5bd',round:1},ai:{fill:C.purpleSoft,st:'#9775fa'},
     data:{fill:C.greenSoft,st:'#69db7c'},external:{fill:C.paper2,st:'#adb5bd',d:'4 3'}};
@@ -152,14 +152,18 @@ CA_SCENES['diagram']=function(D,K,GR){
   function poly(pts,c,sw,d){return K.wire(pts,c,{sw:sw,d:d?'5 4':null});}
   function head(pts,c){var p=pts[pts.length-2],q=pts[pts.length-1],dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l,x=q[0],y=q[1];
     return '<path d="M'+K.f(x-8*ux-4.5*uy)+' '+K.f(y-8*uy+4.5*ux)+'L'+K.f(x)+' '+K.f(y)+'L'+K.f(x-8*ux+4.5*uy)+' '+K.f(y-8*uy-4.5*ux)+'Z" fill="'+c+'"/>';}
-  function state(T){var done=n>0&&T>=end-1e-9,cur=n?(done?n:Math.min(n-1,Math.floor(T+1e-9))):-1;return {cur:cur,done:done};}
+  function state(T){var done=n>0&&T>=n-1e-9,cur=n?(done?n:Math.min(n-1,Math.floor(T+1e-9))):-1;return {cur:cur,done:done};}
   function draw(T,g){var o='',s=state(T),H0=g.h,es=E.map(function(){return 0;}),act={};
     S.forEach(function(st,k){var v=s.done||k<s.cur?1:k===s.cur?2:0;st.edges.forEach(function(i){es[i]=Math.max(es[i],v);});if(v===2)st.nodes.forEach(function(id){act[id]=1;});});
     g.groups.forEach(function(gr){o+=K.rect(gr.x,gr.y,gr.w,gr.h,{r:8,fill:C.paper2,st:C.rule});});
-    [0,1,2].forEach(function(v){E.forEach(function(e,i){if(es[i]!==v)return;var c=v===2?C.blue:v===1?PAST:LINE,pts=g.E[i].pts;
-      o+=poly(pts,c,v===2?2.4:v===1?1.8:1.4,e.dashed)+head(pts,c);});});
+    /* connection level 0 idle, 1 used, 2 current; fractional while a cue runs (colour and width blend) */
+    var lv=E.map(function(e,i){return CH.v('e'+i,'level',T,es[i]);});
+    function lcol(v){return v<=1?K.mix(LINE,PAST,v):K.mix(PAST,C.blue,v-1);}
+    E.map(function(e,i){return i;}).sort(function(a,b){return lv[a]-lv[b];}).forEach(function(i){var e=E[i],v=lv[i],c=lcol(v),pts=g.E[i].pts;
+      o+=poly(pts,c,v<=1?1.4+.4*v:1.8+.6*(v-1),e.dashed).replace('<polyline ','<polyline data-k="e'+i+'" ')+head(pts,c);});
     LY.forEach(function(ly){ly.nodes.forEach(function(x){var b=g.N[x.id],t=TY[x.type],hl=D.highlight.indexOf(x.id)>=0,on=act[x.id];
-      o+=K.rect(b.x,b.y,b.w,H0,{r:t.round?H0/2:8,fill:hl?C.blueSoft:t.fill,st:on||hl?C.blue:t.st,sw:on?2.2:hl?1.6:1.2,d:on||hl?null:t.d}).replace('<rect ','<rect data-solid="'+x.id+'" ');
+      var a=CH.v('n:'+x.id,'act',T,on?1:0),p0=CH.since('n:'+x.id,'pop',T),sc=p0==null?0:.04*K.pop(T,p0,.4),dx=b.w*sc/2,dy=H0*sc/2;   /* a box that joins the step pops once */
+      o+=K.rect(b.x-dx,b.y-dy,b.w+2*dx,H0+2*dy,{r:t.round?H0/2:8,fill:hl?C.blueSoft:t.fill,st:hl?C.blue:K.mix(t.st,C.blue,a),sw:hl?Math.max(1.6,1.2+a):1.2+a,d:a>.5||hl?null:t.d}).replace('<rect ','<rect data-k="n:'+x.id+'" data-solid="'+x.id+'" ');
       var sub=x.sub&&!g.noSub,nl=b.lines.length,lh=b.fs+5,top=b.y+(H0-b.bh)/2+b.fs*0.9;   /* block centred: names, then sub */
       b.lines.forEach(function(s,k){o+=attr(K.text(b.x+b.w/2,top+k*lh,s,{fs:b.fs,c:C.ink,a:'middle',w:700}),'data-in="'+x.id+'"');});
       if(sub)o+=attr(K.text(b.x+b.w/2,top+(nl-1)*lh+g.fsub+7,x.sub,{fs:g.fsub,c:C.muted,a:'middle'}),'data-in="'+x.id+'"');});});
@@ -169,14 +173,14 @@ CA_SCENES['diagram']=function(D,K,GR){
       S[s.cur].paths.forEach(function(r,ri){var legs=[],tot=0;
         r.forEach(function(i,k){if(k){var a=g.E[r[k-1]].pts,b=g.E[i].pts,z=a[a.length-1];tot+=Math.hypot(b[0][0]-z[0],b[0][1]-z[1]);}   /* through the box, unseen */
           legs.push([tot,K.plen(g.E[i].pts),i]);tot+=K.plen(g.E[i].pts);});
-        var dur=Math.min(.9,Math.max(.6,tot/K.M.speed)),d=K.ease(T,s.cur,dur)*tot;
+        var t0=s.cur+.2,dur=Math.min(.75,Math.max(.6,tot/K.M.speed)),d=K.ease(T,t0,dur)*tot;if(T<t0)return;   /* leaves with the new step's rise (0.8 of the old step's fall), arrives before the next step */
         legs.forEach(function(L,k){if(d<L[0]-1e-9||d>L[0]+L[1]+1e-9)return;var a=K.at(g.E[L[2]].pts,d-L[0]);
           o+=K.token(a.x,a.y,'s'+s.cur+'r'+ri+'k'+k,5,C.blue).replace('/>',' stroke="#fff" stroke-width="2"/>');});});}
     g.groups.forEach(function(gr,k){var q=g.gl[k];o+=attr(K.text(q[0],q[1],gr.label,{fs:12,c:C.text,a:q[2],w:700,plate:1}),'data-free="1"');});
-    E.forEach(function(e,i){var p=g.L[i];if(p)o+=attr(K.text(p[0],p[1],lab(i),{fs:12,c:es[i]===2?C.blueText:C.text,a:p[2],plate:1,w:es[i]===2?700:400}),'data-free="1"');});
+    E.forEach(function(e,i){var p=g.L[i],u=K.clamp(lv[i]-1);if(p)o+=attr(K.text(p[0],p[1],lab(i),{fs:12,c:K.mix(C.text,C.blueText,u),a:p[2],plate:1,w:u>.5?700:400}),'data-free="1" data-k="t'+i+'"');});
     S.forEach(function(st,k){var p=g.B[k];if(p)o+=attr(K.text(p[0],p[1],MARK[st.edges[0]],{fs:14,c:C.blueText,a:'middle',w:700,halo:1}),'data-free="1"');});
-    S.forEach(function(st,k){var it=g.list[k],now=!s.done&&k===s.cur,c=s.done||k<=s.cur?(now?C.blueText:C.text):C.muted;
-      it.lines.forEach(function(ln,j){o+=K.text(j?20:0,it.y+j*it.lh,(j?'':st.mark+' ')+ln,{fs:g.v?12:13,c:c,w:now?700:400});});});
+    S.forEach(function(st,k){var it=g.list[k],now=!s.done&&k===s.cur,on=CH.v('l'+k,'on',T,now?2:s.done||k<s.cur?1:0),c=on<=1?K.mix(C.muted,C.text,on):K.mix(C.text,C.blueText,on-1);
+      it.lines.forEach(function(ln,j){o+=attr(K.text(j?20:0,it.y+j*it.lh,(j?'':st.mark+' ')+ln,{fs:g.v?12:13,c:c,w:on>1.5?700:400}),'data-k="l'+k+'.'+j+'"');});});
     g.leg.forEach(function(L){var x=L[0],y=L[1],it=L[2];
       if(it[0]==='type'){var t=TY[it[1]];o+=K.rect(x,y-9,12,11,{r:3,fill:t.fill,st:t.st,d:t.d})+K.text(x+17,y,it[2],{fs:12,c:C.muted});}
       else o+=poly([[x,y-4],[x+22,y-4]],LINE,1.4,1)+K.text(x+28,y,it[2],{fs:12,c:C.muted});});

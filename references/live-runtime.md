@@ -92,6 +92,12 @@ equal the shared scenario functions, verdicts absent before their event), captio
 no-queue variant, static fallback equals the Node render of the same code, inert data,
 validator rejects foreign/modified scripts, determinism, two-instance isolation.
 
+Choreography (v0.13.0): kinds emit cues `[target, prop, t0, dur, curve, from, to]` from the model
+(`scripts/choreo.py` validates durations per property role, no overlap, continuity, settled before `end`);
+`visuals/live/choreo.js` evaluates them (`CA_CHOREO(D.cues, K).v(target, prop, T, default)`). Elements a cue drives
+carry `data-k`; `MOTION_JS` fails a choreographed kind whose keyed colour or width jumps in one frame and only warns
+for kinds not yet migrated. Migrated: diagram.
+
 Motion math (v0.12.0): `K.tween(T,t0,dur,curve)` with `K.CURVE` out/in/inOut/linear and `K.DUR`, closed-form
 `K.spring`/`K.pop` (emphasis only, never a data position), `K.approach` (exact target after `settle`), `K.stagger`,
 `K.wave`/`K.saw`, `K.mix`. Data interpolation stays linear on the model; only presentation uses curves.

@@ -8,6 +8,7 @@ See references/visual-specs.md for the spec reference and selection rules.
 """
 from __future__ import annotations
 import datetime as dt, math, re
+import choreo
 from monitoring_cases import (finite, fluid_tokens, first_reach, interp, token_speed, paced_rate, caption_walls,
                               caption_need, nice_max, grp, DEFAULT_SPEED)
 
@@ -706,21 +707,37 @@ def diagram_data(spec):
     for i, x in enumerate(steps):
         x['mark'] = CIRCLED[i]
     live = bool(steps) and motion != 'none'
-    end = float(max(1, len(steps)))
+    n = len(steps)
+    # default choreography (choreo.py): step k starts at k; the old step falls back first, the new one
+    # rises as that fall is 80% through; the last 0.5 s settles everything into the final (static) scene
+    end = float(n) + 0.5 if n else 1.0
+    cues = []
+    if n:
+        times = list(range(n + 1))
+        used = lambda i, k: any(i in steps[j]['edges'] for j in range(k))
+        for i in range(len(edges)):
+            seq = [2 if i in steps[k]['edges'] else 1 if used(i, k) else 0 for k in range(n)] + [1 if used(i, n) else 0]
+            cues += choreo.levels(f'e{i}', 'level', seq, times)
+        for nid in {x for st in steps for x in st['nodes']}:
+            seq = [1 if nid in steps[k]['nodes'] else 0 for k in range(n)] + [0]
+            lv = choreo.levels(f'n:{nid}', 'act', seq, times)
+            cues += lv + [choreo.cue(f'n:{nid}', 'pop', c[2], 0.4, 0, 1, 'linear') for c in lv if c[6] > c[5]]
+        for l in range(n):
+            cues += choreo.levels(f'l{l}', 'on', [2 if l == k else 1 if l < k else 0 for k in range(n)] + [1], times)
+        cues = choreo.validate(cues, end)
     captions = [[0.0 if live else end, '', claim]]
     rate = [[0, 0.25]] if live else [[0, 1]]   # one step ~3.2 s at the default 1.25x
     dm = text(spec.get('dashed_means', '비동기·선택'), 'dashed_means', 1, 14)
-    data = dict(scene='diagram', time=dict(unit='', end=end), layers=out, edges=edges, groups=groups, steps=steps, highlight=hl, dashed_means=dm,
+    data = dict(scene='diagram', time=dict(unit='', end=end, steps=n), cues=cues, layers=out, edges=edges, groups=groups, steps=steps, highlight=hl, dashed_means=dm,
                 types={k: v for k, v in NODE_TYPES.items() if v and any(n['type'] == k for x in out for n in x['nodes'])},
                 captions=captions, rate=rate, labels=dict(data_kind=DIAGRAM_KINDS[data_kind]))
-    n = len(steps)
 
     def expect(T):
-        return dict(state={'step': n if T >= end - 1e-9 else min(n - 1, math.floor(T + 1e-9))}, stats=[])
+        return dict(state={'step': n if T >= n - 1e-9 else min(n - 1, math.floor(T + 1e-9))}, stats=[])
     samples = [round(i + 0.4, 4) for i in range(n)][:5] + [end]
     while len(samples) < 6:
         samples.append(end)
-    checks = dict(end=end, samples=samples, annotations=[], expect=expect if live else None, resize_at=round(end / 2, 4))
+    checks = dict(end=end, samples=samples, annotations=[], expect=expect if live else None, resize_at=round(end / 2, 4), choreo=bool(cues))
     name = {x['id']: x['name'] for ly in out for x in ly['nodes']}
     head = ['구분', '항목', '설명']
     rows = [[f'구성 요소 · {ly["label"] or i + 1}', x['name'], x['sub'] or NODE_TYPES[x['type']] or '-'] for i, ly in enumerate(out) for x in ly['nodes']]

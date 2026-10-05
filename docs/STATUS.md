@@ -1,4 +1,4 @@
-# Status — v0.12.0 motion math in the kit (design phase 1 of 3)
+# Status — v0.13.0 choreography layer started (design phase 2 of 3: diagram migrated)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -61,6 +61,16 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.13.0 design phase 2, diagram first
+
+Diagram step changes are cues (fade back, then rise at 80%, one pop, token leaves with the rise). New gate:
+a keyed colour/width jump in one frame fails choreographed kinds, warns for others. Gate checked against the
+same diagram with cues removed (fails) and with cues (passes). Actual results: unit tests OK (new
+tests/test_choreo.py); browser_live 18/18 default and NanumGothic; examples 15/15 with --check under both fonts;
+browser_monitoring and browser_smoke rc 0. Frame-by-frame before/after of the agent diagram's step 2->3
+(local, dist/step-switch-before-after.png). Remaining for phase 2: cascade states, status numbers, trend event
+labels, distribution markers, flow/thread-pool state colours. Not verified: the user's judgement of the feel.
 
 ## v0.12.0 design phase 1 (docs/design/motion-concept-architecture.md)
 

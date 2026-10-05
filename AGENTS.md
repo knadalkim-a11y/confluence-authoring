@@ -28,7 +28,8 @@ utilization-wait, cache-stampede, deploy-comparison (trend); percentile-comparis
 side by side with the article demo (dist/ref18/pairs, local only, not committed).
 
 Motion and wiring (v0.11.0+): moving dots are K.token at the kit pace (K.M), connectors are
-K.wire(K.ortho(...)), data-riding markers K.follow. Fix a pace or routing problem in the kit or
+K.wire(K.ortho(...)), data-riding markers K.follow. State changes are cues from the kind (scripts/choreo.py + visuals/live/choreo.js,
+migrated: diagram), never a one-frame switch in scene code. Fix a pace or routing problem in the kit or
 the kind, never in one case; visual_gates.MOTION_JS enforces it for every live visual.
 
 Read references/diagram-layout.md for structure/flow work. Explicit route coordinates

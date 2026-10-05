@@ -212,6 +212,9 @@ unknown events are build errors that list what is available. Never type a comput
   connection's label; the numbered step list sits under the diagram in every mode, so print,
   export and no-JS keep the story. Playback highlights one step at a time with a moving token
   and ends on the whole sequence; the caption is the `claim`. No steps → static.
+- Playback (v0.13.0): each step change is choreographed by the kind (scripts/choreo.py): the previous step
+  fades back, the new path, boxes and list item rise as that fade is 80% through, the token leaves with them,
+  and the last 0.5 s settles into the final scene. Specs do not write cues.
 - Do not draw a diagram of everything: one claim, the components it needs. Put inventories in
   a table.
 

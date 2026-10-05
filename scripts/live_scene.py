@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 LIVE = ROOT / 'visuals/live'
 MARK = '/*ca-live-runtime v1*/'
-CORE_FILES = ['kit.js', 'grammars/flow-queue.js', 'grammars/time-panels.js']
+CORE_FILES = ['kit.js', 'choreo.js', 'grammars/flow-queue.js', 'grammars/time-panels.js']
 STATIC_WIDTH = 720
 NARROW_WIDTH = 360   # second static scene, shown without JavaScript on phone-width screens
 
