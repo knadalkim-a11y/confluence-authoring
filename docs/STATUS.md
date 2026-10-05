@@ -62,6 +62,13 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
 
+## v0.15.1 external-topic test
+
+21 figures from kciter.so sections (local only): 18/21 first build, 21/21 after two library fixes (green tone
+contrast, phone compare height). Side-by-side judgement (mine, not the user's): 12 comparable, 3 weaker, 6 miss the
+point; gaps listed in design doc §11. Actual results: unit 118 OK; browser_live 18/18 default and NanumGothic;
+examples 18/18 under both fonts; browser_monitoring and browser_smoke rc 0.
+
 ## v0.15.0 design phase 3
 
 Survey of all 61 kciter.so posts (design doc §10): interactive demos exist in 5 posts (58 demos); 229 figures

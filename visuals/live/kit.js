@@ -15,7 +15,7 @@ var CA_KIT=(function(){
   /* Role tones for boxes in structure and concept figures: [soft fill, border, text]. A light fill with a
      border of the same hue tells roles apart at a glance; text on these fills uses ink/text or the *Text
      colour (all >= 4.5:1 on the fill). */
-  var TONE={blue:['#e7f5ff','#74c0fc','#1864ab'],green:['#ebfbee','#69db7c','#2b8a3e'],amber:['#fff9db','#fcc419','#a85a00'],
+  var TONE={blue:['#e7f5ff','#74c0fc','#1864ab'],green:['#ebfbee','#69db7c','#237032'],amber:['#fff9db','#fcc419','#a85a00'],
     purple:['#f3f0ff','#9775fa','#6741d9'],red:['#fff5f5','#ffa8a8','#c92a2a'],gray:['#f8f9fa','#ced4da','#495057']};
   /* Pill kinds: [background, text]; every pair >= 4.5:1. */
   var PILL={ok:['#d3f9d8','#237032'],warn:['#fff3bf','#a85a00'],hot:['#e03131','#fff'],info:['#e7f5ff','#1864ab'],bad:['#ffe3e3','#c92a2a'],purple:['#f3f0ff','#6741d9']};

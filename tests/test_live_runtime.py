@@ -147,6 +147,15 @@ process.stdout.write(JSON.stringify(o));"""
   self.assertEqual(r['pop'][0],0);self.assertEqual(r['pop'][1],0);self.assertGreater(r['pop'][2],0.9)
   self.assertEqual(r['mix'],['#228be6','#fa5252']);self.assertEqual(r['stagger'],[2,2.2])
 
+ def test_role_tone_contrast(self):
+  """K.TONE text colours read at >= 4.5:1 on white and on their own soft fill (headers sit on white, labels on fills)."""
+  import shutil,subprocess
+  kit=(ROOT/'visuals/live/kit.js').read_text(encoding='utf-8')
+  tones=json.loads(subprocess.run([shutil.which('node'),'-e',kit+'\nprocess.stdout.write(JSON.stringify(CA_KIT.TONE))'],capture_output=True,text=True,check=True).stdout)
+  for name,(fill,border,txt) in tones.items():
+   self.assertGreaterEqual(contrast(txt,'#ffffff'),4.5,name);self.assertGreaterEqual(contrast(txt,fill),4.5,name)
+   self.assertGreaterEqual(contrast('#495057',fill),4.5,name)   # C.text, used for subs inside tinted boxes
+
  def test_kit_motion_parts(self):
   """K.ortho never leaves a diagonal step; K.at walks a polyline at constant distance; K.ease is 0..1."""
   import random,shutil,subprocess

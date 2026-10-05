@@ -1,5 +1,12 @@
 # Changes
 
+## 0.15.1 — fixes from an external-topic test
+
+- 21 figures built from the gist of kciter.so sections (design doc §11): 18/21 first build, 21/21 after fixes.
+- Fixed in the kit/kind: the green role tone's text was 4.37:1 on white (now #237032, 6.1:1; a unit test checks all
+  tones on white and on their fills); a 3-column compare on phones exceeded the height budget (many items now sit
+  two per row on phones).
+
 ## 0.15.0 — concept vocabulary (design phase 3)
 
 - Reference survey of all 61 kciter.so posts (design doc §10): interactive demos in 5 posts; the concept
