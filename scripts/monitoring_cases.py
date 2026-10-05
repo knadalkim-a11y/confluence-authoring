@@ -487,9 +487,15 @@ def fluid_tokens(series,unit):
         k+=1
     return out
 
-def token_speed(peak_rate,unit,spacing=15):
-    """Token speed in px/s so that tokens of the busiest stream sit ~`spacing` px apart."""
-    return max(240,round(spacing*peak_rate/unit))
+TOKEN_WALL_MAX = 450   # px per wall second, under the gate's 480 (visual_gates.MOTION_MAX) at any build speed
+
+
+def token_speed(peak_rate,unit,rate=None,spacing=15):
+    """Token speed in px per model second: tokens of the busiest stream sit ~`spacing` px apart, but on
+    screen (playback rate map x the fastest build speed, 1.5x) no faster than TOKEN_WALL_MAX - a busier
+    or fast-forwarded stream packs its tokens closer instead of moving them faster."""
+    fastest=max([r for _,r in (rate or [[0,1]])])*1.5
+    return round(min(TOKEN_WALL_MAX/fastest,max(240,spacing*peak_rate/unit)))
 
 def live_rate_map(points,h):
     out=[];last=-1

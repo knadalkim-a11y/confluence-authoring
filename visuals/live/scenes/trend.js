@@ -60,7 +60,7 @@ CA_SCENES['trend']=function(D,K,GR){
       if(!multi&&s.area!==false)o+=K.path('M'+K.f(p.X(s.t[0]))+' '+K.f(p.Y(0))+'L'+pts.join('L')+'L'+K.f(x)+' '+K.f(p.Y(0))+'Z',c[2],'1');
       o+='<path d="M'+pts.join('L')+'" fill="none" stroke="'+c[0]+'" stroke-width="2"'+(s.dashed?' stroke-dasharray="5 4"':'')+' stroke-linejoin="round"/>';
       if(s.dots)s.t.forEach(function(t,k){if(t<=T+1e-9)o+=K.dot(p.X(t),p.Y(s.v[k]),3.5,c[0]);});
-      o+=K.ring(x,y,3.5,'#fff',c[0],2);
+      o+=K.follow(K.ring(x,y,3.5,'#fff',c[0],2));
       if(s.label===false)return;var right=x>p.x1-56;marks.push({x:right?x-6:x+6,y:y-8>=p.y+11?y-8:y+16,dy:y,s:fmt(v,pd),c:c[1],a:right?'end':'start'});});
     if(T<end-1e-6)o+=K.line(p.X(T),p.y,p.X(T),p.y+p.h,C.faint,{d:'2 3'});
     /* thresholds after the series (an area fill must not paint over their label); the label sits
@@ -89,7 +89,7 @@ CA_SCENES['trend']=function(D,K,GR){
     for(var i=0;i<n;i++){var born=i*dt-(x1-x0)/v,ph=phase(Math.max(0,born+(bx-x0)/v)),out=((i*0.6180339)%1)<ph[1]-1e-9,d=(Math.min(T,end)-born)*v;
       if(d<0||born+(x1-x0)/v<0&&false)continue;var x=x0+d,y=my,op=1,col=PAL[ph[2]][0];
       if(out){col=PAL[ph[3]][0];if(x>bx){var e=x-bx;if(st.side){y=my+Math.min(e,sy-12-my);x=bx;if(e>sy-12-my+4)continue;}else{x=bx+e*.6;y=my-e*.45;op=Math.max(0,1-e/90);if(op<=0)continue;}}}
-      if(x>x1)continue;o+=K.dot(x,y,4,col,op);}
+      if(x>x1)continue;o+=K.token(x,y,'q'+i,4,col,op);}
     if(st.box)o+=K.rect(bx-38,my-11,76,22,{r:11,fill:'#e7f5ff',st:C.blue,sw:1.4})+K.text(bx,my+4,st.box,{fs:12,c:C.blueText,a:'middle',w:700});
     var cur=phase(Math.min(T,end));if(cur[4])o+=K.text(bx+(st.side?44:14),my-12,cur[4],{fs:12,c:PAL[cur[3]][1],a:'start',w:700,halo:1});
     if(st.end_note)o+=K.text(x1,my+20,st.end_note,{fs:12,c:C.blueText,a:'end',halo:1});   /* under the line: the phase note is above */

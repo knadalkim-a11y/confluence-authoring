@@ -92,6 +92,11 @@ equal the shared scenario functions, verdicts absent before their event), captio
 no-queue variant, static fallback equals the Node render of the same code, inert data,
 validator rejects foreign/modified scripts, determinism, two-instance isolation.
 
+`tests/test_live_runtime.py` also checks the kit parts (`K.ortho` never leaves a diagonal,
+`K.at`, `K.ease`) and that the cascade and diagram scenes draw every connector as an orthogonal
+`K.wire` at 720/600/360 px. `visual_gates.MOTION_JS` (all live visuals): token speed <= 480 px/s,
+no diagonal wire, no moving dot outside `K.token` (see visual-guidelines "Motion and wiring parts").
+
 `tests/browser_live.py` (Chromium, JS on), for every live case: autoplay, height budget
 at 715/360 px, no horizontal overflow, no SVG text overlap or clipping at six model times
 and two widths, browser `probe(T)` and status numbers equal the Python probe from

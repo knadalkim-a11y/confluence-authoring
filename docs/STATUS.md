@@ -1,4 +1,4 @@
-# Status — v0.10.0 all 18 article cases rebuilt after the reference demos
+# Status — v0.11.0 motion and wiring as shared parts with gates
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -39,7 +39,7 @@ situation at the quality of the live tier. Monitoring cases are validation mater
 
 Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
 
-- Unit: `python -m unittest discover -s tests` — 108 tests pass.
+- Unit: `python -m unittest discover -s tests` — 111 tests pass (v0.11.0).
 - `tests/browser_live.py`: 4/4 live monitoring cases pass all gates; again 4/4 with
   `--font NanumGothic --output dist/live-nanum`.
 - `scripts/build_visual.py <spec> --check` for each of the 15 example specs: 15/15 exit 0;
@@ -61,6 +61,40 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.11.0 generality pass (why: per-case fixes do not reach the next visual)
+
+The user's review found three problems by eye (#10 too-fast spin, #2 abrupt entry, #9 crooked
+LB wires); 0.10.1 fixed each inside its own scene. The user pointed out that this is whack-a-mole.
+This pass moved the rules into shared kit parts and a gate that runs on every live visual.
+
+- Measured first on the article demos (local, not committed) with a pixel "instant change"
+  metric: the demos have single-frame changes of 4,000-27,000 px² too (state switches, loop restarts),
+  so that metric does not separate good from bad motion and is NOT gated. Token speed and wire
+  shape are gated (`visual_gates.MOTION_JS`, 30 frames per wall second, rate map included, 715 and
+  360 px): token <= 480 px/s, no diagonal `K.wire` segment, no moving dot outside `K.token`.
+- Check that the gate catches the reported defect: the pre-fix event loop (7cc0df3) with its rotor
+  tagged as a token measures ~3,000 px/s (fail). The pre-fix cascade and event loop also fail as
+  "moving dot not a token" (they drew dots by hand). The pre-fix cascade's diagonal wires are not
+  detectable after the fact (they were not `K.wire`); new wires cannot be diagonal by construction.
+- Applying the rules to everything found unreported instances: all three diagram examples had
+  diagonal connectors; thread-pool inflow ~860 px/s; support-backlog tokens at the limit under its
+  1.6x rate map (flow token speed is now capped in wall terms from the rate map).
+- Regression found by screenshot (not by a gate) and fixed: slower event-loop arrivals landed on
+  top of queued requests; arrivals now go to their own slot and the queue closes up over 0.2 s.
+
+Actual results (Linux, Python 3.11, Node 22, Playwright 1.56.0 + Chromium 141):
+- Unit: `python -m unittest discover -s tests` — 111 tests pass (2 new: kit parts, orthogonal wires
+  at 720/600/360 px for cascade and the three diagram examples).
+- `tests/browser_live.py`: 18/18 pass; `--font NanumGothic --output dist/live-nanum`: 18/18.
+- `scripts/build_visual.py <spec> --check` for the 15 examples: 15/15 exit 0, again 15/15 with
+  `--font NanumGothic` (support-backlog failed the new speed gate first; fixed as above).
+- `browser_monitoring.py` rc 0 (suite built with `--baseline dist/baseline-v0.5.0`),
+  `browser_smoke.py` rc 0, `browser_diagram_layout.py` SKIP (no CSS layout case left).
+
+Not verified: whether the user finds the new pace and elbow routing better (the gates check
+limits, not taste); 480 px/s is my chosen limit, not measured on readers; target Confluence;
+macOS/Windows fonts. Generality to new topics is still measured only by my own runs.
 
 ## v0.10.0 reference parity (done for all 18; quality judgement pending)
 

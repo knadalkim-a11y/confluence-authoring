@@ -20,8 +20,8 @@ CA_SCENES['timeout']=function(D,K,GR){
     o+=K.rect(g.xb+12,y+bh-(g.nw?14:18),bw-24,7,{r:3,fill:C.rule})+K.rect(g.xb+12,y+bh-(g.nw?14:18),(bw-24)*K.clamp(T/D.be),7,{r:3,fill:done?C.green:C.blue});
     o+=K.text(g.xb+bw/2,y+bh+18,'처리 '+K.grp(D.be)+'s (슬로 쿼리)',{fs:12,c:C.muted,a:'middle'});
     /* request token: user -> gateway -> backend; a 504 goes back to the user */
-    var t0=.35;if(T<t0){var f=T/t0;o+=K.dot(g.xu+bw+(g.xg-g.xu-bw)*f,my,5,C.blue);}
-    else if(T<t0*2){var f2=(T-t0)/t0;o+=K.dot(g.xg+bw+(g.xb-g.xg-bw)*f2,my,5,C.blue);}
+    var t0=.35;if(T<t0){var f=T/t0;o+=K.token(g.xu+bw+(g.xg-g.xu-bw)*f,my,'req1',5,C.blue);}
+    else if(T<t0*2){var f2=(T-t0)/t0;o+=K.token(g.xg+bw+(g.xb-g.xg-bw)*f2,my,'req2',5,C.blue);}
     if(dead){o+=K.pill(g.xu+bw/2,y+bh+18,'504 수신','hot',{fs:12});}
     if(done){var xm=(g.xg+bw+g.xb)/2;o+=K.ring(xm,my,9,'#fff',C.red,2)+K.line(xm-4,my-4,xm+4,my+4,C.red,{sw:2})+K.line(xm-4,my+4,xm+4,my-4,C.red,{sw:2});
       o+=K.text(xm,y-8,'응답 버려짐',{fs:12,c:C.redText,a:'middle',w:700,halo:1});}

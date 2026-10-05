@@ -1,5 +1,21 @@
 # Changes
 
+## 0.11.0 — motion and wiring become shared parts with gates (not per-case fixes)
+
+The three problems the user found by eye (#10 spin, #2 abrupt entry, #9 crooked wires) were each
+fixed inside one case in 0.10.1. This release turns them into rules every visual inherits:
+- Kit parts: `K.ortho` + `K.wire` (orthogonal connectors), `K.token` + `K.at` + `K.M` (one pace
+  for moving things), `K.ease` (appearances), `K.follow` (data-riding markers).
+- Gate `MOTION_JS` for every live visual: token speed <= 480 px/s, no diagonal wire, no moving
+  dot outside `K.token`. On the pre-0.10.1 event loop it reports ~3,000 px/s (fail).
+- Applying the rules everywhere found the same defects in places nobody had pointed at:
+  all three diagram examples had diagonal connectors (now straight where boxes face each other,
+  otherwise one elbow, fan-outs on one spine, bends kept outside group boxes, phone gaps sized
+  by real bends); thread-pool inflow ran at ~860 px/s; event-loop arrivals and responses were
+  quick 0.25-0.35 s slides. All now take the shared pace.
+- Measured and not gated: a pixel "instant change" metric. The article demos switch as abruptly
+  as ours, so it did not separate good from bad motion.
+
 ## 0.10.1 — fixes from the user's review of the comparison page
 
 - event-loop: the loop turned once per task (tasks take ~0.08 s, so it spun); it now turns at a

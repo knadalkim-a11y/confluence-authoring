@@ -49,6 +49,34 @@ var CA_KIT=(function(){
   function num(v,d){return Number(v).toFixed(d==null?1:d);}
   /* Integer with thousands separators, locale independent. */
   function grp(v){var n=Math.round(v),s=String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g,',');return (n<0?'-':'')+s;}
-  return {C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
+  /* Motion and wiring parts shared by every scene; their limits are checked by visual_gates.MOTION_JS.
+     ortho: a polyline made orthogonal - every diagonal step becomes an elbow (along the main axis to
+     the midpoint `at`, across, then on), so connectors never run crooked. dir 'h' | 'v'. */
+  function ortho(pts,dir,at){var o=[pts[0]];for(var i=1;i<pts.length;i++){var a=o[o.length-1],b=pts[i];
+      if(Math.abs(a[0]-b[0])>0.5&&Math.abs(a[1]-b[1])>0.5){if(dir==='v'){var my=at!=null?at:(a[1]+b[1])/2;o.push([a[0],my],[b[0],my]);}
+        else{var mx=at!=null?at:(a[0]+b[0])/2;o.push([mx,a[1]],[mx,b[1]]);}}
+      o.push(b);}return o;}
+  /* wire: draws a connector; data-wire lets the gate verify it has no diagonal segment. */
+  function wire(pts,c,o){o=o||{};return '<polyline data-wire="1" points="'+pts.map(function(p){return f(p[0])+' '+f(p[1]);}).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+(o.sw||1.5)+'"'+
+    (o.d?' stroke-dasharray="'+o.d+'"':'')+(o.op!=null?' opacity="'+o.op+'"':'')+' stroke-linejoin="round"/>';}
+  function plen(pts){var t=0;for(var i=1;i<pts.length;i++)t+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);return t;}
+  /* point at distance d along a polyline (clamped), with the unit direction there */
+  function at(pts,d){d=Math.max(0,d);for(var i=1;i<pts.length;i++){var l=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+      if(d<=l||i===pts.length-1){var r=l?Math.min(1,d/l):0;return {x:pts[i-1][0]+(pts[i][0]-pts[i-1][0])*r,y:pts[i-1][1]+(pts[i][1]-pts[i-1][1])*r,ux:(pts[i][0]-pts[i-1][0])/(l||1),uy:(pts[i][1]-pts[i-1][1])/(l||1)};}d-=l;}
+    return {x:pts[0][0],y:pts[0][1],ux:1,uy:0};}
+  /* Moving things the reader follows. M.speed: px per model second for travel along a wire;
+     M.turn: revolutions per model second for anything that circles. Scenes take their pace from here,
+     and the gate rejects any token faster than MOTION_MAX px per wall second. */
+  var M={speed:150,turn:.45,fade:.35};
+  /* token: a moving dot; id must stay the same while one thing moves (a new trip = a new id). */
+  function token(x,y,id,r,c,op){return dot(x,y,r,c,op).replace('<circle ','<circle data-token="'+esc(id)+'" ');}
+  /* ease: 0..1 over dur seconds from t0 (smooth start and end); for anything that appears or changes state */
+  /* tag: mark the first circle of an svg string as token `id` (rings, dots drawn by other helpers) */
+  function tag(svg,id){return svg.replace('<circle ','<circle data-token="'+esc(id)+'" ');}
+  /* follow: a marker that rides on the data (a line's head); it may jump when the data jumps, so the
+     speed limit does not apply - the data, not the animation, sets its pace */
+  function follow(svg){return svg.replace('<circle ','<circle data-follow="1" ');}
+  function ease(T,t0,dur){var u=clamp((T-t0)/(dur||M.fade));return u*u*(3-2*u);}
+  return {M:M,ortho:ortho,wire:wire,plen:plen,at:at,token:token,tag:tag,follow:follow,ease:ease,C:C,PILL:PILL,f:f,clamp:clamp,esc:esc,text:text,rich:rich,tw:tw,rect:rect,pill:pill,line:line,dot:dot,ring:ring,path:path,arrow:arrow,gauge:gauge,num:num,grp:grp};
 })();
 var CA_GRAMMARS={},CA_SCENES={};

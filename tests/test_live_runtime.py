@@ -119,6 +119,36 @@ class LiveRuntimeTests(unittest.TestCase):
    with self.subTest(key=key):self.assertGreaterEqual(contrast(C[key],'#fff'),4.5)
   for kind,bg,fg in re.findall(r"(\w+):\['(#[0-9a-f]{3,6})','(#[0-9a-f]{3,6})'\]",kit.split('var PILL')[1].split(';')[0]):
    with self.subTest(pill=kind):self.assertGreaterEqual(contrast(fg,bg),4.5)
+ def test_kit_motion_parts(self):
+  """K.ortho never leaves a diagonal step; K.at walks a polyline at constant distance; K.ease is 0..1."""
+  import random,shutil,subprocess
+  kit=(ROOT/'visuals/live/kit.js').read_text(encoding='utf-8');random.seed(7)
+  cases=[[[random.uniform(0,600),random.uniform(0,400)] for _ in range(random.randint(2,5))] for _ in range(200)]
+  prog=kit+'\nvar K=CA_KIT,C=%s,out=[];C.forEach(function(p,i){out.push(K.ortho(p,i%%2?"v":"h"));});'%json.dumps(cases)+\
+   'process.stdout.write(JSON.stringify({o:out,at:K.at([[0,0],[10,0],[10,10]],15),e:[0,.1,.2,.3,.35,.5].map(function(t){return K.ease(t,0,.35);}),'+\
+   'w:K.wire([[0,0],[5,0]],"#000"),t:K.token(1,2,"a<b",3,"#000")}));'
+  r=json.loads(subprocess.run([shutil.which('node'),'-e',prog],capture_output=True,text=True,check=True).stdout)
+  for pts,src in zip(r['o'],cases):
+   self.assertEqual(pts[0],src[0]);self.assertEqual(pts[-1],src[-1])
+   for a,b in zip(pts,pts[1:]):self.assertTrue(abs(a[0]-b[0])<=0.5 or abs(a[1]-b[1])<=0.5,(a,b))
+  self.assertEqual([r['at']['x'],r['at']['y']],[10,5]);e=r['e'];self.assertEqual(e[0],0);self.assertEqual(e[-1],1);self.assertEqual(e,sorted(e))
+  self.assertIn('data-wire="1"',r['w']);self.assertIn('data-token="a&lt;b"',r['t'])
+
+ def test_connectors_are_orthogonal_wires(self):
+  """Scenes that draw connectors use K.wire, and no wire has a diagonal segment at any width."""
+  from visual_spec import build
+  datas=[LIVE_BUILDERS['cluster-cascade'](CASES['cluster-cascade']['params'])[0]]
+  for f in ('ai-agent-request','rag-indexing','ai-adoption-approval'):
+   datas.append(build(json.loads((ROOT/'examples/visuals'/f'{f}.json').read_text(encoding='utf-8')))['data'])
+  for data in datas:
+   for w in (720,600,360):
+    for t in (0.3,data.get('end_h',data.get('time',{}).get('end',1))/2):
+     svg=static_at(data,t,w);ws=re.findall(r'data-wire="1" points="([^"]+)"',svg);self.assertTrue(ws,(data['scene'],w))
+     self.assertNotRegex(svg,r'<path d="M[\d.]+ [\d.]+L[\d.]+ [\d.]+(L[\d.]+ [\d.]+){0,2}" fill="none"')   # no hand-made connector
+     for pts in ws:
+      q=[float(x) for x in pts.split()];xy=list(zip(q[::2],q[1::2]))
+      for a,b in zip(xy,xy[1:]):self.assertTrue(abs(a[0]-b[0])<=0.6 or abs(a[1]-b[1])<=0.6,(data['scene'],w,a,b))
+
  def test_two_static_scenes(self):
   for c in LIVE:
    with self.subTest(id=c['id']):

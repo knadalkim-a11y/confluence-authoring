@@ -19,9 +19,9 @@ CA_GRAMMARS.flowQueue={
     if(st.queueCount){var shown=Math.min(st.queueCount,g.qcap),left=g.qh-(shown-1)*g.step;
       o+=K.rect(left-8,g.my-9,g.qh-left+16,18,{r:9,fill:C.amberSoft,st:'#ffe8a1'});
       o+=K.text(g.qh+8,g.my-16,st.queueLabel,{fs:13,c:C.amberText,a:'end',w:700});}
-    st.queue.forEach(function(pos){if(pos>g.qcap-1)return;o+=K.dot(g.qh-pos*g.step,g.my,4.5,C.amber);});
+    st.queue.forEach(function(pos,k){if(pos>g.qcap-1)return;o+=K.token(g.qh-pos*g.step,g.my,'w'+(st.queueIds?st.queueIds[k]:k),4.5,C.amber);});
     st.transit.forEach(function(t){var tx=t.target==null?inX1-4:g.qh-Math.min(t.target,g.qcap-1)*g.step;
-      o+=K.dot(tx*t.p,g.my,4.5,C.blue,K.clamp(t.p*4));});
+      o+=K.token(tx*t.p,g.my,'in'+t.id,4.5,C.blue,K.clamp(t.p*4));});
     /* overflow count drawn after dots and tokens so nothing paints over it */
     if(st.queueCount>g.qcap)o+=K.text(g.qh-(g.qcap-1)*g.step,g.my+4,'+'+(st.queueCount-g.qcap+1),{fs:10,c:C.amberText,a:'middle',w:700,halo:1});
     o+=K.rect(g.px,g.py,g.pw,g.ph,{r:8,fill:C.paper2,st:C.edge,sw:1});
@@ -33,7 +33,7 @@ CA_GRAMMARS.flowQueue={
       else{o+=K.rect(cx,cy,g.cw,g.ch,{r:5,fill:C.paper,st:C.edge});if(st.flash[i])o+=K.rect(cx,cy,g.cw,g.ch,{r:5,fill:'none',st:C.green,sw:1.6,op:st.flash[i]});}}
     var c0=g.px+g.pw,c1=g.dbx,sp=g.conn/3,v=st.depSlow?6:42,off=(st.T*v)%sp;
     o+=K.line(c0,g.my,c1,g.my,st.depSlow?C.redRail:C.rail,{sw:1.5});
-    for(i=0;i<3;i++){var dx=c0+off+i*sp;if(dx<c1-2)o+=K.dot(dx,g.my,2.4,st.depSlow?C.red:C.blue,.8);}
+    for(i=0;i<3;i++){var dx=c0+off+i*sp;if(dx<c1-2)o+=K.token(dx,g.my,'dep'+(i-Math.floor(st.T*v/sp)),2.4,st.depSlow?C.red:C.blue,.8);}
     o+=K.arrow(c1-2,g.my,C.faint);
     o+=K.rect(g.dbx,g.py,g.dbw,g.ph,{r:8,fill:st.depSlow?C.redSoft:C.paper,st:st.depSlow?C.red:C.green,sw:1.6});
     o+=K.text(g.dbx+g.dbw/2,g.my-6,st.depLabel,{fs:g.nw?13:15,c:C.ink,a:'middle',w:700});
@@ -80,9 +80,9 @@ CA_GRAMMARS.flowQueue.chainDraw=function(K,g,st){
   if(st.limitLabel)o+=K.line(bx,by-4,bx,by+g.boxH+4,C.red,{d:'3 3',sw:1.2})+K.text(bx+4,by-7,st.limitLabel,{fs:11,c:C.redText,w:700});
   /* tokens (not in the final/static scene: a frozen token reads as a glitch in print) */
   if(!st.final)st.tokens.forEach(function(k){var a=k[0],s=k[1],rej=k[2],tx=rej||st.tail(a)>1e-6?bx:qs,d=tx-x0,ta=a-d/v;
-    if(T>=ta&&T<a)o+=K.dot(x0+(T-ta)*v,my,g.c?3.6:4.2,C.blue,K.clamp((T-ta)*v/14));
-    if(rej&&T>=a&&T<a+0.35){var r=(T-a)/0.35;o+=K.dot(bx-2-r*8,my-6-r*20,3.6,C.red,1-r);}
-    if(s!=null){var sx=g.sx[g.o.queueAt]+g.nodeW,ex=g.end-4;if(T>=s&&T<s+(ex-sx)/v)o+=K.dot(sx+(T-s)*v,my,g.c?3.4:4,C.blue,K.clamp((ex-sx-(T-s)*v)/12));}});
+    if(T>=ta&&T<a)o+=K.token(x0+(T-ta)*v,my,'a'+a,g.c?3.6:4.2,C.blue,K.clamp((T-ta)*v/14));
+    if(rej&&T>=a&&T<a+0.35){var r=(T-a)/0.35;o+=K.token(bx-2-r*8,my-6-r*20,'x'+a,3.6,C.red,1-r);}
+    if(s!=null){var sx=g.sx[g.o.queueAt]+g.nodeW,ex=g.end-4;if(T>=s&&T<s+(ex-sx)/v)o+=K.token(sx+(T-s)*v,my,'s'+s,g.c?3.4:4,C.blue,K.clamp((ex-sx-(T-s)*v)/12));}});
   /* stages */
   st.stages.forEach(function(sg,j){var x=g.sx[j],w=g.nodeW,hot=sg.state==='hot',ok=sg.state==='ok';
     o+=K.rect(x,g.y0,w,g.nh,{r:8,fill:hot?C.hotPaper:C.paper,st:hot?C.red:ok?C.green:C.edge,sw:hot||ok?1.6:1.2});

@@ -28,7 +28,7 @@
   var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   window.addEventListener('beforeprint',function(){setPlaying(false);T=sc.end;render();});
   if('ResizeObserver' in window)new ResizeObserver(layout).observe(root);
-  root.__caLive={seek:function(t){setPlaying(false);T=Math.max(0,Math.min(sc.end,t));render();},state:function(){var s=sc.probe(T),k,r={T:T,playing:playing};for(k in s)r[k]=s[k];return r;},end:sc.end};
+  root.__caLive={seek:function(t){setPlaying(false);T=Math.max(0,Math.min(sc.end,t));render();},state:function(){var s=sc.probe(T),k,r={T:T,playing:playing};for(k in s)r[k]=s[k];return r;},end:sc.end,rate:rate};
   layout();setPlaying(false);
   if(reduce)return;
   function start(){if(!started){started=true;play(0);}}

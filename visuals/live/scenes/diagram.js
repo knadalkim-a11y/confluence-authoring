@@ -16,6 +16,9 @@ CA_SCENES['diagram']=function(D,K,GR){
   function two(e){return !!PAIR[e.b+'>'+e.a];}
   var MARK=E.map(function(){return '';});S.forEach(function(st){MARK[st.edges[0]]+=st.mark;});
   function lab(i){var e=E[i];return e.label?(MARK[i]?MARK[i]+' ':'')+e.label:'';}
+  /* a bent connection's spine belongs to its end in the earlier layer (or the earlier box of a side pair): a fan-out
+     and both directions of a pair share it */
+  function owner(e){var A=ND[e.a],B=ND[e.b];return (A.l<B.l||(A.l===B.l&&A.j<B.j))?e.a:e.b;}
   function between(i,r){var a=ND[E[i].a].l,b=ND[E[i].b].l;return E[i].route==='next'&&Math.min(a,b)===r;}
   function wrap(s,fs,w){var out=[],cur='';s.split(' ').forEach(function(wd){var c=cur?cur+' '+wd:wd;if(!cur||K.tw(c,fs)<=w)cur=c;else{out.push(cur);cur=wd;}});if(cur)out.push(cur);return out;}
   function attr(svg,a){return svg.replace('<text ','<text '+a+' ');}
@@ -57,10 +60,14 @@ CA_SCENES['diagram']=function(D,K,GR){
       under.forEach(function(ei,q){g.lanes[ei]=bottom+10+q*12;});
       bottom+=under.length?under.length*12+8:0;
       g.groups=D.groups.map(function(gp){return {x:X[gp.a]-10,y:y0-GH-6,w:X[gp.b]+nw+20-X[gp.a],h:ext+GH+16,label:gp.label};});}
-    else{var gvs=[],rowY=[];for(var r=0;r<L-1;r++){var cr=crowd(r);gvs.push(34+9*Math.min(3,Math.max(0,cr[1]-1)));}
+    else{var gvs=[],rowY=[];
+      LY.forEach(function(ly,i){var k=ly.nodes.length,w=widths[ly.nodes[0].id],hs=g.hg[i],sh=hs.reduce(function(a,b){return a+b;},0),x=g.sl+(g.avail-(k*w+sh))/2;
+        ly.nodes.forEach(function(nd,j){g.N[nd.id].x=x;x+=w+(hs[j]||0);});});
+      function bent(e){var A=g.N[e.a],B=g.N[e.b];return Math.min(A.x+A.w,B.x+B.w)-Math.max(A.x,B.x)<20;}
+      for(var r=0;r<L-1;r++){var cr=crowd(r);var own={};E.forEach(function(e,i){if(between(i,r)&&bent(e))own[owner(e)]=1;});var ns=Object.keys(own).length;   /* one bend per spine */
+        gvs.push(Math.max(34+9*Math.min(3,Math.max(0,cr[1]-1)),ns?24+10*ns+16*Math.ceil(cr[1]/2):0)+(ns&&D.groups.some(function(gp){return gp.a===r+1;})?GH:0));}   /* a group header in the gap keeps the bends and labels clear of it */
       y0=6+(D.groups.some(function(gp){return gp.a===0;})?GH+2:0);var yy=y0;   /* a later group's header sits in the gap above it */
-      LY.forEach(function(ly,i){var k=ly.nodes.length,w=widths[ly.nodes[0].id],hs=g.hg[i],sh=hs.reduce(function(a,b){return a+b;},0),x=g.sl+(g.avail-(k*w+sh))/2;rowY.push(yy);
-        ly.nodes.forEach(function(nd,j){var b=g.N[nd.id];b.x=x;b.y=yy;x+=w+(hs[j]||0);});yy+=H0+(gvs[i]||0);});
+      LY.forEach(function(ly,i){rowY.push(yy);ly.nodes.forEach(function(nd){g.N[nd.id].y=yy;});yy+=H0+(gvs[i]||0);});
       bottom=rowY[L-1]+H0+(GH?8:0);g.lanes={};
       over.forEach(function(ei,q){g.lanes[ei]=6+q*10;});
       under.forEach(function(ei,q){g.lanes[ei]=W-6-q*10;});
@@ -80,10 +87,26 @@ CA_SCENES['diagram']=function(D,K,GR){
       var pk=[id,other].sort().join('|'),idx=0;list.forEach(function(s,k){if(s.pk===pk)idx=k;});
       var sp=Math.min(16,(len-12)/Math.max(1,list.length)),o=(idx-(list.length-1)/2)*sp;
       return f==='r'?[b.x+b.w,b.y+H0/2+o]:f==='l'?[b.x,b.y+H0/2+o]:f==='t'?[b.x+b.w/2+o,b.y]:[b.x+b.w/2+o,b.y+H0];}
-    g.E=E.map(function(e,i){var p=port(e.a,face(e,0),e.b),q=port(e.b,face(e,1),e.a),off=two(e)?(e.a<e.b?4:-4):0,pts;
-      if(e.route==='next'||e.route==='side'){var dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy)||1,px=-dy/l*off,py=dx/l*off;
-        if(e.a>e.b){px=-px;py=-py;}   /* both directions of a pair use the canonical normal */
-        pts=[[p[0]+px,p[1]+py],[q[0]+px,q[1]+py]];}
+    /* straight when the ports line up, otherwise one elbow (K.ortho): never a diagonal. Connections
+       in the same gap that start from different boxes get their own spine, spread around the middle;
+       connections from one box share its spine, so a fan-out reads as one trunk with branches. */
+    var R=E.map(function(e,i){var p=port(e.a,face(e,0),e.b),q=port(e.b,face(e,1),e.a),off=two(e)?(e.a<e.b?4:-4):0;
+      if(e.route!=='next'&&e.route!=='side')return {p:p,q:q,off:off};
+      var dir=(e.route==='next')!==g.v?'h':'v',s=e.a>e.b?-off:off,m=dir==='h'?0:1,c=1-m;   /* m: main axis index, c: across */
+      var A=g.N[e.a],B=g.N[e.b],lo=Math.max(c?A.x:A.y,c?B.x:B.y)+10,hi=Math.min(c?A.x+A.w:A.y+H0,c?B.x+B.w:B.y+H0)-10;
+      if(lo<=hi){var v=Math.max(lo,Math.min(hi,(p[c]+q[c])/2));p=p.slice();q=q.slice();p[c]=v;q[c]=v;}   /* the boxes face each other: a straight line */
+      p=m?[p[0]+s,p[1]]:[p[0],p[1]+s];q=m?[q[0]+s,q[1]]:[q[0],q[1]+s];
+      return {p:p,q:q,off:off,dir:dir,m:m,s:s,bend:Math.abs(p[1-m]-q[1-m])>0.5,key:dir+Math.round(Math.min(p[m],q[m]))+'/'+Math.round(Math.max(p[m],q[m]))};});
+    var spines={};R.forEach(function(r,i){if(!r.bend)return;var src=owner(E[i]),k=spines[r.key]=spines[r.key]||[];if(k.every(function(x){return x[0]!==src;}))k.push([src,(src===E[i].a?r.p:r.q)[1-r.m]]);});
+    Object.keys(spines).forEach(function(k){spines[k].sort(function(a,b){return a[1]-b[1];});});
+    g.E=E.map(function(e,i){var r=R[i],p=r.p,q=r.q,off=r.off,pts;
+      if(r.dir){if(!r.bend)pts=[p,q];
+        else{var list=spines[r.key],idx=0;list.forEach(function(x,k){if(x[0]===owner(e))idx=k;});
+          var lo=p[r.m],hi=q[r.m],dn=hi>lo?1:-1;   /* the bend stays outside group boundaries (their titles sit in the gap) */
+          g.groups.forEach(function(b){var inP=p[0]>=b.x&&p[0]<=b.x+b.w&&p[1]>=b.y&&p[1]<=b.y+b.h;
+            [r.m?b.y:b.x,r.m?b.y+b.h:b.x+b.w].forEach(function(z){if((z-lo)*dn>0&&(hi-z)*dn>0){if(inP)lo=z+dn*4;else hi=z-dn*4;}});});
+          var gapw=Math.abs(hi-lo),sp=Math.min(10,Math.max(0,(gapw-24)/Math.max(1,list.length))),at=(lo+hi)/2+(idx-(list.length-1)/2)*sp*dn+r.s;
+          pts=K.ortho([p,q],r.dir,at);}}
       else{var ln=g.lanes[i];pts=g.v?[[p[0],p[1]+off],[ln,p[1]+off],[ln,q[1]+off],[q[0],q[1]+off]]:[[p[0]+off,p[1]],[p[0]+off,ln],[q[0]+off,ln],[q[0]+off,q[1]]];}
       return {pts:pts,off:off};});
     /* labels: group headers, then connection labels, then step badges; none may sit on a box */
@@ -101,16 +124,16 @@ CA_SCENES['diagram']=function(D,K,GR){
     g.along=along;
     function spread(id,f){return (faces[id+f]||[]).length;}
     g.L=E.map(function(e,i){if(!e.label)return null;var ge=g.E[i],c=[],sa=spread(e.a,face(e,0)),sb=spread(e.b,face(e,1)),
-        fr=sa>sb?[.68,.78,.58,.48,.38,.28]:sb>sa?[.32,.22,.42,.52,.62,.72]:[.5,.38,.62,.28,.72];
+        fr=(sa>sb?[.68,.78,.58,.48,.38,.28]:sb>sa?[.32,.22,.42,.52,.62,.72]:[.5,.38,.62,.28,.72]).concat([.15,.85,.1,.9]);   /* the ends too: a bent route has room near its boxes */
       if((e.route==='over'||e.route==='under')&&g.v){for(var r=Math.min(ND[e.a].l,ND[e.b].l);r<Math.max(ND[e.a].l,ND[e.b].l);r++){var yy=g.rowY[r]+H0+g.gvs[r]/2+4;
           c.push(e.route==='over'?[g.lanes[i]+5,yy,'start']:[g.lanes[i]-5,yy,'end']);}}
-      else{var segs=e.route==='next'||e.route==='side'?[0,1]:[1,2],pts=[ge.pts[segs[0]],ge.pts[segs[1]]];
+      else{var pts=e.route==='next'||e.route==='side'?ge.pts:[ge.pts[1],ge.pts[2]];
         var alt=[];   /* first choice at every point along the line, then the same points with other anchors */
         fr.forEach(function(f){var a=along(pts,f),s=ge.off?(ge.off>0?1:-1)*(e.a>e.b?-1:1):0,nx=-a.uy,ny=a.ux,steep=Math.abs(nx)>Math.abs(ny);
           if(s){var side=[a.x+nx*7*s,a.y+4,nx*s>0?'start':'end'],over=[a.x+nx*10*s,a.y+ny*10*s+4,'middle'];c.push(steep?side:over);alt.push(steep?over:side,[a.x+nx*16*s,a.y+ny*16*s+4,'middle']);}
           else{c.push([a.x,a.y+4,'middle']);alt.push([a.x+7,a.y+4,'start'],[a.x-7,a.y+4,'end']);}});
         c=c.concat(alt);
-        if(e.route==='side')c.push(g.v?[ (ge.pts[0][0]+ge.pts[1][0])/2,ge.pts[0][1]-8,'middle']:[ge.pts[0][0]+6,(ge.pts[0][1]+ge.pts[1][1])/2+4,'start']);}
+        if(e.route==='side'){var z=ge.pts[ge.pts.length-1];c.push(g.v?[(ge.pts[0][0]+z[0])/2,ge.pts[0][1]-8,'middle']:[ge.pts[0][0]+6,(ge.pts[0][1]+z[1])/2+4,'start']);}}
       return put(lab(i),12,c);});
     g.B=S.map(function(st,k){if(E[st.edges[0]].label||(k&&S[k-1].edges[0]===st.edges[0]))return null;var ge=g.E[st.edges[0]],c=[];[16,28,40].forEach(function(d){var tot=0;for(var i=1;i<ge.pts.length;i++)tot+=Math.hypot(ge.pts[i][0]-ge.pts[i-1][0],ge.pts[i][1]-ge.pts[i-1][1]);
         var a=along(ge.pts,Math.min(.45,d/tot)),nx=-a.uy,ny=a.ux;[1,-1].forEach(function(s){c.push([a.x+nx*12*s,a.y+ny*12*s+5,'middle']);});});
@@ -126,7 +149,7 @@ CA_SCENES['diagram']=function(D,K,GR){
     var mw=K.tw(D.labels.data_kind,12);if(items.length&&lx+mw+12>W){ly2+=18;}
     g.markY=ly2;g.H=ly2+6;return g;}
 
-  function poly(pts,c,sw,d){return '<path d="M'+pts.map(function(p){return K.f(p[0])+' '+K.f(p[1]);}).join('L')+'" fill="none" stroke="'+c+'" stroke-width="'+sw+'"'+(d?' stroke-dasharray="5 4"':'')+' stroke-linejoin="round"/>';}
+  function poly(pts,c,sw,d){return K.wire(pts,c,{sw:sw,d:d?'5 4':null});}
   function head(pts,c){var p=pts[pts.length-2],q=pts[pts.length-1],dx=q[0]-p[0],dy=q[1]-p[1],l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l,x=q[0],y=q[1];
     return '<path d="M'+K.f(x-8*ux-4.5*uy)+' '+K.f(y-8*uy+4.5*ux)+'L'+K.f(x)+' '+K.f(y)+'L'+K.f(x-8*ux+4.5*uy)+' '+K.f(y-8*uy-4.5*ux)+'Z" fill="'+c+'"/>';}
   function state(T){var done=n>0&&T>=end-1e-9,cur=n?(done?n:Math.min(n-1,Math.floor(T+1e-9))):-1;return {cur:cur,done:done};}
@@ -140,11 +163,15 @@ CA_SCENES['diagram']=function(D,K,GR){
       var sub=x.sub&&!g.noSub,nl=b.lines.length,lh=b.fs+5,top=b.y+(H0-b.bh)/2+b.fs*0.9;   /* block centred: names, then sub */
       b.lines.forEach(function(s,k){o+=attr(K.text(b.x+b.w/2,top+k*lh,s,{fs:b.fs,c:C.ink,a:'middle',w:700}),'data-in="'+x.id+'"');});
       if(sub)o+=attr(K.text(b.x+b.w/2,top+(nl-1)*lh+g.fsub+7,x.sub,{fs:g.fsub,c:C.muted,a:'middle'}),'data-in="'+x.id+'"');});});
-    if(n&&!s.done){var u=Math.min(1,(T-s.cur)/0.7),f=u<0.5?2*u*u:1-2*(1-u)*(1-u);
-      /* drawn under the labels; one token per route; it travels the connections only and passes through a box unseen */
-      S[s.cur].paths.forEach(function(r){var len=r.map(function(i){var q=g.E[i].pts,l=0;for(var k=1;k<q.length;k++)l+=Math.hypot(q[k][0]-q[k-1][0],q[k][1]-q[k-1][1]);return l;}),
-          tot=len.reduce(function(a,b){return a+b;},0),d=f*tot,k=0;while(k<r.length-1&&d>len[k]){d-=len[k];k++;}
-        var a=g.along(g.E[r[k]].pts,len[k]?Math.min(1,d/len[k]):1);o+=K.ring(a.x,a.y,5,C.blue,'#fff',2);});}
+    if(n&&!s.done){
+      /* drawn under the labels; one token per route at the shared pace (K.M.speed), eased at both ends,
+         finishing within the step; it travels the connections only and passes through a box unseen */
+      S[s.cur].paths.forEach(function(r,ri){var legs=[],tot=0;
+        r.forEach(function(i,k){if(k){var a=g.E[r[k-1]].pts,b=g.E[i].pts,z=a[a.length-1];tot+=Math.hypot(b[0][0]-z[0],b[0][1]-z[1]);}   /* through the box, unseen */
+          legs.push([tot,K.plen(g.E[i].pts),i]);tot+=K.plen(g.E[i].pts);});
+        var dur=Math.min(.9,Math.max(.6,tot/K.M.speed)),d=K.ease(T,s.cur,dur)*tot;
+        legs.forEach(function(L,k){if(d<L[0]-1e-9||d>L[0]+L[1]+1e-9)return;var a=K.at(g.E[L[2]].pts,d-L[0]);
+          o+=K.token(a.x,a.y,'s'+s.cur+'r'+ri+'k'+k,5,C.blue).replace('/>',' stroke="#fff" stroke-width="2"/>');});});}
     g.groups.forEach(function(gr,k){var q=g.gl[k];o+=attr(K.text(q[0],q[1],gr.label,{fs:12,c:C.text,a:q[2],w:700,plate:1}),'data-free="1"');});
     E.forEach(function(e,i){var p=g.L[i];if(p)o+=attr(K.text(p[0],p[1],lab(i),{fs:12,c:es[i]===2?C.blueText:C.text,a:p[2],plate:1,w:es[i]===2?700:400}),'data-free="1"');});
     S.forEach(function(st,k){var p=g.B[k];if(p)o+=attr(K.text(p[0],p[1],MARK[st.edges[0]],{fs:14,c:C.blueText,a:'middle',w:700,halo:1}),'data-free="1"');});

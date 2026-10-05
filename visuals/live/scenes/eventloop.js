@@ -16,22 +16,26 @@ CA_SCENES['eventloop']=function(D,K,GR){
     o+=K.rect(g.bx,g.by,g.bw,g.bh,{r:10,fill:'#fff',st:C.faint,d:'5 4'})+K.text(cx,g.by+18,'Node.js 프로세스 (싱글 스레드)',{fs:12,c:C.text,a:'middle',w:700});
     o+=K.ring(cx,cy+6,g.r,cpu?C.redSoft:'#f1f7ff',cpu?C.red:'#74a7e6',2.5);   /* a light track: the moving dots carry the motion */if(!cpu)o+=K.text(cx,cy+11,'이벤트 루프',{fs:13,c:C.blueText,a:'middle',w:700});   /* a CPU task takes the loop's place */
     /* queue: oldest nearest the loop */
-    s.q.forEach(function(t,k){var x=g.bx-16-k*13;if(x>8)o+=K.dot(x,cy,5,C.blue);});
+    /* a queued request's slot = requests ahead of it; when one leaves, the rest close up over SH seconds */
+    var SH=.2,W0=TK.filter(function(t){return t[3]==='normal'||t[3]==='callback';});
+    function ahead(t,T){var n=0;W0.forEach(function(p){if(p[0]<t[0]-1e-9)n+=T<p[1]?(T>=p[0]?1:0):K.clamp((p[1]+SH-T)/SH);});return n;}
+    s.q.forEach(function(t){var x=g.bx-16-ahead(t,T)*13;if(x>8)o+=K.token(x,cy,'q'+t[0],5,C.blue);});
     if(s.q.length>Math.floor((g.bx-24)/13))o+=K.text(10,cy-12,'+'+s.q.length,{fs:11,c:C.blueText,w:700});
-    /* arrivals slide in */
-    TK.forEach(function(t){if(t[3]!=='normal')return;var f=(T-(t[0]-.25))/.25;if(f>=0&&f<1)o+=K.dot((g.bx-16)*f,cy,5,C.blue,f*2);});
+    /* arrivals slide in at the shared pace */
+    TK.forEach(function(t){if(t[3]!=='normal')return;var tx=Math.max(8,g.bx-16-ahead(t,t[0])*13),da=tx/K.M.speed,f=(T-(t[0]-da))/da;   /* to its own slot */
+      if(f>=0&&f<1)o+=K.token(tx*f,cy,'a'+t[0],5,C.blue,Math.min(1,f*4));});
     /* running task travels the loop */
     /* the loop turns at a steady pace and freezes while the CPU task holds it (no spin per task) */
-    var run=Math.min(T,D.a)+Math.max(0,T-D.b),ang=Math.PI+run*2*Math.PI/1.8,busy=!!s.act||s.q.length>0;
-    for(var k2=1;k2<=6;k2++){var ta=ang-k2*.09;o+=K.dot(cx+g.r*Math.cos(ta),cy+6+g.r*Math.sin(ta),3.2-k2*.35,cpu?C.red:C.blue,.5-k2*.07);}   /* fading trail */
-    o+=K.dot(cx+g.r*Math.cos(ang),cy+6+g.r*Math.sin(ang),6,cpu?C.red:C.blue);
-    if(busy&&!cpu){var a2=ang+Math.PI*.9;o+=K.dot(cx+g.r*Math.cos(a2),cy+6+g.r*Math.sin(a2),4.5,C.blue,.85);}
+    var run=Math.min(T,D.a)+Math.max(0,T-D.b),ang=Math.PI+run*2*Math.PI*K.M.turn,busy=!!s.act||s.q.length>0;
+    for(var k2=1;k2<=6;k2++){var ta=ang-k2*.09;o+=K.token(cx+g.r*Math.cos(ta),cy+6+g.r*Math.sin(ta),'trail'+k2,3.2-k2*.35,cpu?C.red:C.blue,.5-k2*.07);}   /* fading trail */
+    o+=K.token(cx+g.r*Math.cos(ang),cy+6+g.r*Math.sin(ang),'rotor',6,cpu?C.red:C.blue);
+    if(busy&&!cpu){var a2=ang+Math.PI*.9;o+=K.token(cx+g.r*Math.cos(a2),cy+6+g.r*Math.sin(a2),'rotor2',4.5,C.blue,.85);}
     if(cpu){var w=g.bw-20;o+=K.rect(cx-w/2,cy-20,w,48,{r:6,fill:C.red,st:C.redText})+K.text(cx,cy-1,'CPU 작업 '+K.num(s.act[2]-s.act[1],1)+'s',{fs:13,c:'#fff',a:'middle',w:700})+K.text(cx,cy+20,D.cpu_label,{fs:11,c:'#fff',a:'middle'});}
     /* I/O down to the pool and back */
-    IO.forEach(function(x){if(T>=x[0]&&T<x[2]){var down=T<x[1],f3=down?K.clamp((T-x[0])/.25):1;o+=K.dot(cx+8,g.by+g.bh+(g.lib.y-g.by-g.bh)*f3,4.5,C.amber);}});
+    IO.forEach(function(x){if(T>=x[0]&&T<x[2]){var down=T<x[1],f3=down?K.clamp((T-x[0])/.25):1;o+=K.token(cx+8,g.by+g.bh+(g.lib.y-g.by-g.bh)*f3,'io'+x[0],4.5,C.amber);}});
     o+=K.rect(g.lib.x,g.lib.y,g.lib.w,g.lib.h,{r:6,fill:C.paper2,st:C.edge})+K.text(cx,g.lib.y+20,'OS / libuv 스레드 풀',{fs:12,c:C.muted,a:'middle'});
     /* responses leave right */
-    TK.forEach(function(t){if(t[3]!=='normal'&&t[3]!=='callback')return;var f4=(T-t[2])/.35;if(f4>=0&&f4<1)o+=K.dot(g.bx+g.bw+8+(g.W-g.bx-g.bw-20)*f4,cy,5,C.amber,1-f4*.6);});
+    TK.forEach(function(t){if(t[3]!=='normal'&&t[3]!=='callback')return;var dr=(g.W-g.bx-g.bw-20)/K.M.speed,f4=(T-t[2])/dr;if(f4>=0&&f4<1)o+=K.token(g.bx+g.bw+8+(g.W-g.bx-g.bw-20)*f4,cy,'r'+t[2],5,C.amber,1-f4*.6);});
     /* loop lag: how long the oldest queued request has waited */
     var lag=s.q.length?(T-s.q[0][0])*1000:.3,hot=lag>50;
     o+=K.rich(cx,g.lag,[['이벤트 루프 지연(event loop lag): ',null,0],[(lag>=100?K.grp(lag):K.num(lag,1))+' ms',hot?C.redText:C.greenText,1]],{fs:13,a:'middle'});

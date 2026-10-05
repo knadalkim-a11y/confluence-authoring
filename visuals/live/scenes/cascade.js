@@ -25,17 +25,17 @@ CA_SCENES['cascade']=function(D,K,GR){
       g.out=g.cards.map(function(c){var cm=c.y+c.h/2;return [[cx1,cm],[W-sp,cm],[W-sp,dm],[cx1,dm]];});
       g.trunk=[[sp,lm],[sp,g.cards[2].y+g.ch/2]];g.trunk2=[[W-sp,g.cards[0].y+g.ch/2],[W-sp,dm]];}
     return g;}
-  function poly(pts,c,sw,d){return '<path d="M'+pts.map(function(p){return K.f(p[0])+' '+K.f(p[1]);}).join('L')+'" fill="none" stroke="'+c+'" stroke-width="'+sw+'"'+(d?' stroke-dasharray="'+d+'"':'')+' stroke-linejoin="round"/>';}
-  function along(pts,f){var L=[],tot=0,i;for(i=1;i<pts.length;i++){var l=Math.abs(pts[i][0]-pts[i-1][0])+Math.abs(pts[i][1]-pts[i-1][1]);L.push(l);tot+=l;}
-    var d=f*tot;for(i=0;i<L.length;i++){if(d<=L[i]||i===L.length-1){var r=L[i]?d/L[i]:0;return [pts[i][0]+(pts[i+1][0]-pts[i][0])*r,pts[i][1]+(pts[i+1][1]-pts[i][1])*r];}d-=L[i];}}
+  function poly(pts,c,sw,d){return K.wire(pts,c,{sw:sw,d:d});}
+  /* k-th of n tokens on a looping route at pace px/s; a new lap is a new token */
+  function lap(pts,T,pace,k,n,id){var L=K.plen(pts),u=T*pace/L+k/n,a=K.at(pts,(u%1)*L);return [a.x,a.y,id+'-'+Math.floor(u)];}
   function draw(T,g){var o='',n=live(T),slow=T>=D.slow-1e-9,re=n<3,lb=g.lb,db=g.db;
     o+=K.rich(0,14,[['유입 트래픽: ',null,0],[re?'재분배 중':'균등 분배',re?C.redText:C.blueText,1]],{fs:13});
     o+=poly(g.trunk,C.edge,1.5)+poly(g.trunk2,slow?C.amberCell:C.edge,1.4);
     g.cards.forEach(function(c,j){var ok=alive(j,T),pi=g.inp[j],po=g.out[j],br=g.nw?pi.slice(2):pi.slice(1),bo=g.nw?po.slice(0,2):po.slice(0,2);
       o+=poly(j===1||g.nw?pi:br,ok?C.edge:C.faint,1.5,ok?null:'4 3');   /* the middle branch carries the LB stub */
       o+=poly(j===1||g.nw?po:bo,ok?(slow?C.amberCell:C.edge):C.rule,1.4,ok?null:'4 3');
-      if(ok){for(var k=0;k<3;k++){var f=((T*0.45+k/3+j*.13)%1),q=along(pi,f);o+=K.dot(q[0],q[1],3.5,C.blue,.9);}
-        var f2=((T*(slow?.15:.45)+j*.21)%1),q2=along(po,f2);o+=K.dot(q2[0],q2[1],3.5,slow?C.amber:C.blue,.9);
+      if(ok){for(var k=0;k<3;k++){var q=lap(pi,T+j*.4,K.M.speed,k,3,'i'+j+'.'+k);o+=K.token(q[0],q[1],q[2],3.5,C.blue,.9);}
+        var q2=lap(po,(Math.min(T,D.slow)+Math.max(0,T-D.slow)*.3)+j*.7,K.M.speed,0,1,'o'+j);   /* the DB slows the return flow without a jump */o+=K.token(q2[0],q2[1],q2[2],3.5,slow?C.amber:C.blue,.9);
         if(!g.nw){var bx=(pi[2][0]+pi[3][0])/2;o+=K.text(bx,pi[3][1]-7,Math.round(100/n)+'%',{fs:12,c:C.blueText,a:'middle',w:700,halo:1});}}
       else{var xx=(pi[2][0]+pi[3][0])/2,yy=pi[3][1];o+=K.ring(xx,yy,8,'#fff',C.red,1.8)+K.line(xx-3.5,yy-3.5,xx+3.5,yy+3.5,C.red,{sw:1.8})+K.line(xx-3.5,yy+3.5,xx+3.5,yy-3.5,C.red,{sw:1.8});}});
     /* LB */

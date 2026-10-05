@@ -37,4 +37,4 @@ CA_GRAMMARS.timePanels.spark=function(K,x0,x1,y,h,end,ymax,ts,vs,T,color,soft,la
   var pts=this.cut(K,p,ts,vs,T);if(pts.length<2)return o;var last=Math.min(T,ts[ts.length-1]),v=this.at(ts,vs,last);
   o+=K.path('M'+K.f(p.X(ts[0]))+' '+K.f(p.Y(0))+'L'+pts.join('L')+'L'+K.f(p.X(last))+' '+K.f(p.Y(0))+'Z',soft,'1');
   o+='<path d="M'+pts.join('L')+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linejoin="round"/>';
-  o+=K.dot(p.X(last),p.Y(v),3,color);if(label)o+=K.text(Math.min(p.X(last)+6,x1),Math.max(y+10,p.Y(v)-6),label,{fs:12,c:color,a:p.X(last)>x1-60?'end':'start',w:700,halo:1});return o;};
+  o+=K.follow(K.dot(p.X(last),p.Y(v),3,color));if(label)o+=K.text(Math.min(p.X(last)+6,x1),Math.max(y+10,p.Y(v)-6),label,{fs:12,c:color,a:p.X(last)>x1-60?'end':'start',w:700,halo:1});return o;};

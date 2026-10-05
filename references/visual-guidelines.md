@@ -26,6 +26,27 @@ Typical cycle:
 
 Avoid constant pulsing, decorative bouncing, fast looping, and multiple unrelated animations competing at once.
 
+## Motion and wiring parts (v0.11.0, enforced)
+
+Every scene and kind draws moving things and connectors with the shared kit parts, so a pace or
+routing rule is fixed once for all visuals instead of case by case:
+
+- Connectors: `K.wire(K.ortho(points))`. Straight when the two boxes face each other, otherwise
+  one elbow; never a diagonal. The `diagram` kind routes this way (a fan-out shares one spine).
+- Moving dots: `K.token(x, y, id, ...)`; travel at `K.M.speed` (150 px per model second), circle
+  at `K.M.turn` (0.45 revolutions per second), use `K.at(points, distance)` along a wire. A new
+  trip is a new id. Appearances and state changes ease with `K.ease(T, t0)` (0.35 s).
+- Markers that ride on data (a line's head) use `K.follow(...)`: they may jump when the data
+  jumps; the data, not the animation, sets their pace.
+
+The browser gate (`visual_gates.MOTION_JS`, 30 frames per wall second, playback rate included,
+715 and 360 px) fails a visual when a token moves faster than 480 px/s, a wire has a diagonal
+segment, or a dot moves without being a token. 480 px/s is a chosen limit, not one measured
+on readers; the pre-v0.10.1 event loop (about 3,000 px/s) fails it, the current cases pass.
+Not gated: "instant change" (a large area switching in one frame). Measured on the article
+demos with the same pixel metric, they switch as abruptly as ours, so the metric did not
+separate good from bad motion; smooth transitions stay a review item.
+
 ## Motion density
 
 Default:

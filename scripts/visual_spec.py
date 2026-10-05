@@ -268,7 +268,7 @@ def flow_data(spec):
         captions = [[end, '', claim]]
     rate = paced_rate(captions, end, base) if live else [[0, 1]]
     t = lanes[0]['S']['t']
-    data = dict(scene='flow', time=dict(unit=tu, end=end), inflow=sched, unit=unit, speed=token_speed(peak, unit), labels=labels,
+    data = dict(scene='flow', time=dict(unit=tu, end=end), inflow=sched, unit=unit, speed=token_speed(peak, unit, rate), labels=labels,
                 captions=captions, rate=rate, callouts=callouts, t=t,
                 axes=dict(wait_max=nice_max(max(max(l['S']['q']) / l['stages'][l['b']]['capacity'] for l in lanes) or 1)),
                 lanes=[dict(name=l['name'], tone=l['tone'], b=l['b'], limit=l['limit'], peak_q=max(l['S']['q']),

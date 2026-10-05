@@ -24,7 +24,7 @@ CA_SCENES['cfs']=function(D,K,GR){
     var lastY=-1e9;[D.ymax,D.ymax*2/3,D.ymax/3,0].forEach(function(v){var yy=p.Y(v);o+=K.line(p.x0,yy,p.x1,yy,C.rule);if(yy-lastY>=14){o+=K.text(p.x0-5,yy+4,K.grp(v),{fs:11,c:C.muted,a:'end'});lastY=yy;}});
     var pts=TP.cut(K,p,S.t,S.v,T);if(pts.length>1){var v=TP.at(S.t,S.v,T),x=p.X(Math.min(T,end)),yv=p.Y(v);
       o+=K.path('M'+K.f(p.X(0))+' '+K.f(p.Y(0))+'L'+pts.join('L')+'L'+K.f(x)+' '+K.f(p.Y(0))+'Z',C.purpleSoft,'1');
-      o+='<path d="M'+pts.join('L')+'" fill="none" stroke="'+C.purple+'" stroke-width="2" stroke-linejoin="round"/>'+K.ring(x,yv,3.5,'#fff',C.purple,2);
+      o+='<path d="M'+pts.join('L')+'" fill="none" stroke="'+C.purple+'" stroke-width="2" stroke-linejoin="round"/>'+K.follow(K.ring(x,yv,3.5,'#fff',C.purple,2));
       var right=x>p.x1-60;o+=K.text(right?x-7:x+7,Math.max(p.y+14,yv-8),K.grp(Math.round(v))+'ms',{fs:13,c:C.purpleText,a:right?'end':'start',w:700,halo:1});}
     if(T<end-1e-6)o+=K.line(g.X(T),y-2,g.X(T),p.y+p.h,C.faint,{d:'2 3'});
     o+=K.pill(p.x0,g.pill,'CPU 사용률 그래프: 이상 없음','ok',{a:'start',fs:12});

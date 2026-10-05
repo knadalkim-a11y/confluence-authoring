@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-10-02T02:33:31.965296+00:00",
+  "checked_at": "2026-10-05T07:51:09.181335+00:00",
   "mode": "local generated content",
   "javascript_in_macro_context": false,
   "confluence": "not-verified",
@@ -146,7 +146,7 @@
     "script_errors": []
   },
   "network_requests": [],
-  "browser": "144.0.7559.96",
+  "browser": "141.0.7390.37",
   "multi_instance_controls": "pass",
   "keyboard": "pass",
   "result": "pass"

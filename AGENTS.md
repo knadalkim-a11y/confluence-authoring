@@ -27,6 +27,10 @@ utilization-wait, cache-stampede, deploy-comparison (trend); percentile-comparis
 (distribution). gc-pause (bonus) stays on the CSS tier; do not claim it is migrated. Each migration is checked
 side by side with the article demo (dist/ref18/pairs, local only, not committed).
 
+Motion and wiring (v0.11.0+): moving dots are K.token at the kit pace (K.M), connectors are
+K.wire(K.ortho(...)), data-riding markers K.follow. Fix a pace or routing problem in the kit or
+the kind, never in one case; visual_gates.MOTION_JS enforces it for every live visual.
+
 Read references/diagram-layout.md for structure/flow work. Explicit route coordinates
 must generate both the visible line and particle motion. The CSS layout pass (cascade, event
 loop, pipeline) is retired: those cases are live scenes now, gated by tests/browser_live.py, and

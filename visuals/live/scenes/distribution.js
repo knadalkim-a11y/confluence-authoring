@@ -21,8 +21,8 @@ CA_SCENES['distribution']=function(D,K,GR){
       o+=K.line(c.px0,c.base,c.px1,c.base,C.edge,{sw:1.2});
       [0,D.max/2,D.max].forEach(function(v,j){o+=K.text(c.X(v),c.base+18,num(v)+(j===2?D.unit:''),{fs:11,c:C.muted,a:j===0?'start':j===2?'end':'middle'});});
       /* each dot drops from the top onto its stack (gravity: slow start, fast landing) */
-      seq.slice(0,k).forEach(function(d,ix){var v=gr.values[d[0]],hot=tailOn&&v>=D.tail.at,y1=c.base-c.r-1-d[1]*c.step,t0=ix/gr.stats.n*TD,f=K.clamp((T-t0)/.45),y0=c.lab-6;
-        o+=K.dot(c.X(v),y0+(y1-y0)*f*f,c.r,hot?C.red:C.blue,.35+.65*Math.min(1,f*3));});
+      seq.slice(0,k).forEach(function(d,ix){var v=gr.values[d[0]],hot=tailOn&&v>=D.tail.at,y1=c.base-c.r-1-d[1]*c.step,t0=ix/gr.stats.n*TD,y0=c.lab-6,f=K.clamp((T-t0)/Math.max(.45,(y1-y0)/K.M.speed));   /* peak speed 2x the shared pace */
+        o+=K.token(c.X(v),y0+(y1-y0)*f*f,'g'+i+'.'+ix,c.r,hot?C.red:C.blue,.35+.65*Math.min(1,f*3));});
       D.markers.forEach(function(m){if(T<m[3]-1e-9)return;var v=gr.stats[m[0]],x=c.X(v),s=m[1]+' '+num(v)+D.unit,w=K.tw(s,12),right=x+4+w>c.px1,x0=right?x-4-w:x+4,r=0;
         while(rows[r]&&rows[r].some(function(q){return x0<q[1]+6&&x0+w>q[0]-6;}))r++;(rows[r]=rows[r]||[]).push([x0,x0+w]);var ly=c.lab+r*g.rh;
         var gr2=K.clamp((T-m[3])/.5),e=1-(1-gr2)*(1-gr2);   /* the line is drawn downwards, then the label fades in */
