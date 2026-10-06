@@ -1,4 +1,4 @@
-# Status — v0.19.0 (step numbers point at their parts; monitor-only by default)
+# Status — v0.19.1 (steps pair with parts by timing; monitor-only by default)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -62,6 +62,11 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.19.1 no numbers on the picture
+
+The 0.19.0 badges were judged ugly by the user. Step targets stay internal: the current step's box or link lights up
+in the live figure; nothing numbered is drawn on it. Metrics on 49 figures identical to 0.18/0.19.
 
 ## v0.19.0 step numbers point at their parts
 

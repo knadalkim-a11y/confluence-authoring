@@ -263,11 +263,10 @@ Steps (optional, 1-6): `show` (ids of elements, containers = all inside, links, 
 `path` / `paths` (element ids along existing links, 1-3 routes: the route stands out for the step and one dot
 travels it), `caption` (≤ 60; the step lasts until it can be read). Without `steps` each top-level part enters in
 turn (a stack bottom-up). Parts never shown by a step are there from the start (context).
-Every captioned step is numbered, and its number is drawn on the part the step is about (the first thing it
-shows, changes or follows): a box's corner, after a group's name, or in a link's or message's label. The list or
-caption line and the picture therefore pair one to one; the build fails when a number has no part in the final
-picture or is cut off. Steps must name parts by the `id` you gave them (not the engine's `k1`, `e3`), and never
-the whole figure. Group names and split headers sit on the content they label, not on the container's share.
+Every captioned step is about one part (the first thing it shows, changes or follows); while its caption or list
+row is current that box or link lights up, so the row and the picture pair by timing. No number is drawn on the
+picture. `report.json` lists `correspondence` (step -> part): check each row names the part you meant. Steps must
+name parts by the `id` you gave them (not the engine's `k1`, `e3`), and never the whole figure. Group names and split headers sit on the content they label, not on the container's share.
 
 Figure level: `step_list: true` keeps the numbered step captions in the picture (current one highlighted; print and
 the no-JS figure keep the story; the caption line then shows the claim), `legend` (≤ 5 entries
@@ -337,7 +336,7 @@ one claim per figure; if it needs more than ~12 elements, split it.
 3. On `FAIL spec:` fix the field named in the message. On `FAIL gate:` fix the cause
    (shorter labels or captions, fewer items, merge captions that are too close).
 4. Look at `shots/<name>-715-*.png` and `-nojs-*.png` (`-360-*` too with `--phone`; the folder is cleared on
-   each run). Ask: does the picture show the claim at a glance? Does every numbered row point at the part it describes? Do boxes with the same role line up (report.json
+   each run). Ask: does the picture show the claim at a glance? Does every step row describe the part that lights up with it? Do boxes with the same role line up (report.json
    `clutter.near_misses` should be 0 for a figure built from repeated rows)? Does every caption describe
    what is on screen at that moment — placeholders guarantee the numbers, not the story (a
    caption saying a backlog "remains" when the model drained it is caught only here)? Is

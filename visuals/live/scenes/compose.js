@@ -29,9 +29,6 @@ CA_SCENES['compose']=function(D,K,GR){
   function cbox(n,g){var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(var id in UNDER[n.id]){var b=g.B[id];if(!b)continue;x0=Math.min(x0,b.x);y0=Math.min(y0,b.by!=null?b.by:b.y);x1=Math.max(x1,b.x+b.w);y1=Math.max(y1,b.y+b.h);}
     return x0>x1?null:{x:x0,y:y0,w:x1-x0,h:y1-y0};}
   function labelPos(n,g){var b=g.B[n.id],fy=b.y+b.top;if(n.frame)return {x:b.x+b.pl,y:fy+20};var c=cbox(n,g);return {x:c?Math.max(b.x,c.x):b.x,y:fy+15};}
-  /* step numbers (D.marks): each captioned step's number sits on the part it points at */
-  var MK={};(D.marks||[]).forEach(function(m,i){m.i=i;(MK[m.target]=MK[m.target]||[]).push(m);});
-  function mkText(id){return (MK[id]||[]).map(function(m){return m.mark;}).join('');}
   function sum(a){return a.reduce(function(x,y){return x+y;},0);}
   function max(a){return a.length?Math.max.apply(null,a):0;}
 
@@ -198,14 +195,14 @@ CA_SCENES['compose']=function(D,K,GR){
     b.ax=n.kids.map(function(a,i){return x+aw/2+i*sp;});b.ah=ah;b.seps=[];b.hseps=[];
     n.kids.forEach(function(a,i){g.B[a.id]={x:b.ax[i]-aw/2,y:y,w:aw,h:ah,bd:eBody(a,aw,g),bu:null,by:y,actor:1};});
     var y2=y+ah+18;b.rows=n.msgs.map(function(m){var self=m.a===m.b,span=self?(160):Math.abs(b.ax[m.b]-b.ax[m.a])-12,
-        ln=wrap((m.mark?m.mark+' ':'')+m.text,12,Math.max(60,span)),r={y:y2+ln.length*LH+4,ln:ln,self:self};y2=r.y+(self?26:14);return r;});
+        ln=wrap(m.text,12,Math.max(60,span)),r={y:y2+ln.length*LH+4,ln:ln,self:self};y2=r.y+(self?26:14);return r;});
     return y2-y;}
 
   function geom(W){var g={W:W,B:{},inSplit:{},fill:{},rot:{},minh:{},notes:[]};g.fs=14;
     (function mark(n){if(n.t==='e')return;if(n.L==='split')n.kids.forEach(function(p){g.inSplit[p.id]=1;g.fill[p.id]=1;});n.kids.forEach(mark);})(R);
     function gut(side){var m=0;LK.forEach(function(l){if(l.via===side)m=Math.max(m,18+(l.label?K.tw(l.label,12)+8:0));});return m;}
     var vl=gut('left'),vr=gut('right'),ml=vl||2,mr=vr||2,top=4,h=lay(R,ml,top,W-ml-mr,g);
-    if((D.marks||[]).some(function(m){var b=g.B[m.target];return m.kind==='e'&&b&&b.y<12||m.kind==='c'&&b&&b.y<12;})){g.B={};top=14;h=lay(R,ml,top,W-ml-mr,g)+top-4;}   /* a number on a top-row part needs room above it */   /* 2 px keeps box borders off the edge */g.routes=routes(g);
+   /* 2 px keeps box borders off the edge */g.routes=routes(g);
     g.fh=h;var y=h+4;g.sl=[];
     note(g,'height '+Math.round(h)+' px for the figure; top-level parts: '+R.kids.map(function(k){var b=g.B[k.id];return (k.t==='e'?k.name:cname(k))+' '+Math.round(b.h+(b.by!=null?b.y-b.by:0))+' px';}).join(', '));
     if((D.slist||[]).length){y+=10;D.slist.forEach(function(it){var ln=wrap(it.text,13,W-48);g.sl.push({y:y+13,ln:ln});y+=ln.length*LH+(3);});}
@@ -266,7 +263,7 @@ CA_SCENES['compose']=function(D,K,GR){
      link of a two-way pair tries below first; a loop around the side labels its outer side first. */
   function labels(g){var taken=Object.keys(EL).map(function(id){var b=g.B[id];return [b.x,b.y,b.x+b.w,b.y+b.h];});
     (function cl(n){if(n.t==='e')return;var b=g.B[n.id];   /* group names, split headers and separator words are taken too */
-      if(n.label&&!g.inSplit[n.id]){var lp=labelPos(n,g),x0=lp.x,y0=lp.y;taken.push([x0-2,y0-13,x0+K.tw(n.label,13)+(mkText(n.id)?26:4),y0+4]);}
+      if(n.label&&!g.inSplit[n.id]){var lp=labelPos(n,g),x0=lp.x,y0=lp.y;taken.push([x0-2,y0-13,x0+K.tw(n.label,13)+4,y0+4]);}
       (b.hdr||[]).forEach(function(h){var w=K.tw(h.p.label,14)+4,x0=h.a==='middle'?h.x-w/2:h.x;taken.push([x0,h.y-14,x0+w,h.y+4]);});
       (b.seps||[]).forEach(function(sp){var w=K.tw(n.sep,12)+4;taken.push([sp.x-w/2,sp.y1+11,sp.x+w/2,sp.y1+28]);});
       n.kids.forEach(cl);})(R);
@@ -276,7 +273,7 @@ CA_SCENES['compose']=function(D,K,GR){
       var segs=[];for(var i=1;i<p.length;i++)segs.push(i);segs.sort(function(x,y){return Math.hypot(p[y][0]-p[y-1][0],p[y][1]-p[y-1][1])-Math.hypot(p[x][0]-p[x-1][0],p[x][1]-p[x-1][1]);});
       var a0=p[segs[0]-1],b0=p[segs[0]],mx0=(a0[0]+b0[0])/2,my0=(a0[1]+b0[1])/2;
       if(l.style==='fail'){out.x=mx0;out.y=my0+5;taken.push([mx0-9,my0-9,mx0+9,my0+8]);}
-      var lt=(mkText(l.id)?mkText(l.id)+(l.label?' ':''):'')+(l.label||'');
+      var lt=l.label||'';
       if(!lt)return out;
       var cands=[];segs.forEach(function(i){var a=p[i-1],b=p[i],hz=Math.abs(a[1]-b[1])<.5,mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,len=Math.hypot(b[0]-a[0],b[1]-a[1]);
         if(hz){var ln=K.tw(lt,12)>len-12?wrap(lt,12,Math.max(40,len-12)):[lt],up={lx:mx,ly:my-6-(ln.length-1)*LH,an:'middle',ln:ln},dn={lx:mx,ly:my+16,an:'middle',ln:ln};
@@ -300,7 +297,7 @@ CA_SCENES['compose']=function(D,K,GR){
     if(u>=.999&&l.style!=='none')o+=head(p,c);
     var lv=K.clamp((u-.5)/.5),t='',P=g.lab[k];
     if(P&&P.x!=null)t+=K.text(P.x,P.y,'✕',{fs:14,c:C.redText,a:'middle',w:700,plate:1}).replace(/<text /,'<text data-free="1" ');
-    if(P&&P.ln)P.ln.forEach(function(x,j){t+=K.text(P.lx,P.ly+j*LH,x,{fs:12,c:s.t,a:P.an,w:700,plate:1}).replace(/<text /,'<text data-free="1" '+(j===0&&mkText(l.id)?'data-mark="'+mkText(l.id)+'" ':''));});
+    if(P&&P.ln)P.ln.forEach(function(x,j){t+=K.text(P.lx,P.ly+j*LH,x,{fs:12,c:s.t,a:P.an,w:700,plate:1}).replace(/<text /,'<text data-free="1" ');});
     if(t)o+=K.enter(t,lv,l.id+'.t');
     return o;}
   function token(l,k,T,g){var p=g.routes[k];if(!p||!l.token)return '';var s0=CH.since(l.id,'reveal',T);if(s0==null)return '';
@@ -368,23 +365,10 @@ CA_SCENES['compose']=function(D,K,GR){
         var cx=(xa+xb)/2;r.ln.forEach(function(l,j){s+=K.text(cx,r.y-6-(r.ln.length-1-j)*LH,l,{fs:12,c:m.dashed?C.text:C.blueText,a:'middle',w:j?400:700,halo:1});});}
       o+=K.enter(s,Math.min(1,u*1.5),m.key);});
     return o;}
-  /* a number badge on its part: a box's top-right corner (on the border), right after a group's name, or at the top
-     right of a group's content; links and messages carry theirs in their label text */
-  function badge(x,y,txt,id,u){var w=Math.max(18,K.tw(txt,11)+8);
-    return K.enter(K.rect(x-w/2,y-9,w,18,{r:9,fill:'#fff',st:C.blue,sw:1.4})+K.text(x,y+4,txt,{fs:11,c:C.blueText,a:'middle',w:700}).replace(/<text /,'<text data-mark="'+txt+'" '),u,'mk'+id);}
-  function marks(T,g){var o='';for(var id in MK){var ms=MK[id],txt=mkText(id),u=CH.v('mk'+ms[0].i,'on',T,1),kind=ms[0].kind;
-      if(kind==='l'||kind==='m')continue;var b=g.B[id];if(!b)continue;
-      if(kind==='e')o+=badge(b.x+b.w-16,b.y,txt,id,u);
-      else{var n=null;(function f(x){if(x.t==='c'){if(x.id===id)n=x;else x.kids.forEach(f);}})(R);if(!n)continue;
-        if(n.label&&!g.inSplit[n.id]){var lp=labelPos(n,g);o+=badge(lp.x+K.tw(n.label,13)+16,lp.y-4,txt,id,u);}
-        else{var hd=null;for(var pid in g.B){var pb=g.B[pid];(pb.hdr||[]).forEach(function(h){if(h.p.id===id)hd=h;});}
-          if(hd){var hw=K.tw(n.label,14);o+=badge((hd.a==='middle'?hd.x+hw/2:hd.x+hw)+16,hd.y-5,txt,id,u);}
-          else{var c=cbox(n,g);if(c)o+=badge(c.x+c.w-16,c.y,txt,id,u);}}}}
-    return o;}
   function draw(T,g){var cs='',ms='',es='',ls='',ts='';g.top='';
     (function walk(n){if(n.t==='e'){es+=element(n,T,g);return;}cs+=container(n,T,g);n.kids.forEach(walk);if(n.L==='lifelines')ms+=messages(n,T,g);})(R);
     LK.forEach(function(l,k){ls+=link(l,k,T,g);ts+=token(l,k,T,g);});
-    return cs+ms+ls+g.top+es+marks(T,g)+ts+pathTokens(T,g)+stepList(T,g)+legend(g)+K.text(g.W,g.H-4,D.labels.data_kind,{fs:12,c:C.muted,a:'end'});}
+    return cs+ms+ls+g.top+es+ts+pathTokens(T,g)+stepList(T,g)+legend(g)+K.text(g.W,g.H-4,D.labels.data_kind,{fs:12,c:C.muted,a:'end'});}
   function stats(){return {left:[]};}
   function probe(T){var S=D.steps;if(!S)return {};var k=0;S.t0.forEach(function(t,i){if(t<=T+1e-9)k=i;});return {step:T>=S.total-1e-9?S.n:k};}
   return {end:end,geom:geom,draw:draw,stats:stats,probe:probe,notes:function(g){return g.notes;}};

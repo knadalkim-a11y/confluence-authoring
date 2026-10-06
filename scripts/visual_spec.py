@@ -1062,7 +1062,8 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, op
             E[x]['sts'].append(v); E[x]['bds'].append(bd if bd is not None else E[x]['bds'][-1])
             sets.append((x, len(E[x]['sts']) - 1, t0s[k] + 0.5 * R_))
     # correspondence: every captioned step points at one part of the picture (the first thing it shows, changes or
-    # follows) and that part carries the step's number, so the list or caption line and the picture pair one to one
+    # follows); the engine keeps it to light that part up while the step's caption or list row is current. The
+    # pairing is shown by timing, never by numbers drawn on the picture.
     marks = []
     for k, u in enumerate(units):
         if steps is None or not u['caption']:
@@ -1073,14 +1074,15 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, op
         u['mark'] = marks[-1]['mark']
         if not slist:
             caps.append([t0s[k], u['mark'], u['caption']])
-    if steps is not None:   # lifeline messages are numbered by the steps that point at them, not by their order
-        for m in lifeline_msgs:
-            m['mark'] = next((x['mark'] for x in marks if x['target'] == m['key']), '')
     end = round(max(total, max(show.values()) + 1.2 * R_) + 2.7 * R_, 4)
     rate = [[0, R_]] if live else [[0, 1]]
     cues = []
-    hot_l = {lid for u in units for r in u['routes'] for lid in r}
-    hot_n = {x for u in units for x in u['nodes']}
+    focus = {mk['k']: mk['target'] for mk in marks}   # the part each captioned step is about stands out during it
+    for k, u in enumerate(units):
+        u['hot_l'] = {lid for r in u['routes'] for lid in r} | ({focus[k]} if focus.get(k) in {l['id'] for l in lk} else set())
+        u['hot_n'] = set(u['nodes']) | ({focus[k]} if focus.get(k) in E else set())
+    hot_l = {lid for u in units for lid in u['hot_l']}
+    hot_n = {x for u in units for x in u['hot_n']}
     times = t0s + [total]
     if live:
         order = sorted(set(list(E) + list(C)), key=lambda i: show[i])
@@ -1093,18 +1095,16 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, op
         for x, lvl, t in sets:
             cues.append(choreo.cue(x, 'act', t, 0.3, lvl - 1, lvl, 'inOut', rate))
         for lid in hot_l:        # the current step's route stands out, then falls back
-            cues += choreo.levels(lid, 'level', [1 if any(lid in r for r in u['routes']) else 0 for u in units] + [0], times, rate)
+            cues += choreo.levels(lid, 'level', [1 if lid in u['hot_l'] else 0 for u in units] + [0], times, rate)
         for x in hot_n:
-            lv = choreo.levels(x, 'level', [1 if x in u['nodes'] else 0 for u in units] + [0], times, rate)
+            lv = choreo.levels(x, 'level', [1 if x in u['hot_n'] else 0 for u in units] + [0], times, rate)
             cues += lv + [choreo.cue(x, 'pop', c[2], 0.4, 0, 1, 'linear', rate) for c in lv if c[6] > c[5]]
         if slist:
             for n, mk in enumerate(marks):
                 k = mk['k']
                 cues += choreo.levels(f'sl{n}', 'level', [2 if k == j else 1 if k < j else 0 for j in range(len(units))] + [1], times, rate)
-        for n, mk in enumerate(marks):
-            cues += choreo.levels(f'mk{n}', 'on', [1], [mk['t'] + 0.5 * R_], rate)
         cues = choreo.validate(cues, end)
-    captions = ([[0.0, '', claim]] if not caps or caps[0][0] > 0 else []) + caps if live else [[end, caps[-1][1] if caps else '', (caps[-1][2] if caps else claim)]]
+    captions = ([[0.0, '', claim]] if not caps or caps[0][0] > 0 else []) + caps if live else [[end, '', (caps[-1][2] if caps else claim)]]
     if not live:
         for e in elems:
             e['sts'] = [e['sts'][-1]]; e['bds'] = [e['bds'][-1]]

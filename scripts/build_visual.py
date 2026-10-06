@@ -56,20 +56,10 @@ def main():
         st = {w: node_static(info['data'], w) for w in (715, 600)}
         report['clutter'] = {w: metrics(st[w]['svg']) for w in st}
         report['layout'] = st[715].get('notes') or []
-        # correspondence: every numbered step (caption or list row) has its number on a part of the final picture
-        want = [m['mark'] for m in info['data'].get('marks') or []]
-        if want:
-            import re as _re
-            got = ''.join(_re.findall(r'data-mark="([^"]*)"', st[715]['svg']))
-            missing = [m for m in want if m not in got]
-            report['correspondence'] = dict(steps=len(want), in_picture=len(want) - len(missing))
-            tags = _re.findall(r'<text [^>]*data-mark="[^"]*"[^>]*>', st[715]['svg'])
-            cut = [_re.search(r'data-mark="([^"]*)"', t).group(1) for t in tags if float(_re.search(r' y="([-\d.]+)"', t).group(1)) < 12]
-            if cut:
-                errors.append(f'step numbers cut off at the top of the figure: {cut}')
-            if missing:
-                errors.append(f'step numbers {" ".join(missing)} have no part in the final picture to point at: '
-                              'give each captioned step something it shows, changes or follows')
+        # correspondence: which part each captioned step (caption or list row) is about; the engine lights it up
+        # while the step is current. Read it to check that every row names the part you meant.
+        if info['data'].get('marks'):
+            report['correspondence'] = [dict(step=m['mark'], part=m['target']) for m in info['data']['marks']]
         for n in report['layout']:
             print('layout:', n, file=sys.stderr)
     except Exception as e:   # no Node: the figure is still built

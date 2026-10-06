@@ -1,5 +1,13 @@
 # Changes
 
+## 0.19.1 — no numbers on the picture
+
+Review of 0.19.0: the number badges on boxes and in link labels made figures look worse. The pairing stays in the
+engine and is shown by timing instead: while a step's caption or list row is current, the box or link it is about
+lights up (the same emphasis a followed path already had). Badges, label prefixes and the extra top inset are gone;
+the final picture equals 0.18.0 except group names and split headers, which stay on their content. The build no
+longer looks for numbers; report.json lists step -> part. Metrics on 49 figures unchanged.
+
 ## 0.19.0 — step numbers point at their parts
 
 Feedback (in-house use): a figure with four boxes had a five-row step list, and the rows did not match the boxes.

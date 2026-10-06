@@ -242,9 +242,9 @@ class VisualSpecTests(unittest.TestCase):
         from figure_metrics import metrics
         self.assertEqual(metrics(out['svg'])['near_misses'], 0)
 
-    def test_step_numbers_point_at_parts(self):
-        """Every captioned step's number is drawn on the part it is about, so the list (or caption line) and the
-        picture pair one to one; the claim caption carries no number; steps cannot name made-up ids or the whole figure."""
+    def test_steps_point_at_parts(self):
+        """Every captioned step has a part it is about; that part lights up while its row is current (no number is
+        drawn on the picture); the claim caption carries no number; steps cannot name made-up ids or the whole figure."""
         import re
         from live_scene import node_static
         spec = {'kind': 'compose', 'data_kind': 'example', 'source': '시험', 'title': '대응', 'claim': '두 요청이 다른 길로 간다.', 'step_list': True,
@@ -258,7 +258,9 @@ class VisualSpecTests(unittest.TestCase):
         self.assertEqual([m['target'] for m in d['marks']], ['a1', 'proc', 'L0', 'a2', 'b2'])
         self.assertEqual([x['mark'] for x in d['slist']], ['①', '②', '③', '④', '⑤'])
         svg = node_static(d, 715)['svg']
-        self.assertEqual(sorted(''.join(re.findall(r'data-mark="([^"]*)"', svg))), sorted('①②③④⑤'))
+        self.assertNotRegex(re.sub(r'<text [^>]*data-k="sl\d+"[^>]*>[^<]*</text>', '', svg), '[①②③④⑤]')   # numbers only in the list
+        lit = lambda x: [c for c in d['cues'] if c[0] == x and c[1] == 'level' and c[6] > c[5]]
+        self.assertTrue(lit('a1') and lit('L0') and lit('a2') and lit('b2'))   # each element / link target lights up in its step
         frag, info = make(spec, 'ca-mark-x')
         self.assertEqual(validate(frag), [])
         live = dict(spec); live['step_list'] = False
