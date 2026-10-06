@@ -242,6 +242,38 @@ class VisualSpecTests(unittest.TestCase):
         from figure_metrics import metrics
         self.assertEqual(metrics(out['svg'])['near_misses'], 0)
 
+    def test_step_numbers_point_at_parts(self):
+        """Every captioned step's number is drawn on the part it is about, so the list (or caption line) and the
+        picture pair one to one; the claim caption carries no number; steps cannot name made-up ids or the whole figure."""
+        import re
+        from live_scene import node_static
+        spec = {'kind': 'compose', 'data_kind': 'example', 'source': '시험', 'title': '대응', 'claim': '두 요청이 다른 길로 간다.', 'step_list': True,
+                'root': {'layout': 'row', 'items': [{'layout': 'column', 'id': 'req', 'label': '요청', 'items': [{'id': 'a1', 'name': '질문'}, {'id': 'a2', 'name': '신청'}]},
+                                                     {'layout': 'column', 'id': 'proc', 'label': '처리', 'items': [{'id': 'b1', 'name': '검색'}, {'id': 'b2', 'name': '결재'}]}]},
+                'links': [{'from': 'a1', 'to': 'b1'}, {'from': 'a2', 'to': 'b2'}],
+                'steps': [{'show': ['a1'], 'caption': '질문이 들어온다'}, {'show': ['proc'], 'caption': '처리 단계가 준비된다'},
+                          {'show': ['L0'], 'caption': '질문은 검색으로 간다'}, {'show': ['a2', 'L1'], 'caption': '신청은 결재로 간다'},
+                          {'set': {'b2': 'ok'}, 'caption': '결재가 끝난다'}]}
+        d = build(spec)['data']
+        self.assertEqual([m['target'] for m in d['marks']], ['a1', 'proc', 'L0', 'a2', 'b2'])
+        self.assertEqual([x['mark'] for x in d['slist']], ['①', '②', '③', '④', '⑤'])
+        svg = node_static(d, 715)['svg']
+        self.assertEqual(sorted(''.join(re.findall(r'data-mark="([^"]*)"', svg))), sorted('①②③④⑤'))
+        frag, info = make(spec, 'ca-mark-x')
+        self.assertEqual(validate(frag), [])
+        live = dict(spec); live['step_list'] = False
+        caps = build(live)['data']['captions']
+        steps_caps = [c for c in caps if c[2] != spec['claim']]
+        self.assertEqual([c[1] for c in steps_caps], ['①', '②', '③', '④', '⑤'])
+        self.assertTrue(all(c[1] == '' for c in caps if c[2] == spec['claim']))   # the claim is never a step number
+        late = copy.deepcopy(live); late['steps'].insert(0, {'show': ['a2']})       # an uncaptioned first step: the claim shows first
+        caps = build(late)['data']['captions']
+        self.assertEqual((caps[0][1], caps[0][2], caps[1][1]), ('', spec['claim'], '①'))
+        bad = copy.deepcopy(spec); bad['root']['items'][1].pop('id'); bad['steps'][1]['show'] = ['k2']
+        with self.assertRaisesRegex(SpecError, 'made up'): build(bad)
+        bad = copy.deepcopy(spec); bad['root']['id'] = 'all'; bad['steps'][1]['show'] = ['all']
+        with self.assertRaisesRegex(SpecError, 'whole figure'): build(bad)
+
     def test_concept(self):
         """concept kind: three forms, now presets drawn by the compose engine (split / stack / lifelines),
         default choreography that settles before the end."""

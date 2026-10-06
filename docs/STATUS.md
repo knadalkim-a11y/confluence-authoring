@@ -1,4 +1,4 @@
-# Status — v0.18.0 (monitor-only by default; aligned stacked rows; layout notes)
+# Status — v0.19.0 (step numbers point at their parts; monitor-only by default)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -62,6 +62,13 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.19.0 step numbers point at their parts
+
+In-house feedback (4 boxes, 5 list rows) reproduced with an equivalent figure; fixed by drawing each captioned step's
+number on its target, numbering captions by step, failing builds whose numbers have no target, requiring author ids
+in steps, and anchoring group labels to content. The id rule exposed three held-out specs (local) whose steps had
+pointed at the wrong group since v0.16. Actual results: see the PR / commit for the run list.
 
 ## v0.18.0 feedback from first internal use
 

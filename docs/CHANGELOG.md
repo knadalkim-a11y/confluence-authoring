@@ -1,5 +1,21 @@
 # Changes
 
+## 0.19.0 — step numbers point at their parts
+
+Feedback (in-house use): a figure with four boxes had a five-row step list, and the rows did not match the boxes.
+Reproduced with an equivalent figure (4 boxes, 5 captioned steps, one step "the right column appears"); the gates
+passed. Cause: the engine knew where parts are and when they appear, but not which part each caption describes;
+the step list was text under the figure with no counterpart in it.
+- Each captioned step gets a target (the first part it shows, changes or follows) and its number is drawn on it:
+  a box's corner, after a group's name, in a link's or message's label. The final scene keeps all numbers.
+- Captions and list rows are numbered by captioned steps; the claim caption carries no number.
+- The build fails when a step number has no part in the final picture or is cut off; report.json records it.
+- Steps must name parts by ids the author gave: the engine's made-up ids (k1, e3) follow tree order and pointed
+  three held-out steps at the wrong part (one at the whole figure) without anyone noticing. Naming the whole figure
+  is an error too. One example spec (multi-agent) was updated to name its group.
+- Group names and split headers sit on their content's edge (they were offset by the container's share).
+- Measured on 49 figures: wires, bends, crossings, length, near misses unchanged; 17 figures gain step numbers.
+
 ## 0.18.0 — feedback from first internal use: alignment, layout notes, monitor-only by default
 
 Feedback from building one compose figure with an in-house Claude Code on Windows 11, checked in code and reproduced:
