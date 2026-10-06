@@ -3,7 +3,6 @@ from pathlib import Path
 import copy, json, sys, unittest
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT / 'scripts'))
 from visual_spec import build, SpecError, fluid_schedule, decimals_of
-from monitoring_cases import fluid_queue
 from build_visual import make
 from validate_html_macro import validate
 
@@ -63,10 +62,10 @@ class VisualSpecTests(unittest.TestCase):
         with self.assertRaises(SpecError):
             build(s)
 
-    def test_flow_model_matches_reference(self):
-        p = dict(before_rate=200, after_rate=600, application_capacity=300, change_time=4.0, horizon=10.0)
-        a = fluid_queue(p); b = fluid_schedule([[0, 200], [4.0, 600]], 300, 10.0)
-        self.assertEqual([round(r['q'], 6) for r in a], [round(r['q'], 6) for r in b])
+    def test_flow_model(self):
+        b = fluid_schedule([[0, 200], [4.0, 600]], 300, 10.0)   # +0 until t=4, then +300/s for 6 s
+        self.assertAlmostEqual(b[-1]['q'], 1800, places=6)
+        self.assertAlmostEqual(max(r['q'] for r in b if r['t'] <= 4.0), 0, places=6)
         info = build(load('support-backlog.json')); four, five = info['numeric']['lanes']
         self.assertAlmostEqual(four['queue_end'], 150)    # +20/day for 10 days, -10/day for 5 days
         self.assertAlmostEqual(five['queue_end'], 0)
@@ -332,14 +331,11 @@ class VisualSpecTests(unittest.TestCase):
 
     def test_trend_vocabulary(self):
         # bands compute their duration, annotations fill model placeholders, between needs real series
-        sys.path.insert(0, str(ROOT / 'scripts'))
-        from monitoring_cases import postmortem_spec, slow_spec
-        import json as _j
-        cases = {c['id']: c for c in _j.loads((ROOT / 'examples/monitoring-cases.json').read_text())['cases']}
-        pm = build(postmortem_spec(cases['postmortem-timeline']['params'])[0])['data']
+        fx = lambda n: json.loads((ROOT / 'tests/fixtures' / n).read_text(encoding='utf-8'))   # specs from two reference cases, frozen
+        pm = build(fx('postmortem-timeline.json'))['data']
         self.assertEqual(pm['bands'][0][2], '감지 공백 18분')
         self.assertEqual([e[2] for e in pm['events']], ['amber', 'red', 'purple', 'green'])
-        sl = slow_spec(cases['slow-degradation']['params'])[0]
+        sl = fx('slow-degradation.json')
         self.assertEqual(build(sl)['data']['annotations'][0][3], '+72% (180ms → 310ms)')
         bad = copy.deepcopy(sl); bad['between'][0]['lower'] = '없는 선'
         with self.assertRaisesRegex(SpecError, 'series'):

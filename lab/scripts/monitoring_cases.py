@@ -4,6 +4,8 @@ This module is not a monitoring tool. Models are intentionally small and determi
 See the case manifest for the provenance, abstraction and limits of each example.
 """
 from __future__ import annotations
+import sys
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 import math, heapq
 from reference_scene import ReferenceScene, samples, piece, esc, fmt, clamp, COLORS
 from model import (finite, percentile, stats, CAPTION_CPS, CAPTION_MIN_S, CAPTION_MAX_CHARS, DEFAULT_SPEED, caption_need, rate_at, caption_walls,

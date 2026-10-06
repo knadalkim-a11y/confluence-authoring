@@ -4,6 +4,8 @@ All user strings are escaped. Only renderer-produced SVG/HTML can enter markup s
 Numerical geometry and summary labels are derived from the same validated data.
 """
 from __future__ import annotations
+import sys
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 import html
 import json
 import math

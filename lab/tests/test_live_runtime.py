@@ -2,6 +2,7 @@
 from pathlib import Path
 import copy,json,re,sys,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 from monitoring_cases import (build_case,pool_model,pool_live_data,pipeline_live_data,bounded_live_data,cpu_live_data,
                               cpu_scenarios,fluid_queue,live_checks,LIVE_BUILDERS,caption_walls,caption_need,CAPTION_MAX_CHARS)
 from live_scene import node_static,json_for_script,core_js
@@ -113,7 +114,7 @@ class LiveRuntimeTests(unittest.TestCase):
     for cap,w in list(zip(d['captions'],walls))[:-1]:self.assertGreaterEqual(w+1e-6,caption_need(cap[2]),cap)
     self.assertTrue(all(len(x[2])<=CAPTION_MAX_CHARS for x in d['captions']))
  def test_palette_text_contrast(self):
-  kit=(ROOT/'visuals/live/kit.js').read_text()
+  kit=(ROOT.parent/'visuals/live/kit.js').read_text()
   C=dict(re.findall(r"(\w+):'(#[0-9a-f]{3,6})'",kit.split('var PILL')[0]))
   for key in ['ink','text','muted','blueText','redText','amberText','greenText','purpleText']:
    with self.subTest(key=key):self.assertGreaterEqual(contrast(C[key],'#fff'),4.5)
@@ -123,7 +124,7 @@ class LiveRuntimeTests(unittest.TestCase):
   """Curves start at 0 and end at 1, monotonic; spring equals a numerically integrated damped spring;
   approach reaches the model value exactly after `settle`; tween is a pure function of T (seek-safe)."""
   import shutil,subprocess
-  kit=(ROOT/'visuals/live/kit.js').read_text(encoding='utf-8')
+  kit=(ROOT.parent/'visuals/live/kit.js').read_text(encoding='utf-8')
   prog=kit+r"""
 var K=CA_KIT,o={};
 o.curves={};['linear','out','in','inOut'].forEach(function(c){var v=[];for(var i=0;i<=100;i++)v.push(K.CURVE[c](i/100));o.curves[c]=v;});
@@ -150,7 +151,7 @@ process.stdout.write(JSON.stringify(o));"""
  def test_role_tone_contrast(self):
   """K.TONE text colours read at >= 4.5:1 on white and on their own soft fill (headers sit on white, labels on fills)."""
   import shutil,subprocess
-  kit=(ROOT/'visuals/live/kit.js').read_text(encoding='utf-8')
+  kit=(ROOT.parent/'visuals/live/kit.js').read_text(encoding='utf-8')
   tones=json.loads(subprocess.run([shutil.which('node'),'-e',kit+'\nprocess.stdout.write(JSON.stringify(CA_KIT.TONE))'],capture_output=True,text=True,check=True).stdout)
   for name,(fill,border,txt) in tones.items():
    self.assertGreaterEqual(contrast(txt,'#ffffff'),4.5,name);self.assertGreaterEqual(contrast(txt,fill),4.5,name)
@@ -159,7 +160,7 @@ process.stdout.write(JSON.stringify(o));"""
  def test_kit_motion_parts(self):
   """K.ortho never leaves a diagonal step; K.at walks a polyline at constant distance; K.ease is 0..1."""
   import random,shutil,subprocess
-  kit=(ROOT/'visuals/live/kit.js').read_text(encoding='utf-8');random.seed(7)
+  kit=(ROOT.parent/'visuals/live/kit.js').read_text(encoding='utf-8');random.seed(7)
   cases=[[[random.uniform(0,600),random.uniform(0,400)] for _ in range(random.randint(2,5))] for _ in range(200)]
   prog=kit+'\nvar K=CA_KIT,C=%s,out=[];C.forEach(function(p,i){out.push(K.ortho(p,i%%2?"v":"h"));});'%json.dumps(cases)+\
    'process.stdout.write(JSON.stringify({o:out,at:K.at([[0,0],[10,0],[10,10]],15),e:[0,.1,.2,.3,.35,.5].map(function(t){return K.ease(t,0,.35);}),'+\
@@ -176,7 +177,7 @@ process.stdout.write(JSON.stringify(o));"""
   from visual_spec import build
   datas=[LIVE_BUILDERS['cluster-cascade'](CASES['cluster-cascade']['params'])[0]]
   for f in ('ai-agent-request','rag-indexing','ai-adoption-approval'):
-   datas.append(build(json.loads((ROOT/'examples/visuals'/f'{f}.json').read_text(encoding='utf-8')))['data'])
+   datas.append(build(json.loads((ROOT.parent/'examples/visuals'/f'{f}.json').read_text(encoding='utf-8')))['data'])
   for data in datas:
    for w in (720,600,360):
     for t in (0.3,data.get('end_h',data.get('time',{}).get('end',1))/2):

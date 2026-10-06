@@ -2,6 +2,7 @@
 from pathlib import Path
 import copy,hashlib,json,math,re,sys,unittest
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 from monitoring_cases import build_case,stats,fluid_queue,pool_model,pool_state,BUILDERS
 from reference_scene import ReferenceScene,document,simplify_track
 from validate_html_macro import validate

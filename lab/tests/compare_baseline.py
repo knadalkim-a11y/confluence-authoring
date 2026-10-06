@@ -12,6 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 import argparse,io,json,re,sys
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 from playwright.sync_api import sync_playwright
 from PIL import Image,ImageDraw
 from monitoring_cases import live_checks,LIVE_BUILDERS

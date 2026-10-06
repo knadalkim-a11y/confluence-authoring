@@ -6,6 +6,7 @@ import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 from motion import ROOT, FIELDS, render, weighted_stats, queue_states
 from validate_html_macro import validate
 from build_gallery import build

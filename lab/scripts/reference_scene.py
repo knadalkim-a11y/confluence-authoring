@@ -5,6 +5,8 @@ markers and tables come from the same values. Only this module inserts raw marku
 external text is escaped. There is no runtime JS in a generated macro.
 """
 from __future__ import annotations
+import sys
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 import html, math, re, uuid
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]

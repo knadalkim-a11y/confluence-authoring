@@ -3,6 +3,7 @@ import json,math,re,sys,unittest
 from pathlib import Path
 from html.parser import HTMLParser
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'scripts'))
+sys.path.insert(1, str(__import__('pathlib').Path(__file__).resolve().parents[2] / 'scripts'))   # the product scripts (model, live_scene, visual_spec)
 from diagram_layout import cascade_layout,event_layout,pipeline_layout,Node,Layout
 from monitoring_cases import build_case
 from validate_html_macro import validate
