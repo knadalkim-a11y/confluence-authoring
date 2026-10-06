@@ -9,8 +9,8 @@ See references/visual-specs.md for the spec reference and selection rules.
 from __future__ import annotations
 import datetime as dt, math, re
 import choreo
-from monitoring_cases import (finite, fluid_tokens, first_reach, interp, token_speed, paced_rate, caption_walls,
-                              caption_need, nice_max, grp, DEFAULT_SPEED)
+from model import (finite, fluid_tokens, first_reach, interp, token_speed, paced_rate, caption_walls,
+                   caption_need, nice_max, grp, DEFAULT_SPEED)
 
 KINDS = ('flow', 'trend', 'bars', 'share', 'timeline', 'diagram', 'distribution', 'concept', 'compose')
 DATA_KINDS = {'measured': '측정값', 'estimate': '추정값', 'example': '예시 데이터'}
@@ -770,7 +770,7 @@ MARKERS = {'mean': ('평균', 'blue'), 'p50': ('P50', 'green'), 'p95': ('P95', '
 def distribution_data(spec):
     """One dot per observation, stacked by value; mean and percentiles appear one at a time.
     The point is the shape: two samples with the same average can have very different tails."""
-    from monitoring_cases import stats
+    from model import stats
     kind, title, claim, source, data_kind, motion = common(spec)
     only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'unit', 'max', 'groups', 'markers', 'tail', 'captions'), 'distribution spec')
     unit = text(spec.get('unit', ''), 'unit', 0, 6) if spec.get('unit') else ''

@@ -167,5 +167,4 @@ def assemble(scene,meta,content,phases,duration=18):
     vals={'PREFIX':p,'PATTERN':'reference-'+meta['id'],'CSS':css,'ANIMATION_CSS':'\n'.join(scene.rules),'SCENE':body,'DURATION':str(duration),'MODE_LABEL':'설명용 합성 시나리오','DATA_TABLE':''.join(scene.tables),'TITLE':esc(meta['title']),'DESCRIPTION':esc(meta['goal']),'CAPTION':esc(meta['conclusion']),'PROVENANCE':esc(meta['assumptions'])}
     return sub((ROOT/'visuals/components/player.html').read_text(),vals)
 
-def document(fragment,title='Monitoring reference'):
-    return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+'</title><style>body{margin:0;background:#f3f6fa;padding:16px}@media(max-width:480px){body{padding:4px}}</style></head><body>'+fragment+'</body></html>'
+from live_scene import document   # one page wrapper for every preview (shared with the spec path)

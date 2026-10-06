@@ -15,8 +15,7 @@ import argparse, json, sys, uuid
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from visual_spec import build, SpecError
-from live_scene import assemble_live, figure_svg, STATIC_WIDTH
-from reference_scene import document
+from live_scene import assemble_live, figure_svg, STATIC_WIDTH, document
 from validate_html_macro import validate
 
 

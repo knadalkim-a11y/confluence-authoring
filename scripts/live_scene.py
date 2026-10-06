@@ -153,3 +153,8 @@ def assemble_live(case_id: str, prefix: str, speed: float, data: dict, aria: str
     if re.search(r'%%[A-Z_]+%%', out.replace(script, '') if script else out):
         raise ValueError('Unresolved live template token')
     return out
+
+
+def document(fragment, title='Monitoring reference'):
+    """A standalone preview page around one macro fragment (the macro itself is the fragment)."""
+    return '<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+html.escape(str(title),quote=True)+'</title><style>body{margin:0;background:#f3f6fa;padding:16px}@media(max-width:480px){body{padding:4px}}</style></head><body>'+fragment+'</body></html>'

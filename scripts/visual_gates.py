@@ -257,7 +257,7 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
 
 def caption_report(data, end):
     """Reading time per caption at the default speed (pure Python; also run by the CLI)."""
-    from monitoring_cases import caption_walls, caption_need
+    from model import caption_walls, caption_need
     walls = caption_walls(data['captions'], data['rate'], end)
     return [dict(caption=c[2], shown_s=round(w, 1), need_s=round(caption_need(c[2]), 1), ok=i == len(walls) - 1 or w + 1e-6 >= caption_need(c[2]))
             for i, (c, w) in enumerate(zip(data['captions'], walls))]
