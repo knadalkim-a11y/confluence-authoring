@@ -47,9 +47,7 @@ CA_SCENES['compose']=function(D,K,GR){
 
   /* ---- measuring ---- */
   function word(s,fs){return max(String(s).split(' ').map(function(x){return K.tw(x,fs);}));}
-  /* g.tight: a row that did not fit asks again with names and subs allowed to wrap at their spaces */
-  function eMin(e,g){var nm=g.tight?Math.max(word(e.name,g.fs)+24,Math.min(K.tw(e.name,g.fs),g.nw?120:170)/2+28):Math.min(K.tw(e.name,g.fs),g.nw?120:170)+28,
-      sb=e.sub?(g.tight?word(e.sub,12)+20:Math.min(K.tw(e.sub,12),g.nw?120:200)+24):0,cd=0;
+  function eMin(e,g){var nm=Math.min(K.tw(e.name,g.fs),g.nw?120:170)+28,sb=e.sub?Math.min(K.tw(e.sub,12),g.nw?120:200)+24:0,cd=0;
     e.code.forEach(function(l){cd=Math.max(cd,K.tw(l,11)+36);});
     return Math.max(g.nw?64:76,nm,sb,cd,max(anyBadge(e).map(function(b){return K.tw(b.text,11)+40;})),e.bubble?Math.min(K.tw(e.bubble,12)+24,120):0);}
   function eBody(e,w,g){var fs=g.fs,ln=K.tw(e.name,fs)>w-16?wrap(e.name,fs-1,w-14):[e.name],f=ln.length>1?fs-1:fs;
@@ -72,14 +70,13 @@ CA_SCENES['compose']=function(D,K,GR){
   function gaps(n,g,tight){var out=[];for(var i=0;i+1<n.kids.length;i++){var a=n.kids[i],b=n.kids[i+1],gp=g.nw?20:28,cnt=0;
       LK.forEach(function(l){if(l.via)return;if((under(a,l.a)&&under(b,l.b))||(under(a,l.b)&&under(b,l.a))){if(l.label)cnt++;
         gp=Math.max(gp,!l.label?44:tight?Math.max(44,max(l.label.split(' ').map(function(x){return K.tw(x,12);}))+28):Math.min(K.tw(l.label,12)+36,g.nw?72:96));}});
-      if(cnt>2)gp+=Math.min(g.nw?24:84,14*(cnt-2));   /* many labels in one gap: room for them to spread (fan-out) */
       if(n.sep)gp=Math.max(gp,48);out.push(gp);}return out;}
   function vgap(n,i,g){var a=n.kids[i],b=n.kids[i+1],gp=g.nw?8:12;
     LK.forEach(function(l){if(l.via)return;if((under(a,l.a)&&under(b,l.b))||(under(a,l.b)&&under(b,l.a)))gp=Math.max(gp,l.label?36:28);});
     if(n.sep)gp=Math.max(gp,30);return gp;}
 
   /* ---- layout: lay(node, x, y, w, g, stretchTo) places the subtree and returns its height ---- */
-  function lay(n,x,y,w,g,minH,mid){if(n.t==='e')return layEl(n,x,y,w,g,minH);
+  function lay(n,x,y,w,g,minH){if(n.t==='e')return layEl(n,x,y,w,g,minH);
     var fr=n.frame,top=(n.span?30:0),lab=n.label&&!g.inSplit[n.id];
     var pl=fr?(g.nw?10:14):0,pr=pl+(n.bracket?(g.nw?64:96):0),pt=top+(fr?(n.label?32:14):(lab?24:0));
     var iw=w-pl-pr,ix=x+pl,iy=y+pt;
@@ -87,10 +84,7 @@ CA_SCENES['compose']=function(D,K,GR){
     var b={x:x,y:y,w:w,top:top,pl:pl,pr:pr,pt:pt,pb:pb,nl:nl,fb:fr?12:0};g.B[n.id]=b;
     var h=n.L==='row'||(n.L==='column'&&g.rot[n.id])?layRow(n,ix,iy,iw,g):n.L==='grid'?layGrid(n,ix,iy,iw,g):n.L==='stack'?layStack(n,ix,iy,iw,g):
       n.L==='split'?laySplit(n,ix,iy,iw,g):n.L==='lifelines'?layLife(n,ix,iy,iw,g):layCol(n,ix,iy,iw,g,false);
-    if(mid&&minH>pt+h+pb+1){var dy=(minH-(pt+h+pb))/2;iy+=dy;   /* a frame stretched to its row's height keeps its content in the middle */
-      h=n.L==='row'||(n.L==='column'&&g.rot[n.id])?layRow(n,ix,iy,iw,g):n.L==='grid'?layGrid(n,ix,iy,iw,g):n.L==='stack'?layStack(n,ix,iy,iw,g):
-        n.L==='split'?laySplit(n,ix,iy,iw,g):n.L==='lifelines'?layLife(n,ix,iy,iw,g):layCol(n,ix,iy,iw,g,false);}
-    b=g.B[n.id]=Object.assign(g.B[n.id]||{},b);b.cy0=iy;b.cy1=iy+h;b.h=Math.max(iy-y+h+pb,minH||0);
+    b=g.B[n.id]=Object.assign(g.B[n.id]||{},b);b.cy0=iy;b.cy1=iy+h;b.h=Math.max(pt+h+pb,minH||0);
     return b.h;}
   function layEl(e,x,y,w,g,minH){var bd=eBody(e,w,g),bu=bubble(e,w,g),ex=bu?bu.h+10:0,h=Math.max(bd.h,(minH||0)-ex,g.minh[e.id]||0);
     g.B[e.id]={x:x,y:y+ex,w:w,h:h,bd:bd,bu:bu,by:y};return ex+h;}
@@ -99,11 +93,7 @@ CA_SCENES['compose']=function(D,K,GR){
      only when even two a line do not fit it folds into a column */
   function layRow(n,x,y,w,g){var ks=n.kids,gp=gaps(n,g),mins=ks.map(function(k){return minW(k,g);}),per=0;
     function fits(i0,i1){return sum(mins.slice(i0,i1))+sum(gp.slice(i0,i1-1))<=w;}
-    if(!fits(0,ks.length)){var gt=gaps(n,g,1);if(sum(mins)+sum(gt)<=w)gp=gt;   /* narrower gaps (labels wrap) before a second line, */
-      else if(!g.tight){g.tight=1;var mt=ks.map(function(k){return minW(k,g);});g.tight=0;   /* then names wrapped onto two lines */
-        if(sum(mt)+sum(gt)<=w){gp=gt;mins=mt;}}}
-    var full=gaps(n,g),slack=w-sum(mins)-sum(gp),def=sum(full.map(function(f,i){return Math.max(0,f-gp[i]);}));
-    if(slack>0&&def>0)gp=gp.map(function(v,i){return v+Math.max(0,full[i]-v)*Math.min(1,slack/def);});   /* width left over goes back to narrowed gaps first (their labels), then to containers */
+    if(!fits(0,ks.length)){var gt=gaps(n,g,1);if(sum(mins)+sum(gt)<=w)gp=gt;}   /* narrower gaps (labels wrap) before a second line */
     for(var L=1;L<=Math.ceil(ks.length/2)&&!per;L++){var c=Math.ceil(ks.length/L),ok=true;   /* fewest lines, items spread evenly over them */
       for(var i=0;i<ks.length;i+=c)if(!fits(i,Math.min(ks.length,i+c)))ok=false;if(ok)per=c;}
     if(!per)return layCol(n,x,y,w,g,true);
@@ -123,22 +113,18 @@ CA_SCENES['compose']=function(D,K,GR){
   function layLine(n,ks,gp,mins,x,y,w,g){var ws=ks.map(function(k){return prefW(k,g,w);}),flex=[],fixed=0;
     ks.forEach(function(k,i){if(ws[i]==null)flex.push(i);else fixed+=ws[i];});
     var room=w-sum(gp);
-    /* containers share what the elements leave by their grow weights; one that needs more gets its minimum and the
-       others share the rest; elements give up their spare width only when the containers still do not fit */
-    function share(rest){var big={},again=true;while(again){again=false;var gw=0,left=rest;
-        flex.forEach(function(i){if(big[i])left-=mins[i];else gw+=ks[i].grow||1;});
-        flex.forEach(function(i){if(!big[i]){ws[i]=left*(ks[i].grow||1)/gw;if(ws[i]<mins[i]-.5){big[i]=1;again=true;}}else ws[i]=mins[i];});}}
-    if(flex.length){var rest=room-fixed,need=sum(flex.map(function(i){return mins[i];}));
-      if(need>rest){var spare=sum(ks.map(function(k,i){return ws[i]!=null&&k.t==='e'?ws[i]-mins[i]:0;})),lack=need-rest;
-        if(spare<lack)return null;
-        ks.forEach(function(k,i){if(k.t==='e'&&ws[i]!=null)ws[i]-=(ws[i]-mins[i])*lack/spare;});
-        rest=room-sum(ks.map(function(k,i){return k.t==='e'?ws[i]:0;}));}
-      share(rest);}
+    if(flex.length){var gw=sum(flex.map(function(i){return ks[i].grow||1;})),rest=room-fixed;
+      flex.forEach(function(i){ws[i]=rest*(ks[i].grow||1)/gw;});
+      var lack=sum(flex.map(function(i){return Math.max(0,mins[i]-ws[i]);}));
+      if(lack>0){var spare=sum(ks.map(function(k,i){return ws[i]!=null&&k.t==='e'?ws[i]-mins[i]:0;}));
+        if(spare<lack)return null;   /* containers share equally; one that would be squeezed folds the row instead */
+        ks.forEach(function(k,i){if(k.t==='e')ws[i]-=(ws[i]-mins[i])*lack/spare;});
+        rest=room-sum(ks.map(function(k,i){return k.t==='e'?ws[i]:0;}));flex.forEach(function(i){ws[i]=rest*(ks[i].grow||1)/gw;});}}
     else if(fixed>room){var sp=fixed-sum(mins);ks.forEach(function(k,i){ws[i]-=(ws[i]-mins[i])*(fixed-room)/sp;});}
     var extra=room-sum(ws),gx=gp.slice();
     if(extra>0&&gp.length){var add=Math.min(extra/gp.length,g.nw?24:96);gx=gp.map(function(v){return v+add;});extra-=add*gp.length;}
     var hs=ks.map(function(k,i){return lay(k,0,0,ws[i],g);}),H=max(hs),cx=x+Math.max(0,extra)/2,seps=[];
-    ks.forEach(function(k,i){var framed=k.t==='c'&&k.frame;lay(k,cx,framed?y:y+(H-hs[i])/2,ws[i],g,framed?H:0,1);
+    ks.forEach(function(k,i){var framed=k.t==='c'&&k.frame;lay(k,cx,framed?y:y+(H-hs[i])/2,ws[i],g,framed?H:0);
       if(i<gx.length)seps.push({x:cx+ws[i]+gx[i]/2,y0:y,y1:y+H});cx+=ws[i]+(gx[i]||0);});
     return {H:H,seps:seps};}
   function layCol(n,x,y,w,g,folded){var ks=n.kids,cy=y,hseps=[],two=g.nw&&!folded&&NEL>6&&ks.length>=4&&ks.every(function(k){return k.t==='e';})&&
@@ -147,9 +133,7 @@ CA_SCENES['compose']=function(D,K,GR){
         pair.forEach(function(k,j){lay(k,x+j*(cw+8),cy,cw,g,H);});cy+=H+8;}
       var b0=g.B[n.id]||(g.B[n.id]={});b0.seps=[];b0.hseps=[];return cy-8-y;}
     var fill=g.nw||g.fill[n.id];
-    /* a folded row turns its columns into rows (a layer of side-by-side parts reads across, as on wide screens) */
-    ks.forEach(function(k,i){var kw=k.t==='e'&&!fill?Math.min(w,Math.max(minW(k,g)+48,240)):w,rot=folded&&k.t==='c'&&k.L==='column';if(rot)g.rot[k.id]=1;
-      var h=lay(k,x+(w-kw)/2,cy,kw,g);if(rot)delete g.rot[k.id];cy+=h;
+    ks.forEach(function(k,i){var kw=k.t==='e'&&!fill?Math.min(w,Math.max(minW(k,g)+48,240)):w,h=lay(k,x+(w-kw)/2,cy,kw,g);cy+=h;
       if(i+1<ks.length){var gp=vgap(n,i,g);if(folded&&n.sep)hseps.push(cy+gp/2);cy+=gp;}});
     var b=g.B[n.id]||(g.B[n.id]={});b.seps=[];b.hseps=hseps.map(function(sy){return {y:sy,x0:x,x1:x+w};});
     return cy-y;}
@@ -188,11 +172,8 @@ CA_SCENES['compose']=function(D,K,GR){
     (function mark(n){if(n.t==='e')return;if(n.L==='split')n.kids.forEach(function(p){g.inSplit[p.id]=1;g.fill[p.id]=1;});n.kids.forEach(mark);})(R);
     function gut(side){var m=0;LK.forEach(function(l){if(l.via===side)m=Math.max(m,18+(l.label?K.tw(l.label,12)+8:0));});return m;}
     var vl=gut('left'),vr=gut('right'),ml=vl||2,mr=vr||2,h=lay(R,ml,4,W-ml-mr,g);   /* 2 px keeps box borders off the edge */g.routes=routes(g);
-    var grow=0;for(var key in g.ports){var id=key.split('|')[0],n=g.ports[key].length,need=(n+1)*16;if(n>=3&&g.B[id].h<need){g.minh[id]=Math.max(g.minh[id]||0,need);grow=1;}}
-    if(grow){g.B={};h=lay(R,ml,4,W-ml-mr,g);g.routes=routes(g);}   /* a side with many links: the box grows so they can spread */
     if(g.blocked&&g.nw&&!vl&&!vr){var lw=18+max(LK.map(function(l){return l.label?K.tw(l.label,12)+8:0;}));   /* no clear path: make a gutter on both sides and route around */
       g.B={};g.gut=1;h=lay(R,lw,4,W-2*lw,g);g.blocked=0;g.routes=routes(g);}
-    var h0=h+4;g.routes.forEach(function(r,k){(r||[]).forEach(function(p){if(p[1]>h0-8)h=Math.max(h,p[1]+(LK[k].label?26:4));});});   /* a route around the bottom stays inside, with room for its label */
     g.fh=h;var y=h+4;g.sl=[];
     if((D.slist||[]).length){y+=g.nw?6:10;D.slist.forEach(function(it){var ln=wrap(it.text,13,W-48);g.sl.push({y:y+13,ln:ln});y+=ln.length*LH+(g.nw?1:3);});}
     g.lg=[];var dk=K.tw(D.labels.data_kind,12)+16,lx=2,rows=[[]];
@@ -208,8 +189,7 @@ CA_SCENES['compose']=function(D,K,GR){
     while(cb&&!up[PAR[cb.id]&&PAR[cb.id].id])cb=PAR[cb.id];if(!cb||!PAR[cb.id])return null;var lca=PAR[cb.id];
     ca=EL[l.a];while(ca&&PAR[ca.id]!==lca)ca=PAR[ca.id];if(!ca)return null;var A=g.B[ca.id],B2=g.B[cb.id];
     if(A.y+A.h<=B2.y+1||B2.y+B2.h<=A.y+1)return {ax:'v',at:A.y<B2.y?(A.y+A.h+B2.y)/2:(B2.y+B2.h+A.y)/2};
-    if(A.x+A.w<=B2.x+1||B2.x+B2.w<=A.x+1){var gp=A.x<B2.x?B2.x-(A.x+A.w):A.x-(B2.x+B2.w);   /* a run bends just before its target, so its label has the long run */
-      return {ax:'h',at:gp>40?(A.x<B2.x?B2.x-14:B2.x+B2.w+14):(A.x<B2.x?(A.x+A.w+B2.x)/2:(B2.x+B2.w+A.x)/2)};}return null;}
+    if(A.x+A.w<=B2.x+1||B2.x+B2.w<=A.x+1)return {ax:'h',at:A.x<B2.x?(A.x+A.w+B2.x)/2:(B2.x+B2.w+A.x)/2};return null;}
   function plan(l,g){var a=g.B[l.a],b=g.B[l.b];
     if(l.via)return {m:'via'};
     var ax=axis(l,g);   /* elbows turn in the gap between the two branches (a bus between a parent and its row of children) */
@@ -222,15 +202,11 @@ CA_SCENES['compose']=function(D,K,GR){
     return null;}
   /* routes for all links: links that leave one side of a box share its centre, so a parent and its children form
      a trunk and a bus (the elbow sits in the gap between the branches); two-way pairs run as parallel lines */
-  function routes(g){var P=LK.map(function(l){return plan(l,g);}),fan={},ports={},PY={};
-    /* left/right sides with two or more links: ports spread evenly along the side, ordered by where the other end is
-       (a two-way pair in link order), so runs never bunch; top/bottom sides keep one shared port (trunks and buses) */
-    LK.forEach(function(l,k){var p=P[k];if(!p||(p.m!=='h'&&p.m!=='hs'))return;
-      [[l.a,p.sa,l.b],[l.b,p.sb,l.a]].forEach(function(e){var key=e[0]+'|'+e[1],o=g.B[e[2]];(ports[key]=ports[key]||[]).push({k:k,o:o.y+o.h/2});});});
-    for(var key in ports){var L=ports[key];if(L.length<2)continue;var id=key.split('|')[0],b=g.B[id];
-      L.sort(function(x,y){return x.o-y.o||x.k-y.k;});L.forEach(function(e,i){PY[e.k+'|'+id]=b.y+b.h*(i+1)/(L.length+1);});}
-    g.ports=ports;
-    LK.forEach(function(l,k){var p=P[k];if(p&&(p.m==='h'||p.m==='hs')){var key=l.a+'|'+p.sa;fan[key]=(fan[key]||0)+1;}});   /* links leaving one side of a box */
+  /* routes for all links: links that leave one side of a box share its centre, so a parent and its children form
+     a trunk and a bus (the elbow sits in the gap between the branches); two-way pairs run as parallel lines.
+     (v0.17 spread ports along busy sides and moved bends; measured with scripts/figure_metrics.py it added 43% more
+     bends at 715 px and crossings on phones, so it was taken out again.) */
+  function routes(g){var P=LK.map(function(l){return plan(l,g);});
     function cen(id){var b=g.B[id];return [b.x+b.w/2,b.y+b.h/2];}
     var EB=Object.keys(EL).map(function(id){return [id,g.B[id]];});
     function hit(pts,l){for(var i=1;i<pts.length;i++){var x0=Math.min(pts[i-1][0],pts[i][0]),x1=Math.max(pts[i-1][0],pts[i][0]),y0=Math.min(pts[i-1][1],pts[i][1]),y1=Math.max(pts[i-1][1],pts[i][1]);
@@ -239,31 +215,17 @@ CA_SCENES['compose']=function(D,K,GR){
     function around(l,side){var a=g.B[l.a],b=g.B[l.b],ya=a.y+a.h/2,yb=b.y+b.h/2,lo=Math.min(a.y,b.y),hi=Math.max(a.y+a.h,b.y+b.h),Lf=side==='left',X=Lf?Math.min(a.x,b.x):Math.max(a.x+a.w,b.x+b.w);
       EB.forEach(function(e){var c=e[1];if(c.y<hi&&c.y+c.h>lo)X=Lf?Math.min(X,c.x):Math.max(X,c.x+c.w);});X+=Lf?-12:12;
       if(X<2||X>g.W-2)return null;return [[Lf?a.x:a.x+a.w,ya],[X,ya],[X,yb],[Lf?b.x:b.x+b.w,yb]];}
-    function overUnder(l,side){var a=g.B[l.a],b=g.B[l.b],xa=a.x+a.w/2,xb=b.x+b.w/2,lo=Math.min(a.x,b.x),hi=Math.max(a.x+a.w,b.x+b.w),Tp=side==='top',Y=Tp?Math.min(a.y,b.y):Math.max(a.y+a.h,b.y+b.h);
-      EB.forEach(function(e){var c=e[1];if(c.x<hi&&c.x+c.w>lo)Y=Tp?Math.min(Y,c.y):Math.max(Y,c.y+c.h);});Y+=Tp?-12:12;
-      if(Y<2)return null;return [[xa,Tp?a.y:a.y+a.h],[xa,Y],[xb,Y],[xb,Tp?b.y:b.y+b.h]];}
     g.side={};
-    /* a blocked link goes around: over or under a run, beside a drop (the other pair as a fallback) */
-    return LK.map(function(l,k){var r=route1(l,k);if(l.via){g.side[k]=l.via;return r;}if(r&&hit(r,l)){var hz=P[k]&&(P[k].m==='h'||P[k].m==='hs'),
-          names=hz?['top','bottom','right','left']:['right','left','top','bottom'],al=names.map(function(nm){return nm==='top'||nm==='bottom'?overUnder(l,nm):around(l,nm);});
-        for(var i=0;i<4;i++)if(al[i]&&!hit(al[i],l)){g.side[k]=names[i];return al[i];}g.blocked=1;}return r;});
+    return LK.map(function(l,k){var r=route1(l,k);if(l.via){g.side[k]=l.via;return r;}if(r&&hit(r,l)){var al=[around(l,'right'),around(l,'left')];
+        for(var i=0;i<2;i++)if(al[i]&&!hit(al[i],l)){g.side[k]=i?'left':'right';return al[i];}g.blocked=1;}return r;});
     function route1(l,k){var p=P[k];if(!p)return null;var a=g.B[l.a],b=g.B[l.b],ac=cen(l.a),bc=cen(l.b),
         twin=LK.some(function(o){return o!==l&&o.a===l.b&&o.b===l.a&&!o.via;}),off=twin?(LK.some(function(o,j){return j<k&&o.a===l.b&&o.b===l.a;})?7:-7):0;   /* the earlier link of a pair runs above (left), its label above it */
       function pick(lo,hi,c1,c2){var m=(lo+hi)/2;return c1>=lo&&c1<=hi?c1:c2>=lo&&c2<=hi?c2:m;}
       function sx(bx,sd){return sd==='r'?bx.x+bx.w:bx.x;}function sy(bx,sd){return sd==='b'?bx.y+bx.h:bx.y;}
       if(p.m==='via')return around(l,l.via);
-      var ya=PY[k+'|'+l.a],yb=PY[k+'|'+l.b];
-      if((p.m==='hs'||p.m==='h')&&(ya!=null||yb!=null)){   /* spread ports: straight when both ends line up, else one elbow */
-        if(ya==null)ya=yb>=a.y+8&&yb<=a.y+a.h-8?yb:ac[1];if(yb==null)yb=ya>=b.y+8&&ya<=b.y+b.h-8?ya:bc[1];
-        var x0=sx(a,p.sa),x1=sx(b,p.sb);if(Math.abs(ya-yb)<1)return [[x0,ya],[x1,ya]];
-        var at=p.at;if(fan[l.a+'|'+p.sa]>1&&Math.abs(x1-x0)>40)at=x0+(x1>x0?14:-14);
-        if(twin)at=(x0+x1)/2;   /* both links of a two-way pair turn at one x, so they stay parallel instead of crossing */
-        return K.ortho([[x0,ya],[x1,yb]],'h',at);}
       if(p.m==='hs'){var yy=Math.max(p.lo,Math.min(p.hi,pick(p.lo,p.hi,ac[1],bc[1])+off));return [[sx(a,p.sa),yy],[sx(b,p.sb),yy]];}
       if(p.m==='vs'){var xx=Math.max(p.lo,Math.min(p.hi,pick(p.lo,p.hi,ac[0],bc[0])+off));return [[xx,sy(a,p.sa)],[xx,sy(b,p.sb)]];}
-      if(p.m==='h'){var x0=sx(a,p.sa),x1=sx(b,p.sb),at=p.at;   /* a fan-out turns next to its source, so each branch has its own run (and label) */
-        if(fan[l.a+'|'+p.sa]>1&&Math.abs(x1-x0)>40)at=x0+(x1>x0?14:-14);
-        return K.ortho([[x0,ac[1]+off],[x1,bc[1]+off]],'h',at);}
+      if(p.m==='h')return K.ortho([[sx(a,p.sa),ac[1]+off],[sx(b,p.sb),bc[1]+off]],'h',p.at);
       return K.ortho([[ac[0]+off,sy(a,p.sa)],[bc[0]+off,sy(b,p.sb)]],'v',p.at);}}
   /* label places, decided once per layout: candidates on every segment (longest first) - above/below a run,
      right/left of a drop - and the first that clears every box, earlier labels and the figure edge wins. The later

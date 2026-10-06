@@ -280,12 +280,7 @@ What the engine does for you, so the spec never carries coordinates:
 Not for numbers (use a chart kind), and not for metaphors (tangled lines, a seesaw): say those in prose. Keep
 one claim per figure; if it needs more than ~12 elements, split it.
 
-### `diagram` — components, connections, and the path through them (a `compose` preset since v0.17.0)
-
-The spec is unchanged. It expands into a compose tree: layers → columns in a row (on phones the row folds and each
-layer reads across), groups → dashed frames, component types → role tone and shape (person = pill, data =
-cylinder, external = dashed border; listed in the legend), dashed edges → `reply` links (with `dashed_means` in
-the legend), steps → path steps with the step list kept in the picture.
+### `diagram` — components, connections, and the path through them
 
 ```json
 {"kind": "diagram", "data_kind": "proposed",

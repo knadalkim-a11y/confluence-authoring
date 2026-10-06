@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence, and make report visuals that fit the situation (backlog/capacity flows, metric trends around events, comparisons and before/after, funnels, composition, schedules and incident timelines, architecture and process diagrams including AI agent and RAG request paths; animated only when movement explains). Builds validated Confluence HTML macros plus standalone HTML, SVG and PNG figures from a JSON spec. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools. Building visuals requires Python 3.10+ and Node.js (it renders the static scenes); the browser quality gates and PNG export need Playwright with Chromium (without them builds still succeed and report the gates as not run).
 metadata:
-  version: "0.17.0"
+  version: "0.17.1"
 ---
 
 # Confluence Authoring
@@ -70,7 +70,7 @@ To make a visual for a report or document, use the spec path (default):
    `timeline` (schedule; incident minutes with `HH:MM` times), `distribution` (how values
    spread; mean vs percentiles), `diagram` (architecture,
    components and connections; with `steps` the path a request, document or approval takes,
-   e.g. an AI agent call; `data_kind` `current` or `proposed`; a preset of compose), `concept`
+   e.g. an AI agent call; `data_kind` `current` or `proposed`), `concept`
    (compare / stack / sequence presets) and `compose` for any other idea: nest layout containers (row, column,
    grid, stack, split, lifelines) and parts (elements with states, code, badges and bubbles;
    frames and boundaries; links) so the figure has the idea's own shape instead of the

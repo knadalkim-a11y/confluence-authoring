@@ -709,61 +709,58 @@ def diagram_data(spec):
         need(('path' in st) != ('paths' in st), f'{nm}: give "path" (one route) or "paths" (routes that happen at the same time)')
         paths = [st['path']] if 'path' in st else st['paths']
         need(isinstance(paths, list) and 1 <= len(paths) <= 3, f'{nm}.paths: 1-3 routes')
-        routes = []
+        routes, nodes = [], []
         for path in paths:
             need(isinstance(path, list) and len(path) >= 2 and all(x in where for x in path), f'{nm}.path: two or more component ids')
-            for x, y in zip(path, path[1:]):
-                need((x, y) in index, f'{nm}.path: no connection {x} -> {y}; add it to edges (direction matters)')
-            routes.append([index[(x, y)] for x, y in zip(path, path[1:])])
-        steps.append(dict(edges=[i for r in routes for i in r], paths=routes, raw=paths, mark=CIRCLED[k],
+            for a, b in zip(path, path[1:]):
+                need((a, b) in index, f'{nm}.path: no connection {a} -> {b}; add it to edges (direction matters)')
+            routes.append([index[(a, b)] for a, b in zip(path, path[1:])])
+            nodes += [x for x in path if x not in nodes]
+        steps.append(dict(edges=[i for r in routes for i in r], paths=routes, nodes=nodes,
                           text=text(fill(text(st.get('text'), f'{nm}.text', 2, 80), {}, f'{nm}.text'), f'{nm}.text', 2, 40)))
     need(len(steps) <= 6, 'steps: at most 6; a longer story needs two diagrams or prose')
-    dm = text(spec.get('dashed_means', '비동기·선택'), 'dashed_means', 1, 14)
+    for i, x in enumerate(steps):
+        x['mark'] = CIRCLED[i]
+    live = bool(steps) and motion != 'none'
     n = len(steps)
-    # --- preset: the diagram becomes a compose tree (docs/design/motion-concept-architecture.md, section 12) ---
-    # layers -> columns in a row (a group = a dashed frame around its layers); component types -> role tone and
-    # shape; edges -> links (dashed = reply style, explained in the legend); steps -> path steps with the
-    # numbered step list kept in the picture (print and no-JS keep the story)
-    TYPE_LOOK = {'system': ('blue', 'box', False), 'person': ('gray', 'pill', False), 'ai': ('purple', 'box', False),
-                 'data': ('green', 'cylinder', False), 'external': ('gray', 'box', True)}
-    def comp(x):
-        tone_, shape_, dashed_ = TYPE_LOOK[x['type']]
-        e = dict(id=x['id'], name=x['name'], tone=x['tone'] or tone_, shape=shape_)
-        if dashed_: e['dashed'] = True
-        if x['sub']: e['sub'] = x['sub']
-        if x['id'] in hl: e['state'] = 'selected'
-        return e
-    cols = [dict(layout='column', id=f'ly{i}', items=[comp(x) for x in ly['nodes']]) for i, ly in enumerate(out)]   # layer names go to the table, as before
-    items, i = [], 0
-    while i < len(cols):
-        gp = next((g for g in groups if g['a'] == i), None)
-        if gp:
-            items.append(dict(layout='row', id=f'grp{groups.index(gp)}', frame='dashed', label=gp['label'], tone=gp['tone'] or 'gray', items=cols[gp['a']:gp['b'] + 1]))
-            i = gp['b'] + 1
-        else:
-            items.append(cols[i]); i += 1
-    root = dict(layout='row', id='layers', items=items)
-    mark = ['' for _ in edges]
-    for x in steps:
-        mark[x['edges'][0]] += x['mark']
-    links = [dict(id=f'e{i}', **{'from': e['a'], 'to': e['b']}, style='reply' if e['dashed'] else 'flow', token=False,
-                  **({'label': (mark[i] + ' ' if mark[i] else '') + e['label']} if e['label'] else {})) for i, e in enumerate(edges)]
-    csteps = [dict(caption=x['text'], **({'path': x['raw'][0]} if len(x['raw']) == 1 else {'paths': x['raw']})) for x in steps] or None
-    legend = [dict(tone=TYPE_LOOK[t][0], shape=TYPE_LOOK[t][1], dashed=TYPE_LOOK[t][2], text=v) for t, v in NODE_TYPES.items()
-              if v and any(x['type'] == t for ly in out for x in ly['nodes'])]
-    if any(e['dashed'] for e in edges):
-        legend.append(dict(style='reply', text=f'점선 = {dm}'))
+    # default choreography (choreo.py): step k starts at k; the old step falls back first, the new one
+    # rises as that fall is 80% through; the last 0.5 s settles everything into the final (static) scene
+    end = float(n) + 0.5 if n else 1.0
+    rate = [[0, 0.25]] if live else [[0, 1]]   # one step ~3.2 s at the default 1.25x
+    cues = []
+    if n:
+        times = list(range(n + 1))
+        used = lambda i, k: any(i in steps[j]['edges'] for j in range(k))
+        for i in range(len(edges)):
+            seq = [2 if i in steps[k]['edges'] else 1 if used(i, k) else 0 for k in range(n)] + [1 if used(i, n) else 0]
+            cues += choreo.levels(f'e{i}', 'level', seq, times, rate)
+        for nid in {x for st in steps for x in st['nodes']}:
+            seq = [1 if nid in steps[k]['nodes'] else 0 for k in range(n)] + [0]
+            lv = choreo.levels(f'n:{nid}', 'act', seq, times, rate)
+            cues += lv + [choreo.cue(f'n:{nid}', 'pop', c[2], 0.4, 0, 1, 'linear', rate) for c in lv if c[6] > c[5]]
+        for l in range(n):
+            cues += choreo.levels(f'l{l}', 'on', [2 if l == k else 1 if l < k else 0 for k in range(n)] + [1], times, rate)
+        cues = choreo.validate(cues, end)
+    captions = [[0.0 if live else end, '', claim]]
+    dm = text(spec.get('dashed_means', '비동기·선택'), 'dashed_means', 1, 14)
+    data = dict(scene='diagram', time=dict(unit='', end=end, steps=n), cues=cues, layers=out, edges=edges, groups=groups, steps=steps, highlight=hl, dashed_means=dm,
+                types={k: v for k, v in NODE_TYPES.items() if v and any(n['type'] == k for x in out for n in x['nodes'])},
+                captions=captions, rate=rate, labels=dict(data_kind=DIAGRAM_KINDS[data_kind]))
+
+    def expect(T):
+        return dict(state={'step': n if T >= n - 1e-9 else min(n - 1, math.floor(T + 1e-9))}, stats=[])
+    samples = [round(i + 0.4, 4) for i in range(n)][:5] + [end]
+    while len(samples) < 6:
+        samples.append(end)
+    checks = dict(end=end, samples=samples, annotations=[], expect=expect if live else None, resize_at=round(end / 2, 4), choreo=bool(cues))
     name = {x['id']: x['name'] for ly in out for x in ly['nodes']}
+    head = ['구분', '항목', '설명']
     rows = [[f'구성 요소 · {ly["label"] or i + 1}', x['name'], x['sub'] or NODE_TYPES[x['type']] or '-'] for i, ly in enumerate(out) for x in ly['nodes']]
     rows += [['연결', f'{name[e["a"]]} → {name[e["b"]]}', (e['label'] or '-') + (' (점선)' if e['dashed'] else '')] for e in edges]
     route = lambda r: ' → '.join([name[edges[r[0]]['a']]] + [name[edges[i]['b']] for i in r])
     rows += [[f'단계 {x["mark"]}', ' · '.join(route(r) for r in x['paths']), x['text']] for x in steps]
-    info = compose_build(spec, root, links, csteps, ['구분', '항목', '설명'], rows,
-                         opts=dict(rate=0.25, step=1.0, live=bool(steps) and motion != 'none', step_list=True, legend=legend,
-                                   notes=f'근거: {source} ({DIAGRAM_KINDS[data_kind]}).'))
-    info['numeric'] = dict(steps=n)
-    info['data']['groups'] = [dict(label=g['label'], tone=g['tone']) for g in groups]   # kept for readers of the data
-    return info
+    return dict(data=data, aria=f'{title}. {claim}', notes=f'근거: {source} ({DIAGRAM_KINDS[data_kind]}).', table=(head, rows),
+                checks=checks, live=live, numeric=dict(steps=n), title=title)
 
 
 # ---------------------------------------------------------------- distribution

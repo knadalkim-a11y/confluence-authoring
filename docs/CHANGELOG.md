@@ -1,5 +1,22 @@
 # Changes
 
+## 0.17.1 — diagram restored; clutter is measured
+
+- Correction to 0.17.0: moving `diagram` onto the compose engine made the figures busier, not "comparable" as I
+  reported. Measured on 46 figures with the new `scripts/figure_metrics.py`: bends at 715 px 74 → 106 (+43%),
+  connector crossings on phones 0 → 3; compose figures were affected too (straight links became elbows). The gates
+  passed because they check defects, not clutter.
+- `diagram` is back on its own scene (`visuals/live/scenes/diagram.js`, v0.16 builder). The routing and layout rules
+  added for the move are removed (spread ports, bend placement, two-line names to fit a row, min-aware sharing,
+  folded-row transpose, over/under detours, centred stretched frames, crowded-gap widening, leftover width to gaps,
+  bottom-detour label room). Kept: the compose parts (path steps, step list, legend, dashed, bar, badge per state)
+  and three fixes for real gate findings (wrapped-name spacing, group names as taken label places, side-gutter
+  relayout on phones only).
+- Result: all 46 measured figures have the same clutter numbers as v0.16; 61/61 pass the gates; 10 examples look the
+  same side by side (diagram 3, compose 7).
+- `build_visual.py` writes the clutter numbers into `report.json`; a layout or routing change is accepted only when it
+  does not make the measured set busier than its baseline (AGENTS.md).
+
 ## 0.17.0 — diagram on the composition engine; remaining gaps
 
 - `diagram` is now a compose preset (`visuals/live/scenes/diagram.js` removed; one implementation for every

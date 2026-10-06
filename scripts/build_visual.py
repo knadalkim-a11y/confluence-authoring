@@ -49,6 +49,12 @@ def main():
     from visual_gates import caption_report
     report = dict(kind=spec['kind'], mode='live' if info['live'] else 'static', bytes=len(frag.encode()), lint=errors or 'PASS',
                   captions=caption_report(info['data'], info['checks']['end']) if info['live'] else None)
+    try:   # clutter numbers (scripts/figure_metrics.py): compare against a baseline before accepting a layout change
+        from figure_metrics import metrics
+        from live_scene import node_static
+        report['clutter'] = {w: metrics(node_static(info['data'], w)['svg']) for w in (715, 360)}
+    except Exception as e:   # no Node: the figure is still built
+        report['clutter'] = f'not measured ({str(e)[:80]})'
     if errors:
         print('FAIL lint:', '; '.join(errors), file=sys.stderr)
     unchecked = None

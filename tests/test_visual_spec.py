@@ -209,9 +209,16 @@ class VisualSpecTests(unittest.TestCase):
         self.assertEqual(len(build(spec)['data']['legend']), 2)
         spec['legend'] = [{'tone': 'pink', 'text': 'x'}]
         with self.assertRaises(SpecError): build(spec)
-        dg = build(load('ai-agent-request.json'))['data']                                     # diagram preset: types -> legend, external -> dashed
-        self.assertTrue(dg['legend'] and dg['slist'])
-        walk(dg['tree']); self.assertTrue(any(e['dashed'] for e in el.values()))
+
+    def test_figure_metrics(self):
+        """Clutter numbers: connectors, bends, crossings between two connectors, length (scripts/figure_metrics.py)."""
+        from figure_metrics import metrics
+        svg = ('<polyline data-wire="1" points="0 50 100 50"/>'                  # straight
+               '<polyline data-wire="1" points="50 0 50 30 80 30 80 100"/>'      # two bends, crosses the first at (80, 50)
+               '<polyline data-wire="1" points="200 0 200 10"/>')
+        m = metrics(svg)
+        self.assertEqual((m['wires'], m['segments'], m['bends'], m['crossings'], m['length']), (3, 5, 2, 1, 240))
+        self.assertEqual(metrics('<polyline data-wire="1" points="0 0 10 0"/><polyline data-wire="1" points="10 0 10 10"/>')['crossings'], 0)   # touching ends is not a crossing
 
     def test_concept(self):
         """concept kind: three forms, now presets drawn by the compose engine (split / stack / lifelines),
@@ -250,10 +257,8 @@ class VisualSpecTests(unittest.TestCase):
         self.assertFalse(build(load('rag-indexing.json'))['live'])   # structure only -> static
         self.assertEqual([r['checks']['expect'](t)['state']['step'] for t in (0, 1.5, 3.99, 4)], [0, 1, 3, 4])
         self.assertEqual(r['data']['captions'][-1][2], load('ai-agent-request.json')['claim'])
-        d = build(load('ai-adoption-approval.json'))['data']
-        self.assertEqual(d['scene'], 'compose')                      # a preset of the compose engine (v0.17.0)
-        self.assertEqual(len(d['paths'][0]['routes']), 2)            # parallel routes in one step
-        self.assertEqual(len(d['slist']), len(load('ai-adoption-approval.json')['steps']))   # the step list stays in the picture
+        par = build(load('ai-adoption-approval.json'))['data']['steps'][0]
+        self.assertEqual(len(par['paths']), 2)                       # parallel routes in one step
         base = load('rag-indexing.json')
         cases = {
             'data_kind': (lambda s: s.update(data_kind='measured'), 'current'),

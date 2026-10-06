@@ -1,4 +1,4 @@
-# Status — v0.17.0 (composition engine; concept and diagram are its presets)
+# Status — v0.17.1 (composition engine; concept forms are its presets; diagram on its own scene)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -63,16 +63,14 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
 
-## v0.17.0 diagram on the engine
+## v0.17.1 diagram restored, clutter measured
 
-`diagram` is a compose preset now (diagram.js removed); new parts: path steps, step list, legend, dashed border,
-relative bar, badge per state. Engine rules fixed while moving diagram are listed in the changelog; after each fix
-all figures were rebuilt. Actual results (2026-10-06, Chromium 141): unit 121 OK; 60/60 figures pass --check
-(23 examples, 9 dev, 8 held-out, 21 v0.15.1 external specs incl. 7 diagrams); 11 compose/diagram/concept examples
-pass under --font NanumGothic; browser_live 18/18 default and 18/18 NanumGothic; browser_monitoring PASS;
-browser_smoke pass; browser_diagram_layout SKIP; example gallery PASS. Side-by-side with the old diagram scene
-(my judgement): comparable on all three diagram examples after the fixes; the first build was worse on
-ai-agent-request. Held-out re-measurement is deferred: the user will give feedback from real use instead.
+v0.17.0 moved diagram onto the compose engine and reported it "comparable"; the user saw it was busier, and the new
+clutter metric agreed (bends at 715 px +43%, crossings on phones 0 → 3, compose figures affected too). Reverted the
+move and the rules added for it; kept the compose parts and three fixes for real gate findings. All 46 measured
+figures now have the v0.16 clutter numbers.
+Actual results (2026-10-06, Chromium 141): see the verification list in the PR (unit, 61/61 --check, browser_live
+both fonts, monitoring, smoke, gallery).
 
 ## v0.16.0 composition engine
 
