@@ -27,7 +27,7 @@ with sync_playwright() as pw:
         data = LIVE_BUILDERS[c['id']](c['params'])[0]
         (OUT / c['id']).mkdir(parents=True, exist_ok=True)
         (OUT / c['id'] / 'macro.html').write_text(frag, encoding='utf8'); (OUT / c['id'] / 'preview.html').write_text(document(frag, c['title']), encoding='utf8')
-        rec = run(frag, live_checks(c['id'], c['params']), data, SHOTS, c['id'], browser=browser, font=opt.font)
+        rec = run(frag, live_checks(c['id'], c['params']), data, SHOTS, c['id'], browser=browser, font=opt.font, phone=True)
         # Gallery mounts and runs the exact macro (innerHTML never executes scripts; the gallery re-creates them).
         gallery = ROOT / 'dist/monitoring-suite/gallery.html'
         if gallery.exists():

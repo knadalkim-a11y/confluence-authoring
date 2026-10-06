@@ -20,10 +20,10 @@ from reference_scene import document
 from validate_html_macro import validate
 
 
-def make(spec, prefix=None, speed=1.25):
+def make(spec, prefix=None, speed=1.25, phone=False):
     info = build(spec)
     prefix = prefix or 'ca-' + uuid.uuid4().hex[:12]
-    frag = assemble_live(spec['kind'], prefix, speed, info['data'], info['aria'], info['notes'], info['table'], live=info['live'])
+    frag = assemble_live(spec['kind'], prefix, speed, info['data'], info['aria'], info['notes'], info['table'], live=info['live'], phone=phone)
     return frag, info
 
 
@@ -33,10 +33,11 @@ def main():
     ap.add_argument('--check', action='store_true', help='run browser quality gates (needs Playwright + Chromium)')
     ap.add_argument('--browser', help='Chromium executable (default: Playwright bundled)')
     ap.add_argument('--font', help='force a font family during the gates (e.g. NanumGothic) to test other metrics')
+    ap.add_argument('--phone', action='store_true', help='also build the 360 px phone scene and check phone widths (off: read on monitors)')
     a = ap.parse_args()
     try:
         spec = json.loads(a.spec.read_text(encoding='utf-8'))
-        frag, info = make(spec, a.prefix)
+        frag, info = make(spec, a.prefix, phone=a.phone)
     except (SpecError, ValueError, KeyError, TypeError, json.JSONDecodeError) as e:
         print('FAIL spec:', e, file=sys.stderr); return 1
     errors = validate(frag)
@@ -49,10 +50,14 @@ def main():
     from visual_gates import caption_report
     report = dict(kind=spec['kind'], mode='live' if info['live'] else 'static', bytes=len(frag.encode()), lint=errors or 'PASS',
                   captions=caption_report(info['data'], info['checks']['end']) if info['live'] else None)
-    try:   # clutter numbers (scripts/figure_metrics.py): compare against a baseline before accepting a layout change
+    try:   # clutter numbers (scripts/figure_metrics.py) and the layout decisions the scene made, at the column width
         from figure_metrics import metrics
         from live_scene import node_static
-        report['clutter'] = {w: metrics(node_static(info['data'], w)['svg']) for w in (715, 360)}
+        st = {w: node_static(info['data'], w) for w in (715, 600)}
+        report['clutter'] = {w: metrics(st[w]['svg']) for w in st}
+        report['layout'] = st[715].get('notes') or []
+        for n in report['layout']:
+            print('layout:', n, file=sys.stderr)
     except Exception as e:   # no Node: the figure is still built
         report['clutter'] = f'not measured ({str(e)[:80]})'
     if errors:
@@ -86,7 +91,7 @@ def main():
         from visual_gates import run
         import shutil
         shutil.rmtree(a.out / 'shots', ignore_errors=True)   # never review a stale screenshot
-        rec = run(frag, info['checks'], info['data'], a.out / 'shots', a.spec.stem, a.browser, font=a.font)
+        rec = run(frag, info['checks'], info['data'], a.out / 'shots', a.spec.stem, a.browser, font=a.font, phone=a.phone)
         if report.get('figure', 'PASS') != 'PASS':   # the exported SVG/PNG is part of the deliverable
             rec['failures'] = list(rec['failures']) + report['figure']; rec['result'] = 'FAIL'
         report['gates'] = rec

@@ -978,7 +978,7 @@ def build_case(meta,prefix=None,speed=1.25):
         from live_scene import assemble_live
         prefix=prefix or 'ca-'+__import__('uuid').uuid4().hex[:12]
         data,aria,notes,table,numeric=LIVE_BUILDERS[meta['id']](meta['params'])
-        return assemble_live(meta['id'],prefix,speed,data,meta['title']+'. '+aria,notes,table),numeric
+        return assemble_live(meta['id'],prefix,speed,data,meta['title']+'. '+aria,notes,table,phone=True),numeric
     s=ReferenceScene(prefix);content,phases=BUILDERS[meta['id']](s,meta['params'])
     fragment=assemble(s,meta,content,phases,duration=18/speed)
     return fragment,s.numeric

@@ -21,6 +21,9 @@ CA_SCENES['compose']=function(D,K,GR){
   function wrap(s,fs,w){var out=[],cur='';String(s).split(' ').forEach(function(wd){var c=cur?cur+' '+wd:wd;if(!cur||K.tw(c,fs)<=w)cur=c;else{out.push(cur);cur=wd;}});if(cur)out.push(cur);return out;}
   function attr(svg,a){return svg.replace(/<(text|rect|polyline) /,'<$1 '+a+' ');}
   function on(key,T){return CH.v(key,'on',T,1);}
+  /* layout decisions in plain words, for the build report (the author sees why, instead of guessing) */
+  function note(g,t){if(g.notes.indexOf(t)<0)g.notes.push(t);}
+  function cname(n){return (n.label?'"'+n.label+'" ':'')+'('+n.id+')';}
   function sum(a){return a.reduce(function(x,y){return x+y;},0);}
   function max(a){return a.length?Math.max.apply(null,a):0;}
 
@@ -47,38 +50,40 @@ CA_SCENES['compose']=function(D,K,GR){
 
   /* ---- measuring ---- */
   function word(s,fs){return max(String(s).split(' ').map(function(x){return K.tw(x,fs);}));}
-  function eMin(e,g){var nm=Math.min(K.tw(e.name,g.fs),g.nw?120:170)+28,sb=e.sub?Math.min(K.tw(e.sub,12),g.nw?120:200)+24:0,cd=0;
+  function eMin(e,g){var nm=Math.min(K.tw(e.name,g.fs),170)+28,sb=e.sub?Math.min(K.tw(e.sub,12),200)+24:0,cd=0;
     e.code.forEach(function(l){cd=Math.max(cd,K.tw(l,11)+36);});
-    return Math.max(g.nw?64:76,nm,sb,cd,max(anyBadge(e).map(function(b){return K.tw(b.text,11)+40;})),e.bubble?Math.min(K.tw(e.bubble,12)+24,120):0);}
+    return Math.max(76,nm,sb,cd,max(anyBadge(e).map(function(b){return K.tw(b.text,11)+40;})),e.bubble?Math.min(K.tw(e.bubble,12)+24,120):0);}
   function eBody(e,w,g){var fs=g.fs,ln=K.tw(e.name,fs)>w-16?wrap(e.name,fs-1,w-14):[e.name],f=ln.length>1?fs-1:fs;
     var sub=!e.sub?[]:K.tw(e.sub,12)<=w-14?[e.sub]:wrap(e.sub,12,w-14);
     var ls=ln.length>1?f+6:f+4;   /* wrapped name lines need the extra 2 px or their boxes touch */
     var ch=ln.length*ls+sub.length*16+(anyBadge(e).length?24:0)+(e.code.length?e.code.length*15+14:0)+(e.bar!=null?12:0);
-    return {ln:ln,f:f,ls:ls,sub:sub,ch:ch,h:Math.max(e.shape==='pill'?(g.nw?32:38):(g.nw?36:44),ch+(g.nw?12:18)+(e.shape==='cylinder'?10:0))};}   /* phones: tighter boxes keep the height budget */
+    return {ln:ln,f:f,ls:ls,sub:sub,ch:ch,h:Math.max(e.shape==='pill'?(38):(44),ch+(18)+(e.shape==='cylinder'?10:0))};}
+  /* one rule set, read on monitors (715 px columns and narrower Confluence layouts); a too-narrow width folds rows
+     into columns like any other lack of room, there are no phone-only rules */
   function bubble(e,w,g){if(!e.bubble)return null;var bw=Math.min(Math.max(w,K.tw(e.bubble,12)+24),w+48),ln=wrap(e.bubble,12,bw-18);
     bw=Math.max(Math.min(bw,max(ln.map(function(l){return K.tw(l,12);}))+24),60);return {w:bw,ln:ln,h:ln.length*16+10};}
   function minW(n,g){if(n.t==='e')return eMin(n,g);var p=padLR(n,g),m;
     if(n.L==='row')m=sum(n.kids.map(function(k){return minW(k,g);}))+sum(gaps(n,g));
     else if(n.L==='split')m=max(n.kids.map(function(k){return minW(k,g);}));
-    else if(n.L==='lifelines')m=n.kids.length*(g.nw?72:96);
+    else if(n.L==='lifelines')m=n.kids.length*(96);
     else if(n.L==='stack')m=150;
     else m=max(n.kids.map(function(k){return minW(k,g);}));
     return m+p;}
-  function padLR(n,g){return (n.frame?(g.nw?20:28):0)+(n.bracket?(g.nw?64:96):0);}
+  function padLR(n,g){return (n.frame?(28):0)+(n.bracket?(96):0);}
   /* gaps between row neighbours: room for the labels of links that join them, and for a boundary separator */
   /* tight: a label may wrap at its spaces, so the gap only needs its longest word (rows try this before wrapping) */
-  function gaps(n,g,tight){var out=[];for(var i=0;i+1<n.kids.length;i++){var a=n.kids[i],b=n.kids[i+1],gp=g.nw?20:28,cnt=0;
+  function gaps(n,g,tight){var out=[];for(var i=0;i+1<n.kids.length;i++){var a=n.kids[i],b=n.kids[i+1],gp=28,cnt=0;
       LK.forEach(function(l){if(l.via)return;if((under(a,l.a)&&under(b,l.b))||(under(a,l.b)&&under(b,l.a))){if(l.label)cnt++;
-        gp=Math.max(gp,!l.label?44:tight?Math.max(44,max(l.label.split(' ').map(function(x){return K.tw(x,12);}))+28):Math.min(K.tw(l.label,12)+36,g.nw?72:96));}});
+        gp=Math.max(gp,!l.label?44:tight?Math.max(44,max(l.label.split(' ').map(function(x){return K.tw(x,12);}))+28):Math.min(K.tw(l.label,12)+36,96));}});
       if(n.sep)gp=Math.max(gp,48);out.push(gp);}return out;}
-  function vgap(n,i,g){var a=n.kids[i],b=n.kids[i+1],gp=g.nw?8:12;
+  function vgap(n,i,g){var a=n.kids[i],b=n.kids[i+1],gp=12;
     LK.forEach(function(l){if(l.via)return;if((under(a,l.a)&&under(b,l.b))||(under(a,l.b)&&under(b,l.a)))gp=Math.max(gp,l.label?36:28);});
     if(n.sep)gp=Math.max(gp,30);return gp;}
 
   /* ---- layout: lay(node, x, y, w, g, stretchTo) places the subtree and returns its height ---- */
   function lay(n,x,y,w,g,minH){if(n.t==='e')return layEl(n,x,y,w,g,minH);
     var fr=n.frame,top=(n.span?30:0),lab=n.label&&!g.inSplit[n.id];
-    var pl=fr?(g.nw?10:14):0,pr=pl+(n.bracket?(g.nw?64:96):0),pt=top+(fr?(n.label?32:14):(lab?24:0));
+    var pl=fr?(14):0,pr=pl+(n.bracket?(96):0),pt=top+(fr?(n.label?32:14):(lab?24:0));
     var iw=w-pl-pr,ix=x+pl,iy=y+pt;
     var nl=n.note?wrap(n.note,12,iw):[],pb=(fr?12:0)+(n.banner?36:0)+(nl.length?nl.length*16+8:0);
     var b={x:x,y:y,w:w,top:top,pl:pl,pr:pr,pt:pt,pb:pb,nl:nl,fb:fr?12:0};g.B[n.id]=b;
@@ -88,7 +93,7 @@ CA_SCENES['compose']=function(D,K,GR){
     return b.h;}
   function layEl(e,x,y,w,g,minH){var bd=eBody(e,w,g),bu=bubble(e,w,g),ex=bu?bu.h+10:0,h=Math.max(bd.h,(minH||0)-ex,g.minh[e.id]||0);
     g.B[e.id]={x:x,y:y+ex,w:w,h:h,bd:bd,bu:bu,by:y};return ex+h;}
-  function prefW(k,g,w){return k.t==='e'?Math.min(w,Math.max(minW(k,g)+24,g.nw?96:128)*(k.grow||1)):null;}
+  function prefW(k,g,w){return k.t==='e'?Math.min(w,Math.max(minW(k,g)+24,128)*(k.grow||1)):null;}
   /* a row lays its items on one line; when they do not fit it wraps into lines of equal count (like text), and
      only when even two a line do not fit it folds into a column */
   function layRow(n,x,y,w,g){var ks=n.kids,gp=gaps(n,g),mins=ks.map(function(k){return minW(k,g);}),per=0;
@@ -96,7 +101,8 @@ CA_SCENES['compose']=function(D,K,GR){
     if(!fits(0,ks.length)){var gt=gaps(n,g,1);if(sum(mins)+sum(gt)<=w)gp=gt;}   /* narrower gaps (labels wrap) before a second line */
     for(var L=1;L<=Math.ceil(ks.length/2)&&!per;L++){var c=Math.ceil(ks.length/L),ok=true;   /* fewest lines, items spread evenly over them */
       for(var i=0;i<ks.length;i+=c)if(!fits(i,Math.min(ks.length,i+c)))ok=false;if(ok)per=c;}
-    if(!per)return layCol(n,x,y,w,g,true);
+    if(!per){note(g,'row '+cname(n)+': '+ks.length+' items need '+Math.round(sum(mins)+sum(gp))+' px, '+Math.round(w)+' px available: folded into a column');return layCol(n,x,y,w,g,true);}
+    if(per<ks.length)note(g,'row '+cname(n)+': '+ks.length+' items need '+Math.round(sum(mins)+sum(gp))+' px, '+Math.round(w)+' px available: wrapped into '+Math.ceil(ks.length/per)+' lines');
     var b=g.B[n.id]||(g.B[n.id]={}),cy=y,seps=[],hseps=[];
     var flip=false;
     for(var i0=0;i0<ks.length;i0+=per){var i1=Math.min(ks.length,i0+per),lk=ks.slice(i0,i1),lg=gp.slice(i0,i1-1),lm=mins.slice(i0,i1);
@@ -105,7 +111,7 @@ CA_SCENES['compose']=function(D,K,GR){
       if(i0&&LK.some(function(l){return !l.via&&((under(ks[i0-1],l.a)&&under(ks[i0],l.b))||(under(ks[i0-1],l.b)&&under(ks[i0],l.a)));}))flip=!flip;
       if(flip){lk=lk.slice().reverse();lg=lg.slice().reverse();lm=lm.slice().reverse();}
       var r=layLine(n,lk,lg,lm,x,cy,w,g);
-      if(!r)return layCol(n,x,y,w,g,true);
+      if(!r){note(g,'row '+cname(n)+': a container would get less than its minimum width: folded into a column');return layCol(n,x,y,w,g,true);}
       seps=seps.concat(r.seps);cy+=r.H;
       if(i1<ks.length){var vg=Math.max(28,gp[i1-1]>44?40:28);if(n.sep)hseps.push({y:cy+vg/2,x0:x,x1:x+w});cy+=vg;}}
     b=g.B[n.id]||(g.B[n.id]={});b.seps=n.sep?seps:[];b.hseps=hseps;
@@ -122,35 +128,54 @@ CA_SCENES['compose']=function(D,K,GR){
         rest=room-sum(ks.map(function(k,i){return k.t==='e'?ws[i]:0;}));flex.forEach(function(i){ws[i]=rest*(ks[i].grow||1)/gw;});}}
     else if(fixed>room){var sp=fixed-sum(mins);ks.forEach(function(k,i){ws[i]-=(ws[i]-mins[i])*(fixed-room)/sp;});}
     var extra=room-sum(ws),gx=gp.slice();
-    if(extra>0&&gp.length){var add=Math.min(extra/gp.length,g.nw?24:96);gx=gp.map(function(v){return v+add;});extra-=add*gp.length;}
+    if(extra>0&&gp.length){var add=Math.min(extra/gp.length,96);gx=gp.map(function(v){return v+add;});extra-=add*gp.length;}
     var hs=ks.map(function(k,i){return lay(k,0,0,ws[i],g);}),H=max(hs),cx=x+Math.max(0,extra)/2,seps=[];
     ks.forEach(function(k,i){var framed=k.t==='c'&&k.frame;lay(k,cx,framed?y:y+(H-hs[i])/2,ws[i],g,framed?H:0);
       if(i<gx.length)seps.push({x:cx+ws[i]+gx[i]/2,y0:y,y1:y+H});cx+=ws[i]+(gx[i]||0);});
     return {H:H,seps:seps};}
-  function layCol(n,x,y,w,g,folded){var ks=n.kids,cy=y,hseps=[],two=g.nw&&!folded&&NEL>6&&ks.length>=4&&ks.every(function(k){return k.t==='e';})&&
-      !LK.some(function(l){return UNDER[n.id][l.a]&&UNDER[n.id][l.b];});
-    if(two){var cw=(w-8)/2;for(var r=0;r<ks.length;r+=2){var pair=ks.slice(r,r+2),hs=pair.map(function(k){return lay(k,0,0,cw,g);}),H=max(hs);   /* phones: two boxes a row keep many items in the height budget */
-        pair.forEach(function(k,j){lay(k,x+j*(cw+8),cy,cw,g,H);});cy+=H+8;}
-      var b0=g.B[n.id]||(g.B[n.id]={});b0.seps=[];b0.hseps=[];return cy-8-y;}
-    var fill=g.nw||g.fill[n.id];
+  /* a column of plain rows with the same number of items is a table: every row uses the same column widths and
+     gaps (the widest cell of each column, the widest gap between two columns), so boxes with the same role line up
+     and one row cannot decide differently from the others; containers in a column share the room left over */
+  function plainRow(k){return k.t==='c'&&k.L==='row'&&!k.frame&&!k.label&&!k.span&&!k.note&&!k.banner&&!k.bracket;}
+  function layTable(n,x,y,w,g){var rows=n.kids,c=rows[0].kids.length,i,r;
+    var mins=[],ws=[],gp=[],flex=[];for(i=0;i<c;i++){mins.push(0);ws.push(0);flex.push(false);}for(i=0;i+1<c;i++)gp.push(0);
+    rows.forEach(function(row){var gg=gaps(row,g);row.kids.forEach(function(k,i){mins[i]=Math.max(mins[i],minW(k,g));
+        if(k.t==='e')ws[i]=Math.max(ws[i],prefW(k,g,w));else flex[i]=true;});gg.forEach(function(v,i){gp[i]=Math.max(gp[i],v);});});
+    if(sum(mins)+sum(gp)>w){note(g,'column '+cname(n)+': its rows did not fit as a table ('+Math.round(sum(mins)+sum(gp))+' px needed, '+Math.round(w)+' px), laid row by row');return null;}
+    ws=ws.map(function(v,i){return Math.max(v,mins[i]);});
+    var room=w-sum(gp),fixed=sum(ws.map(function(v,i){return flex[i]?0:v;})),nf=flex.filter(Boolean).length;
+    if(nf){var rest=room-fixed;flex.forEach(function(f,i){if(f)ws[i]=Math.max(mins[i],rest/nf);});}
+    if(sum(ws)>room){var sp=sum(ws)-sum(mins);ws=ws.map(function(v,i){return v-(v-mins[i])*(sum(ws)-room)/Math.max(1,sp);});}
+    var extra=room-sum(ws);if(extra>0&&gp.length){var add=Math.min(extra/gp.length,96);gp=gp.map(function(v){return v+add;});extra-=add*gp.length;}
+    var x0=x+Math.max(0,extra)/2,xs=[],cx=x0;ws.forEach(function(v,i){xs.push(cx);cx+=v+(gp[i]||0);});
+    var cy=y;rows.forEach(function(row,ri){var hs=row.kids.map(function(k,i){return lay(k,0,0,ws[i],g);}),H=max(hs);
+      row.kids.forEach(function(k,i){var framed=k.t==='c'&&k.frame;lay(k,xs[i],framed?cy:cy+(H-hs[i])/2,ws[i],g,framed?H:0);});
+      g.B[row.id]={x:x0,y:cy,w:cx-x0,h:H,top:0,pl:0,pr:0,pt:0,pb:0,nl:[],fb:0,cy0:cy,cy1:cy+H,hseps:[],
+        seps:row.sep?gp.map(function(v,i){return {x:xs[i]+ws[i]+v/2,y0:cy,y1:cy+H};}):[]};
+      cy+=H+(row.sep?28:0);if(ri+1<rows.length)cy+=vgap(n,ri,g);});
+    note(g,'column '+cname(n)+': '+rows.length+' rows aligned as a table of '+c+' columns');
+    var b=g.B[n.id]||(g.B[n.id]={});b.seps=[];b.hseps=[];return cy-y;}
+  function layCol(n,x,y,w,g,folded){var ks=n.kids,cy=y,hseps=[];
+    if(!folded&&ks.length>=2&&ks.every(plainRow)&&ks[0].kids.length>=2&&ks.every(function(k){return k.kids.length===ks[0].kids.length;})){var th=layTable(n,x,y,w,g);if(th!=null)return th;}
+    var fill=g.fill[n.id];
     ks.forEach(function(k,i){var kw=k.t==='e'&&!fill?Math.min(w,Math.max(minW(k,g)+48,240)):w,h=lay(k,x+(w-kw)/2,cy,kw,g);cy+=h;
       if(i+1<ks.length){var gp=vgap(n,i,g);if(folded&&n.sep)hseps.push(cy+gp/2);cy+=gp;}});
     var b=g.B[n.id]||(g.B[n.id]={});b.seps=[];b.hseps=hseps.map(function(sy){return {y:sy,x0:x,x1:x+w};});
     return cy-y;}
-  function layGrid(n,x,y,w,g){var c=n.cols,gp=g.nw?8:12,mx=max(n.kids.map(function(k){return minW(k,g);}));
+  function layGrid(n,x,y,w,g){var c=n.cols,gp=12,mx=max(n.kids.map(function(k){return minW(k,g);}));
     while(c>1&&(w-(c-1)*gp)/c<mx)c--;var cw=(w-(c-1)*gp)/c,cy=y;
     for(var r=0;r<n.kids.length;r+=c){var row=n.kids.slice(r,r+c),hs=row.map(function(k){return lay(k,0,0,cw,g);}),H=max(hs);
       row.forEach(function(k,j){lay(k,x+j*(cw+gp),cy,cw,g,H);});cy+=H+gp;}
     var b=g.B[n.id]||(g.B[n.id]={});b.seps=[];b.hseps=[];return cy-gp-y;}
   function inline(e,w,g){return !e.code.length&&!anyBadge(e).length&&e.bar==null&&(!e.sub||K.tw(e.name,g.fs)+K.tw(e.sub,12)+48<w)&&K.tw(e.name,g.fs)+24<w;}   /* one line in a band: name (and sub) */
   function layStack(n,x,y,w,g){var su=(n.free?1:0)+sum(n.kids.map(function(k){return k.size;})),cy=y,
-      unit=g.nw?Math.max(28,Math.min(36,260/(su*Math.max(1,NS)))):Math.max(30,Math.min(42,300/su)),b=g.B[n.id]||(g.B[n.id]={});   /* bands share a height budget; sizes stay proportional */
+      unit=Math.max(30,Math.min(42,300/su)),b=g.B[n.id]||(g.B[n.id]={});   /* bands share a height budget; sizes stay proportional */
     b.free=null;if(n.free){b.free={x:x,y:cy,w:w,h:unit};cy+=unit+6;}
-    n.kids.forEach(function(k){var il=inline(k,w,g),need=il?g.fs+(g.nw?14:18):eBody(k,w,g).h,h=Math.max(unit*k.size,need);layEl(k,x,cy,w,g,h);g.B[k.id].il=il;g.B[k.id].h=h;cy+=h+6;});   /* the band is exactly its slot: need already fits its text */
+    n.kids.forEach(function(k){var il=inline(k,w,g),need=il?g.fs+(18):eBody(k,w,g).h,h=Math.max(unit*k.size,need);layEl(k,x,cy,w,g,h);g.B[k.id].il=il;g.B[k.id].h=h;cy+=h+6;});   /* the band is exactly its slot: need already fits its text */
     b.seps=[];b.hseps=[];return cy-6-y;}
   function laySplit(n,x,y,w,g){var k=n.kids.length,gp=n.arrow?Math.max(76,K.tw(n.arrow,12)+28):40,b=g.B[n.id]||(g.B[n.id]={}),
-      v=g.nw||gp>w*.22||sum(n.kids.map(function(p){return minW(p,g);}))+gp*(k-1)>w;   /* the gap fits the arrow label; too wide a gap stacks the sides */
-    b.v=v;b.hdr=[];b.divs=[];b.seps=[];b.hseps=[];
+      v=gp>w*.22||sum(n.kids.map(function(p){return minW(p,g);}))+gp*(k-1)>w;   /* the gap fits the arrow label; too wide a gap stacks the sides */
+    b.v=v;b.hdr=[];b.divs=[];b.seps=[];b.hseps=[];if(v)note(g,'split '+cname(n)+': sides stacked (side by side needs '+Math.round(sum(n.kids.map(function(p){return minW(p,g);}))+gp*(k-1))+' px, '+Math.round(w)+' px available)');
     if(!v){var tot=w-gp*(k-1),mins=n.kids.map(function(p){return minW(p,g);}),ws=n.kids.map(function(){return tot/k;});
       for(var it=0;it<k;it++){var big=n.kids.map(function(p,i){return mins[i]>ws[i]+.5;}),nb=big.filter(Boolean).length;if(!nb)break;   /* a side that needs more room gets its minimum; the others share the rest */
         var left=tot-sum(mins.filter(function(m,i){return big[i]||ws[i]<0;}));ws=ws.map(function(x0,i){return big[i]?mins[i]:left/(k-nb);});}
@@ -161,21 +186,20 @@ CA_SCENES['compose']=function(D,K,GR){
     var cy=y;n.kids.forEach(function(p,i){if(i){b.divs.push({y:cy+8,x0:x,x1:x+w});cy+=n.arrow?34:20;}
       if(p.label&&!p.frame){b.hdr.push({x:x,y:cy+16,a:'start',p:p});cy+=24;}cy+=lay(p,x,cy,w,g)+4;});
     return cy-y;}
-  function layLife(n,x,y,w,g){var k=n.kids.length,aw=Math.min(g.nw?84:150,(w-12*(k-1))/k),sp=(w-aw)/(k-1),ah=g.nw?40:46,b=g.B[n.id]||(g.B[n.id]={});
+  function layLife(n,x,y,w,g){var k=n.kids.length,aw=Math.min(150,(w-12*(k-1))/k),sp=(w-aw)/(k-1),ah=46,b=g.B[n.id]||(g.B[n.id]={});
     b.ax=n.kids.map(function(a,i){return x+aw/2+i*sp;});b.ah=ah;b.seps=[];b.hseps=[];
     n.kids.forEach(function(a,i){g.B[a.id]={x:b.ax[i]-aw/2,y:y,w:aw,h:ah,bd:eBody(a,aw,g),bu:null,by:y,actor:1};});
-    var y2=y+ah+18;b.rows=n.msgs.map(function(m){var self=m.a===m.b,span=self?(g.nw?110:160):Math.abs(b.ax[m.b]-b.ax[m.a])-12,
+    var y2=y+ah+18;b.rows=n.msgs.map(function(m){var self=m.a===m.b,span=self?(160):Math.abs(b.ax[m.b]-b.ax[m.a])-12,
         ln=wrap(m.mark+' '+m.text,12,Math.max(60,span)),r={y:y2+ln.length*LH+4,ln:ln,self:self};y2=r.y+(self?26:14);return r;});
     return y2-y;}
 
-  function geom(W){var g={W:W,nw:W<560,B:{},inSplit:{},fill:{},rot:{},minh:{}};g.fs=g.nw?13:14;
+  function geom(W){var g={W:W,B:{},inSplit:{},fill:{},rot:{},minh:{},notes:[]};g.fs=14;
     (function mark(n){if(n.t==='e')return;if(n.L==='split')n.kids.forEach(function(p){g.inSplit[p.id]=1;g.fill[p.id]=1;});n.kids.forEach(mark);})(R);
     function gut(side){var m=0;LK.forEach(function(l){if(l.via===side)m=Math.max(m,18+(l.label?K.tw(l.label,12)+8:0));});return m;}
     var vl=gut('left'),vr=gut('right'),ml=vl||2,mr=vr||2,h=lay(R,ml,4,W-ml-mr,g);   /* 2 px keeps box borders off the edge */g.routes=routes(g);
-    if(g.blocked&&g.nw&&!vl&&!vr){var lw=18+max(LK.map(function(l){return l.label?K.tw(l.label,12)+8:0;}));   /* no clear path: make a gutter on both sides and route around */
-      g.B={};g.gut=1;h=lay(R,lw,4,W-2*lw,g);g.blocked=0;g.routes=routes(g);}
     g.fh=h;var y=h+4;g.sl=[];
-    if((D.slist||[]).length){y+=g.nw?6:10;D.slist.forEach(function(it){var ln=wrap(it.text,13,W-48);g.sl.push({y:y+13,ln:ln});y+=ln.length*LH+(g.nw?1:3);});}
+    note(g,'height '+Math.round(h)+' px for the figure; top-level parts: '+R.kids.map(function(k){var b=g.B[k.id];return (k.t==='e'?k.name:cname(k))+' '+Math.round(b.h+(b.by!=null?b.y-b.by:0))+' px';}).join(', '));
+    if((D.slist||[]).length){y+=10;D.slist.forEach(function(it){var ln=wrap(it.text,13,W-48);g.sl.push({y:y+13,ln:ln});y+=ln.length*LH+(3);});}
     g.lg=[];var dk=K.tw(D.labels.data_kind,12)+16,lx=2,rows=[[]];
     (D.legend||[]).forEach(function(d){var w=24+K.tw(d.text,12)+14;if(lx+w>W-dk&&rows[rows.length-1].length){rows.push([]);lx=2;}rows[rows.length-1].push({d:d,x:lx});lx+=w;});
     if((D.legend||[]).length){y+=6;rows.forEach(function(r,i){r.forEach(function(it){it.y=y+(i+1)*20-4;g.lg.push(it);});});y+=(rows.length-1)*20;}   /* the last legend row shares the line of the data-kind label */
@@ -217,7 +241,8 @@ CA_SCENES['compose']=function(D,K,GR){
       if(X<2||X>g.W-2)return null;return [[Lf?a.x:a.x+a.w,ya],[X,ya],[X,yb],[Lf?b.x:b.x+b.w,yb]];}
     g.side={};
     return LK.map(function(l,k){var r=route1(l,k);if(l.via){g.side[k]=l.via;return r;}if(r&&hit(r,l)){var al=[around(l,'right'),around(l,'left')];
-        for(var i=0;i<2;i++)if(al[i]&&!hit(al[i],l)){g.side[k]=i?'left':'right';return al[i];}g.blocked=1;}return r;});
+        for(var i=0;i<2;i++)if(al[i]&&!hit(al[i],l)){g.side[k]=i?'left':'right';note(g,'link '+l.id+': the direct path crosses a box, routed around the '+g.side[k]);return al[i];}
+        g.blocked=1;note(g,'link '+l.id+': no clear path (direct or around a side); reorder the items or add via');}return r;});
     function route1(l,k){var p=P[k];if(!p)return null;var a=g.B[l.a],b=g.B[l.b],ac=cen(l.a),bc=cen(l.b),
         twin=LK.some(function(o){return o!==l&&o.a===l.b&&o.b===l.a&&!o.via;}),off=twin?(LK.some(function(o,j){return j<k&&o.a===l.b&&o.b===l.a;})?7:-7):0;   /* the earlier link of a pair runs above (left), its label above it */
       function pick(lo,hi,c1,c2){var m=(lo+hi)/2;return c1>=lo&&c1<=hi?c1:c2>=lo&&c2<=hi?c2:m;}
@@ -327,7 +352,7 @@ CA_SCENES['compose']=function(D,K,GR){
     return o?K.enter(o,on(n.id,T),n.id):'';}
   function messages(n,T,g){var b=g.B[n.id],o='';
     n.msgs.forEach(function(m,k){var r=b.rows[k],u=CH.v(m.key,'reveal',T,1),xa=b.ax[m.a],xb=b.ax[m.b],c=m.dashed?C.muted:C.blue,s='';if(u<=0)return;
-      if(r.self){var w=g.nw?22:30,p=[[xa,r.y-8],[xa+w,r.y-8],[xa+w,r.y+8],[xa+4,r.y+8]];s+=K.wire(u<1?trim(p,K.plen(p)*u):p,c,{sw:1.5,d:m.dashed?'5 4':null});if(u>.98)s+=head(p,c);
+      if(r.self){var w=30,p=[[xa,r.y-8],[xa+w,r.y-8],[xa+w,r.y+8],[xa+4,r.y+8]];s+=K.wire(u<1?trim(p,K.plen(p)*u):p,c,{sw:1.5,d:m.dashed?'5 4':null});if(u>.98)s+=head(p,c);
         r.ln.forEach(function(l,j){s+=K.text(xa+w+6,r.y-8+j*LH+4,l,{fs:12,c:C.text,w:j?400:700});});}
       else{var p2=[[xa,r.y],[xb,r.y]];s+=K.line(xa,r.y,xa+(xb-xa)*Math.max(.001,u),r.y,c,{sw:1.6,d:m.dashed?'5 4':null});if(u>.98)s+=head(p2,c);
         var cx=(xa+xb)/2;r.ln.forEach(function(l,j){s+=K.text(cx,r.y-6-(r.ln.length-1-j)*LH,l,{fs:12,c:m.dashed?C.text:C.blueText,a:'middle',w:j?400:700,halo:1});});}
@@ -339,5 +364,5 @@ CA_SCENES['compose']=function(D,K,GR){
     return cs+ms+ls+g.top+es+ts+pathTokens(T,g)+stepList(T,g)+legend(g)+K.text(g.W,g.H-4,D.labels.data_kind,{fs:12,c:C.muted,a:'end'});}
   function stats(){return {left:[]};}
   function probe(T){var S=D.steps;if(!S)return {};var k=0;S.t0.forEach(function(t,i){if(t<=T+1e-9)k=i;});return {step:T>=S.total-1e-9?S.n:k};}
-  return {end:end,geom:geom,draw:draw,stats:stats,probe:probe};
+  return {end:end,geom:geom,draw:draw,stats:stats,probe:probe,notes:function(g){return g.notes;}};
 };

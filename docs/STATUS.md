@@ -1,4 +1,4 @@
-# Status — v0.17.1 (composition engine; concept forms are its presets; diagram on its own scene)
+# Status — v0.18.0 (monitor-only by default; aligned stacked rows; layout notes)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -62,6 +62,15 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.18.0 feedback from first internal use
+
+An in-house Claude Code built a compose figure on Windows 11 from the repository link. Its feedback (unaligned
+stacked rows, no alignment criterion, invisible layout decisions, `grow` docs) was reproduced and fixed in the
+engine; phone support became opt-in (`--phone`). Actual results (2026-10-06, Chromium 141): unit 124 OK; 62/62
+figures --check; browser_live 18/18 default and NanumGothic; 10 examples under NanumGothic; monitoring, smoke,
+gallery pass; metrics on 48 figures: only the reproduction changed (near misses 14 → 0).
+Not verified: Windows 11 font widths; whether the layout notes help the in-house agent.
 
 ## v0.17.1 diagram restored, clutter measured
 

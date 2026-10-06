@@ -1,5 +1,21 @@
 # Changes
 
+## 0.18.0 — feedback from first internal use: alignment, layout notes, monitor-only by default
+
+Feedback from building one compose figure with an in-house Claude Code on Windows 11, checked in code and reproduced:
+stacked "A → B" rows put same-role boxes at different x (here 128-160) and widths, nothing measured alignment, the
+layout decisions were invisible, and the `grow` docs did not match the code.
+- A column of plain rows with the same item count is laid out as a table (shared column widths and gaps), so rows
+  cannot decide differently; the reproduction now has identical x and width per column.
+- `figure_metrics.py` counts near misses (box edges or centres 1-12 px from lining up); report.json records it; the
+  review guidance asks whether same-role boxes line up.
+- The build prints and records the layout decisions (folded, wrapped, aligned, rerouted, height per top-level part).
+- `grow` documented as it behaves (element: multiple of its natural width; container: share of the rest).
+- Monitor-only by default (Confluence is not used on phones here): no 360 px scene or phone checks unless `--phone`;
+  the compose engine has no phone-only rules any more. The article cases keep their phone scene and checks.
+- Measured on 48 figures at 715/600 px: near misses 32 → 18 (all 14 from the reproduction); every other number on every
+  other figure unchanged.
+
 ## 0.17.1 — diagram restored; clutter is measured
 
 - Correction to 0.17.0: moving `diagram` onto the compose engine made the figures busier, not "comparable" as I

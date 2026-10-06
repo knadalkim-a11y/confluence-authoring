@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Clutter metrics for built figures, from the final static scene (the same JS scene run in Node).
 
-  python scripts/figure_metrics.py spec.json [...] [--root <repo>] [--widths 715,360] [--json out.json]
+  python scripts/figure_metrics.py spec.json [...] [--root <repo>] [--widths 715,600] [--json out.json]
 
 The browser gates catch defects (overlap, clipping, a line through a box); they say nothing about how busy a
 picture is. These numbers do: connectors drawn with K.wire, their segments and bends, crossings between two
-different connectors, and total connector length (px). Use them to compare a change against a baseline built
+different connectors, total connector length (px), and near misses (box edges or centres 1-12 px from lining
+up: an unaligned layout). Use them to compare a change against a baseline built
 from the previous revision (--root points at a checkout of it): a layout or routing change that makes figures
 busier should not be accepted on "gates pass" alone. Lower is calmer; the numbers do not judge meaning.
 """
@@ -35,14 +36,25 @@ def metrics(svg: str) -> dict:
         x, y = va[0], ha[1]
         return min(ha[0], hb[0]) + 2 < x < max(ha[0], hb[0]) - 2 and min(va[1], vb[1]) + 2 < y < max(va[1], vb[1]) - 2
     crossings = sum(1 for i in range(len(segs)) for j in range(i + 1, len(segs)) if segs[i][0] != segs[j][0] and cross(segs[i], segs[j]))
-    return dict(wires=len(wires), segments=len(segs), bends=bends, crossings=crossings, length=round(length))
+    # alignment: box edges and centres that nearly line up but miss by 1-12 px read as a mistake (a near miss);
+    # exactly aligned or clearly apart is fine
+    boxes = []
+    for m in re.finditer(r'<rect data-solid="[^"]+"[^>]*>', svg):
+        a = {k: float(v) for k, v in re.findall(r' (x|y|width|height)="([-\d.]+)"', m.group(0))}
+        if {'x', 'y', 'width', 'height'} <= set(a):
+            boxes.append(a)
+    near = 0
+    for key in (lambda b: b['x'], lambda b: b['x'] + b['width'], lambda b: b['x'] + b['width'] / 2, lambda b: b['y'] + b['height'] / 2):
+        vals = [key(b) for b in boxes]
+        near += sum(1 for i in range(len(vals)) for j in range(i + 1, len(vals)) if 1 <= abs(vals[i] - vals[j]) <= 12)
+    return dict(wires=len(wires), segments=len(segs), bends=bends, crossings=crossings, length=round(length), near_misses=near)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('specs', nargs='+', type=Path)
     ap.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1], help='repository whose scripts build the figures')
-    ap.add_argument('--widths', default='715,360')
+    ap.add_argument('--widths', default='715,600')
     ap.add_argument('--json', type=Path)
     a = ap.parse_args()
     sys.path.insert(0, str(a.root / 'scripts'))

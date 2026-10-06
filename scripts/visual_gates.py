@@ -107,9 +107,11 @@ def close(a, b):
     return abs(a - b) <= 0.051
 
 
-def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_path: str | None = None, browser=None, font: str | None = None) -> dict:
+def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_path: str | None = None, browser=None, font: str | None = None, phone: bool = False) -> dict:
     """checks: {end, samples, annotations:[[label, t]], expect: callable(T)->{state, stats} | None, resize_at}.
-    font: run every check with this font family forced (e.g. NanumGothic) to catch metric-dependent overlaps."""
+    font: run every check with this font family forced (e.g. NanumGothic) to catch metric-dependent overlaps.
+    phone: also check 360 px (height budget, overlap, motion, no-JS phone scene); document visuals are read on
+    monitors, so by default only the desktop widths (715 px, and the 600 px sweep) are checked."""
     global FONT
     FONT = font
     from playwright.sync_api import sync_playwright
@@ -117,6 +119,7 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
     live = 'data-ca-runtime="live"' in fragment
     fails, rec = [], {'id': name, 'live': live, 'checks': {}, 'sha256': hashlib.sha256(fragment.encode()).hexdigest(), 'bytes': len(fragment.encode())}
     end = checks['end']; prefix = fragment.split('data-ca-prefix="')[1].split('"')[0]
+    WIDTHS = (715, 360) if phone else (715,)
 
     def fail(msg):
         fails.append(msg)
@@ -135,7 +138,7 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
             if not 0 < t1 < t2 < end: fail(f'autoplay: clock did not advance from the start ({t1}, {t2})')
             rec['checks']['autoplay'] = [t1, t2]
         samples = checks['samples'] if live else [end]
-        for width in (715, 360):
+        for width in WIDTHS:
             page.set_viewport_size({'width': 800 if width == 715 else 360, 'height': 1000}); page.set_content(wrap(fragment, 715 if width == 715 else None)); page.wait_for_timeout(250)
             h = root.bounding_box()['height']; rec['checks'][f'height_{width}'] = round(h)
             if h > BUDGET[width]: fail(f'{width}px: height {h:.0f} > budget {BUDGET[width]}')
@@ -178,7 +181,7 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
                 if o['bad'] or o['out'] or bx: fail(f'600px T={t:.2f}: overlapping/clipped text {(o["bad"] or o["out"] or bx)[:3]}'); break
             rec['checks']['dense_overlap_600'] = 25
         if live:   # motion: token speed and wire shape over the whole timeline, at 715 and 360 px
-            for width in (715, 360):
+            for width in WIDTHS:
                 page.set_viewport_size({'width': 800 if width == 715 else 360, 'height': 1000}); page.set_content(wrap(fragment, 715 if width == 715 else None)); page.wait_for_timeout(200)
                 m = page.evaluate(MOTION_JS, [MOTION_MAX]); rec['checks'][f'motion_{width}'] = {k: m[k] for k in ('max', 'tokens', 'frames')}
                 if m['fast']: fail(f'{width}px: token faster than {MOTION_MAX}px/s {m["fast"][:3]}')
@@ -229,7 +232,7 @@ def run(fragment: str, checks: dict, data: dict, out: Path, name: str, browser_p
             st = page.evaluate('(p)=>document.querySelector(`[data-ca-prefix="${p}"]`).__caLive.state()', prefix)
             if abs(st['T'] - end) > 1e-6 or st['playing']: fail('reduced motion: autoplayed or not at the final scene')
             ctx.close()
-        for width in (715, 360):
+        for width in WIDTHS:
             ctx = br.new_context(viewport={'width': 800 if width == 715 else 360, 'height': 900}, java_script_enabled=False); page = ctx.new_page()
             page.set_content(wrap(fragment, 715 if width == 715 else None))
             sel = 'svg[data-ca-live]' if width == 715 else 'svg[data-ca-narrow]'

@@ -42,7 +42,7 @@ def node_static(data: dict, width: int = STATIC_WIDTH) -> dict:
     program = core_js(data['scene']) + '\n' + (
         'var D=JSON.parse(require("fs").readFileSync(0,"utf8"));'
         'var sc=CA_SCENES[D.scene](D,CA_KIT,CA_GRAMMARS),g=sc.geom(%d);'
-        'process.stdout.write(JSON.stringify({svg:sc.draw(sc.end,g),H:g.H,stats:sc.stats(sc.end)}));' % width)
+        'process.stdout.write(JSON.stringify({svg:sc.draw(sc.end,g),H:g.H,stats:sc.stats(sc.end),notes:sc.notes?sc.notes(g):[]}));' % width)
     with tempfile.TemporaryDirectory() as tmp:
         script = Path(tmp) / 'static.js'
         script.write_text(program, encoding='utf-8')
@@ -114,13 +114,14 @@ def stats_html(stats: dict) -> str:
 
 
 def assemble_live(case_id: str, prefix: str, speed: float, data: dict, aria: str, notes: str,
-                  table: tuple[list[str], list[list]], live: bool = True) -> str:
+                  table: tuple[list[str], list[list]], live: bool = True, phone: bool = False) -> str:
     """One self-contained <section>. live=False gives a static figure: same scene code rendered
-    once in Node (720 px and 360 px), no script, no controls."""
+    once in Node, no script, no controls. phone=True adds a second static scene at 360 px for phones
+    without JavaScript (the article cases keep it; document visuals are read on monitors)."""
     if not re.fullmatch(r'[A-Za-z][A-Za-z0-9-]{2,40}', prefix):
         raise ValueError('Invalid prefix')
     static = node_static(data)
-    narrow = node_static(data, NARROW_WIDTH)
+    narrow = node_static(data, NARROW_WIDTH) if phone else {'H': 0, 'svg': ''}
     final_caption = data['captions'][-1]
     head, rows = table
     table_html = ('<table><thead><tr>' + ''.join('<th scope="col">' + html.escape(h) + '</th>' for h in head) +
@@ -139,6 +140,9 @@ def assemble_live(case_id: str, prefix: str, speed: float, data: dict, aria: str
         'ARIA': html.escape(aria, quote=True), 'NOTES': html.escape(notes), 'TABLE': table_html,
     }
     out = (LIVE / 'shell.html').read_text(encoding='utf-8')
+    if not phone:   # no phone scene: drop its svg and the media rule that swaps it in
+        out = re.sub(r'\n<svg data-ca-static data-ca-narrow[^\n]*', '', out)
+        out = re.sub(r'\n\.%%PREFIX%% svg\[data-ca-narrow\]\{display:none\}\n@media \(max-width:540px\)\{[^\n]*data-ca-narrow[^\n]*', '', out)
     if not live:
         ctl = re.search(r'\n<div class="ca-live-ctl" data-ca-controls>.*?</div>', out)
         out = out.replace(ctl[0], '').replace('<script>%%SCRIPT%%</script>\n', '').replace('data-ca-runtime="live"', 'data-ca-runtime="static"')

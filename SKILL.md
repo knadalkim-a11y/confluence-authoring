@@ -3,7 +3,7 @@ name: confluence-authoring
 description: Create, edit, explain and structure general-purpose Confluence documents from conversations, files and project evidence, and make report visuals that fit the situation (backlog/capacity flows, metric trends around events, comparisons and before/after, funnels, composition, schedules and incident timelines, architecture and process diagrams including AI agent and RAG request paths; animated only when movement explains). Builds validated Confluence HTML macros plus standalone HTML, SVG and PNG figures from a JSON spec. Preserve existing pages and distinguish verified facts from proposals.
 compatibility: Reading via authorized repository and Confluence tools. Building visuals requires Python 3.10+ and Node.js (it renders the static scenes); the browser quality gates and PNG export need Playwright with Chromium (without them builds still succeed and report the gates as not run).
 metadata:
-  version: "0.17.1"
+  version: "0.18.0"
 ---
 
 # Confluence Authoring
@@ -82,7 +82,9 @@ To make a visual for a report or document, use the spec path (default):
    Exit 0 = built and checked, 1 = a `FAIL` to fix, 2 = built but the browser gates could
    not run (no Playwright/Chromium): say so instead of reporting it as checked.
    Fix what a `FAIL` names; then look at the screenshots in `<dir>/shots/` at both widths
-   and revise until the picture shows the claim at a glance.
+   and revise until the picture shows the claim at a glance and boxes with the same role line up.
+   `report.json` lists the layout decisions (`layout`: folded, wrapped, aligned, rerouted, height per part)
+   and clutter numbers; read them instead of guessing when a layout surprises you.
 4. Paste `<dir>/macro.html` into one HTML macro per visual. Animated output needs inline
    scripts in the target Confluence (smoke check in `confluence-rules.md`); otherwise
    rebuild with `"motion": "none"` for a static figure of the same quality. For slides,

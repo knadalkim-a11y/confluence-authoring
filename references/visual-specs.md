@@ -243,12 +243,13 @@ Containers (`layout`, nest up to 4 deep):
 
 Any container: `id`, `label` (≤ 18), `tone`, `frame` (`"solid"` a group, `"dashed"` a boundary), `note` (≤ 40,
 under it), `banner` (≤ 40, a tinted bar under it: the consequence), `span` (≤ 24, an arrow over its width: one
-operation across all of it), `grow` (1-3 width share in a row).
+operation across all of it), `grow` (1-3: in a row, containers share the width the elements leave in this ratio).
 
 Elements: `id` (needed to link or step), `name` (≤ 16; 18 in a stack), `sub` (≤ 22), `shape` (`box` · `pill` ·
 `cylinder` storage · `doc` file/document), `tone` (inherits the container's), `state` (`normal` · `selected` ·
 `muted` not chosen / idle · `error` · `ok`), `code` (≤ 5 lines × 30 chars: the data itself, e.g. a row, JSON),
-`badge` (`{"text": ≤ 10, "kind": ok|bad|warn|info}`), `bubble` (≤ 26: what this side assumes), `size`, `grow`,
+`badge` (`{"text": ≤ 10, "kind": ok|bad|warn|info}`), `bubble` (≤ 26: what this side assumes), `size`, `grow` (1-3: in a
+row, the element is this many times its natural width; it is not a share of the row),
 `dashed` (true: outside your control, e.g. an external service), `bar` (0-1: a relative amount drawn as a bar inside
 the box; say what it means in `sub` or a note; it is not a measured number).
 
@@ -330,8 +331,9 @@ one claim per figure; if it needs more than ~12 elements, split it.
    repeats the gates under another Korean font.
 3. On `FAIL spec:` fix the field named in the message. On `FAIL gate:` fix the cause
    (shorter labels or captions, fewer items, merge captions that are too close).
-4. Look at `shots/<name>-715-*.png`, `-360-*.png` and `-nojs-*.png` (the folder is cleared on
-   each run). Ask: does the picture show the claim at a glance? Does every caption describe
+4. Look at `shots/<name>-715-*.png` and `-nojs-*.png` (`-360-*` too with `--phone`; the folder is cleared on
+   each run). Ask: does the picture show the claim at a glance? Do boxes with the same role line up (report.json
+   `clutter.near_misses` should be 0 for a figure built from repeated rows)? Does every caption describe
    what is on screen at that moment — placeholders guarantee the numbers, not the story (a
    caption saying a backlog "remains" when the model drained it is caught only here)? Is
    anything shown that the text never uses? Revise the spec, rebuild.

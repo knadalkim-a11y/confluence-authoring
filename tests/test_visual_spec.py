@@ -22,7 +22,7 @@ class VisualSpecTests(unittest.TestCase):
                 frag, info = make(json.loads(f.read_text(encoding='utf-8')), 'ca-spec-x')
                 self.assertEqual(validate(frag), [])
                 self.assertEqual(frag.count('<script>'), 1 if info['live'] else 0)
-                self.assertIn('data-ca-narrow', frag)
+                self.assertNotIn('data-ca-narrow', frag)   # read on monitors: no phone scene unless asked (--phone)
                 self.assertNotRegex(json.dumps(info['data']['captions'], ensure_ascii=False), r'\{[^{}]*\}')
 
     def test_mode_follows_situation(self):
@@ -147,7 +147,7 @@ class VisualSpecTests(unittest.TestCase):
             with self.assertRaises(SpecError): build(spec)
 
     def test_compose_layout_static(self):
-        """Every compose figure at 715/600/360 px (the Node static render): connectors are orthogonal and never run
+        """Every compose figure at 715/600 px (the Node static render): connectors are orthogonal and never run
         through a box other than their ends; boxes and frames nest or stay apart; nothing leaves the figure."""
         import re
         from live_scene import node_static
@@ -156,7 +156,7 @@ class VisualSpecTests(unittest.TestCase):
         num = lambda m, k: float(re.search(k + r'="([-\d.]+)"', m).group(1))
         for f in names:
             data = build(json.loads(f.read_text(encoding='utf-8')))['data']
-            for w in (715, 600, 360):
+            for w in (715, 600):
                 with self.subTest(f=f.name, w=w):
                     svg = node_static(data, w)['svg']
                     boxes = [(m.group(1), num(m.group(0), 'x'), num(m.group(0), 'y'), num(m.group(0), 'width'), num(m.group(0), 'height'))
@@ -219,6 +219,28 @@ class VisualSpecTests(unittest.TestCase):
         m = metrics(svg)
         self.assertEqual((m['wires'], m['segments'], m['bends'], m['crossings'], m['length']), (3, 5, 2, 1, 240))
         self.assertEqual(metrics('<polyline data-wire="1" points="0 0 10 0"/><polyline data-wire="1" points="10 0 10 10"/>')['crossings'], 0)   # touching ends is not a crossing
+
+    def test_phone_scene_is_opt_in(self):
+        frag, _ = make(load('multi-agent.json'), 'ca-phone-x', phone=True)
+        self.assertIn('data-ca-narrow', frag)
+        self.assertEqual(validate(frag), [])
+
+    def test_stacked_rows_align(self):
+        """A column of plain rows with the same item count is laid out as a table: same x and width per column."""
+        import re
+        from live_scene import node_static
+        spec = {'kind': 'compose', 'data_kind': 'example', 'source': '시험', 'title': '짝 정렬', 'claim': '같은 역할은 같은 자리에 선다.', 'motion': 'none',
+                'root': {'layout': 'column', 'items': [{'layout': 'row', 'items': [{'id': f'a{i}', 'name': n}, {'id': f'b{i}', 'name': m}]}
+                                                      for i, (n, m) in enumerate([('짧음', '긴 이름의 처리 단계'), ('중간 길이 요청', '처리'), ('요청', '결재 시스템 연동 처리')])]},
+                'links': [{'from': f'a{i}', 'to': f'b{i}'} for i in range(3)]}
+        out = node_static(build(spec)['data'], 715)
+        box = {m.group(1): (float(re.search(r' x="([-\d.]+)"', m.group(0)).group(1)), float(re.search(r' width="([-\d.]+)"', m.group(0)).group(1)))
+               for m in re.finditer(r'<rect data-solid="(\w+)"[^>]*>', out['svg'])}
+        for col in 'ab':
+            self.assertEqual(len({box[f'{col}{i}'] for i in range(3)}), 1, box)
+        self.assertTrue(any('aligned as a table' in n for n in out['notes']))
+        from figure_metrics import metrics
+        self.assertEqual(metrics(out['svg'])['near_misses'], 0)
 
     def test_concept(self):
         """concept kind: three forms, now presets drawn by the compose engine (split / stack / lifelines),
