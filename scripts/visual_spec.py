@@ -857,7 +857,7 @@ def compose_tree(root, ids):
 
     def element(n, nm, in_stack=False, in_life=False):
         only(n, ('id', 'name', 'sub', 'shape', 'tone', 'state', 'code', 'badge', 'bubble', 'size', 'grow', 'dashed', 'bar'), nm)
-        e = dict(t='e', id=take_id(n, nm, f'e{len(elems)}'), name=text(n.get('name'), f'{nm}.name', 1, 18 if in_stack else 16),
+        e = dict(t='e', auto=n.get('id') is None, id=take_id(n, nm, f'e{len(elems)}'), name=text(n.get('name'), f'{nm}.name', 1, 18 if in_stack else 16),
                  sub=text(n['sub'], f'{nm}.sub', 1, 28 if in_stack else 22) if n.get('sub') else '')
         shp = n.get('shape', 'box'); need(shp in SHAPES, f'{nm}.shape: one of {list(SHAPES)}')
         st = n.get('state', 'normal'); need(st in STATES, f'{nm}.state: one of {list(STATES)}')
@@ -889,7 +889,7 @@ def compose_tree(root, ids):
         need(depth <= 4, f'{nm}: containers nest at most 4 deep')
         L = n.get('layout'); need(L in LAYOUTS, f'{nm}.layout: one of {list(LAYOUTS)}')
         only(n, ('layout', 'id', 'items', 'label', 'tone', 'frame', 'note', 'banner', 'span', 'sep', 'bracket', 'free', 'arrow', 'cols', 'messages', 'grow'), nm)
-        c = dict(t='c', L=L, id=take_id(n, nm, f'k{len(conts)}'))
+        c = dict(t='c', L=L, auto=n.get('id') is None, id=take_id(n, nm, f'k{len(conts)}'))
         conts.append(c)
         ct = tone(n.get('tone'), f'{nm}.tone')
         fr = n.get('frame'); need(fr in (None, False, 'solid', 'dashed'), f'{nm}.frame: "solid" (a group) or "dashed" (a boundary)')
@@ -1010,6 +1010,11 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, op
                     need((a, b) in by_pair, f'{nm}.path: no connection {a} -> {b}; add it to links (direction matters)')
                 routes.append([by_pair[(a, b)] for a, b in zip(pth, pth[1:])])
             need(sh or sv or routes, f'{nm}: show something, set a state or follow a path')
+            for x in list(sh) + list(sv):   # a step names the part it is about: only names the author gave, never the whole figure
+                part = E.get(x) or C.get(x)
+                need(not (part and part.get('auto')), f'{nm}: "{x}" is a name the engine made up; give that part an "id" and use it '
+                     '(made-up names follow the tree order and silently point at the wrong part)')
+                need(x != tree['id'], f'{nm}: "{x}" is the whole figure; name the part this step is about')
             units.append(dict(show=sh, set=sv, routes=routes, nodes=[x for p_ in pths for x in p_],
                               caption=text(fill(text(st['caption'], f'{nm}.caption', 2, 80), {}, f'{nm}.caption'), f'{nm}.caption', 2, 60) if st.get('caption') else ''))
     else:
@@ -1056,8 +1061,21 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, op
         for x, (v, bd) in u['set'].items():
             E[x]['sts'].append(v); E[x]['bds'].append(bd if bd is not None else E[x]['bds'][-1])
             sets.append((x, len(E[x]['sts']) - 1, t0s[k] + 0.5 * R_))
-        if u['caption'] and not slist:
-            caps.append([t0s[k], '', u['caption']])
+    # correspondence: every captioned step points at one part of the picture (the first thing it shows, changes or
+    # follows) and that part carries the step's number, so the list or caption line and the picture pair one to one
+    marks = []
+    for k, u in enumerate(units):
+        if steps is None or not u['caption']:
+            continue
+        tgt = (u['show'] or list(u['set']) or [r[0] for r in u['routes']])[0]
+        kind_ = 'e' if tgt in E else 'c' if tgt in C else 'm' if any(tgt == m['key'] for m in lifeline_msgs) else 'l'
+        marks.append(dict(target=tgt, kind=kind_, k=k, mark=CIRCLED[len(marks)] if len(marks) < len(CIRCLED) else f'{len(marks) + 1}.', t=t0s[k]))
+        u['mark'] = marks[-1]['mark']
+        if not slist:
+            caps.append([t0s[k], u['mark'], u['caption']])
+    if steps is not None:   # lifeline messages are numbered by the steps that point at them, not by their order
+        for m in lifeline_msgs:
+            m['mark'] = next((x['mark'] for x in marks if x['target'] == m['key']), '')
     end = round(max(total, max(show.values()) + 1.2 * R_) + 2.7 * R_, 4)
     rate = [[0, R_]] if live else [[0, 1]]
     cues = []
@@ -1080,16 +1098,19 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, op
             lv = choreo.levels(x, 'level', [1 if x in u['nodes'] else 0 for u in units] + [0], times, rate)
             cues += lv + [choreo.cue(x, 'pop', c[2], 0.4, 0, 1, 'linear', rate) for c in lv if c[6] > c[5]]
         if slist:
-            for k in range(len(units)):
-                cues += choreo.levels(f'sl{k}', 'level', [2 if k == j else 1 if k < j else 0 for j in range(len(units))] + [1], times, rate)
+            for n, mk in enumerate(marks):
+                k = mk['k']
+                cues += choreo.levels(f'sl{n}', 'level', [2 if k == j else 1 if k < j else 0 for j in range(len(units))] + [1], times, rate)
+        for n, mk in enumerate(marks):
+            cues += choreo.levels(f'mk{n}', 'on', [1], [mk['t'] + 0.5 * R_], rate)
         cues = choreo.validate(cues, end)
-    captions = ([[0.0, '', claim]] if not caps or caps[0][0] > 0 else []) + caps if live else [[end, '', (caps[-1][2] if caps else claim)]]
+    captions = ([[0.0, '', claim]] if not caps or caps[0][0] > 0 else []) + caps if live else [[end, caps[-1][1] if caps else '', (caps[-1][2] if caps else claim)]]
     if not live:
         for e in elems:
             e['sts'] = [e['sts'][-1]]; e['bds'] = [e['bds'][-1]]
-    marks = [CIRCLED[i] if i < len(CIRCLED) else f'{i + 1}.' for i in range(len(captions))]
-    for c, m in zip(captions, marks):
-        c[1] = m if len(captions) > 1 else ''
+    if steps is None:
+        for c in captions:
+            c[1] = ''
     legend = opts.get('legend') if opts.get('legend') is not None else spec.get('legend')
     lg = []
     for i, x in enumerate(legend or []):
@@ -1101,7 +1122,8 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, op
                 labels=dict(data_kind=DIAGRAM_KINDS[data_kind]), show={k: round(v, 4) for k, v in show.items()},
                 paths=[dict(t0=t0s[k], t1=round(t0s[k] + lens[k], 4), routes=u['routes']) for k, u in enumerate(units) if u['routes']] if live else [],
                 steps=dict(t0=t0s, total=total, n=len(units)) if steps is not None and live else None,
-                slist=[dict(mark=CIRCLED[k], text=u['caption']) for k, u in enumerate(units)] if slist else [], legend=lg)
+                slist=[dict(mark=mk['mark'], text=units[mk['k']]['caption']) for mk in marks] if slist else [], legend=lg,
+                marks=[{k: v for k, v in mk.items() if k != 'k'} for mk in marks])
     # accessible table: every part in reading order, then connectors and steps
     names = {e['id']: e['name'] for e in elems}
     rows = list(extra_rows) if extra_rows is not None else None
