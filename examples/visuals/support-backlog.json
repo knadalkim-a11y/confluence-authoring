@@ -1,0 +1,27 @@
+{
+  "kind": "flow",
+  "title": "고객 문의 백로그: 상담 인력 4명과 5명",
+  "claim": "문의가 처리 한도를 넘는 동안 백로그는 쌓이고, 문의가 줄어도 천천히 빠진다.",
+  "source": "예시: 일별 문의 수와 상담원 1명당 하루 25건 처리 가정",
+  "data_kind": "example",
+  "time": {"unit": "일", "end": 20},
+  "units": {"rate": "건/일", "count": "건"},
+  "inflow": [[0, 90], [5, 120], [15, 90]],
+  "stages": [{"name": "상담팀", "capacity": 100}],
+  "variants": [
+    {"name": "현재 4명 (하루 100건)", "tone": "bad", "capacity": 100},
+    {"name": "5명 (하루 125건)", "tone": "good", "capacity": 125}
+  ],
+  "labels": {"wait": "새 문의 대기"},
+  "captions": [
+    {"at": 0, "text": "평소 하루 90건은 두 팀 모두 처리할 수 있다."},
+    {"at": "change", "text": "5일째 문의가 하루 120건으로 늘었다."},
+    {"at": "wait:1", "text": "4명 팀은 하루 20건씩 밀려 새 문의가 하루 넘게 기다린다."},
+    {"at": "change:2", "text": "15일째 문의가 줄어도 백로그는 하루 10건씩만 준다."},
+    {"at": "end", "text": "20일째 4명 팀은 {queue_end}건이 남았다. 5명 팀은 밀리지 않았다."}
+  ],
+  "callouts": [
+    {"lane": 0, "at": "wait:1", "text": "하루 넘게 대기", "tone": "hot"},
+    {"lane": 1, "at": "change", "text": "한도 안: 대기 없음", "tone": "ok"}
+  ]
+}

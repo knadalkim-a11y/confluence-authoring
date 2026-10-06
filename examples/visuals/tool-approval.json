@@ -1,0 +1,102 @@
+{
+ "kind": "compose",
+ "data_kind": "example",
+ "source": "예시: 일반적인 구조를 단순화",
+ "title": "위험한 도구 호출은 사람이 승인한다",
+ "claim": "읽기는 바로 실행하고, 쓰기·삭제는 사람의 승인을 거친다.",
+ "root": {
+  "layout": "row",
+  "items": [
+   {
+    "id": "ag",
+    "name": "에이전트",
+    "tone": "purple"
+   },
+   {
+    "id": "gate",
+    "name": "권한 검사",
+    "tone": "amber",
+    "code": [
+     "read  → 허용",
+     "write → 승인 필요"
+    ]
+   },
+   {
+    "layout": "column",
+    "items": [
+     {
+      "id": "rd",
+      "name": "문서 읽기",
+      "tone": "green",
+      "badge": {
+       "text": "자동 실행",
+       "kind": "ok"
+      }
+     },
+     {
+      "id": "del",
+      "name": "파일 삭제",
+      "tone": "red",
+      "bubble": "정말 지울까?",
+      "badge": {
+       "text": "승인 대기",
+       "kind": "warn"
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "links": [
+  {
+   "from": "ag",
+   "to": "gate",
+   "label": "호출 요청"
+  },
+  {
+   "from": "gate",
+   "to": "rd"
+  },
+  {
+   "from": "gate",
+   "to": "del",
+   "style": "hidden"
+  }
+ ],
+ "steps": [
+  {
+   "show": [
+    "ag",
+    "gate",
+    "L0"
+   ],
+   "caption": "모든 호출은 먼저 권한 검사를 지난다"
+  },
+  {
+   "show": [
+    "rd",
+    "L1"
+   ],
+   "caption": "읽기는 바로 실행된다"
+  },
+  {
+   "show": [
+    "del",
+    "L2"
+   ],
+   "caption": "삭제는 사람이 승인할 때까지 멈춘다"
+  },
+  {
+   "set": {
+    "del": {
+     "state": "ok",
+     "badge": {
+      "text": "실행됨",
+      "kind": "ok"
+     }
+    }
+   },
+   "caption": "승인되면 그때 실행된다"
+  }
+ ]
+}

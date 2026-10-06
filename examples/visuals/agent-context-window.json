@@ -1,0 +1,16 @@
+{
+  "kind": "concept", "form": "stack",
+  "title": "에이전트가 한 번에 보는 맥락",
+  "claim": "대화가 길어지면 이전 기록이 공간을 차지해, 새 문서를 넣을 자리가 줄어든다.",
+  "source": "예시: 사내 에이전트 프롬프트 구성 설명용",
+  "data_kind": "example",
+  "bracket": "컨텍스트 창",
+  "free": "남은 공간",
+  "layers": [
+    {"name": "시스템 프롬프트", "sub": "역할·규칙·말투", "tone": "blue"},
+    {"name": "도구 정의", "sub": "검색 · 결재 조회 · 일정", "tone": "green"},
+    {"name": "이전 대화 기록", "sub": "길어질수록 커진다", "tone": "amber", "size": 3},
+    {"name": "검색된 사내 문서", "sub": "질문과 관련된 조각", "tone": "purple"},
+    {"name": "현재 질문", "tone": "gray"}
+  ]
+}

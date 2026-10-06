@@ -1,0 +1,16 @@
+{
+  "kind": "bars",
+  "title": "분기별 매출과 목표",
+  "claim": "3분기까지는 목표에 못 미쳤고, 4분기에 처음 목표를 넘었다.",
+  "source": "예시 데이터",
+  "data_kind": "example",
+  "unit": "억 원",
+  "items": [
+    {"label": "1분기", "value": 11.2},
+    {"label": "2분기", "value": 12.8},
+    {"label": "3분기", "value": 13.9},
+    {"label": "4분기", "value": 16.4}
+  ],
+  "highlight": ["4분기"],
+  "target": {"value": 15, "label": "목표 15억"}
+}

@@ -1,0 +1,43 @@
+{
+ "kind": "compose",
+ "data_kind": "example",
+ "source": "예시: 일반적인 소프트웨어 계층을 단순화",
+ "title": "추상화가 감추는 것",
+ "claim": "위층으로 갈수록 다루기 쉬워지지만, 아래층에서 일어나는 일은 더 많이 감춰진다.",
+ "root": {
+  "layout": "stack",
+  "bracket": "추상화 ↑",
+  "items": [
+   {
+    "name": "애플리케이션",
+    "sub": "감춰진 정보",
+    "tone": "blue",
+    "bar": 0.9
+   },
+   {
+    "name": "프레임워크",
+    "sub": "감춰진 정보",
+    "tone": "green",
+    "bar": 0.7
+   },
+   {
+    "name": "런타임",
+    "sub": "감춰진 정보",
+    "tone": "amber",
+    "bar": 0.5
+   },
+   {
+    "name": "운영체제",
+    "sub": "감춰진 정보",
+    "tone": "red",
+    "bar": 0.3
+   },
+   {
+    "name": "하드웨어",
+    "sub": "감춰진 정보",
+    "tone": "purple",
+    "bar": 0.05
+   }
+  ]
+ }
+}

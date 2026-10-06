@@ -1,0 +1,360 @@
+{
+  "version": "0.2.0",
+  "profile": {
+    "runtime": "HTML + CSS + SVG",
+    "javascript_in_macros": false,
+    "repeat_default": 1,
+    "validation": "tests/verification.json",
+    "input_guide": "references/motion-inputs.md",
+    "examples": "examples/motion-inputs.json",
+    "renderer": "scripts/render_motion.py",
+    "common_required": [
+      "title",
+      "description",
+      "caption",
+      "provenance",
+      "data_mode"
+    ],
+    "common_optional": [
+      "duration",
+      "repeat"
+    ],
+    "controls": [
+      "pause-resume",
+      "replay",
+      "static"
+    ],
+    "verification": {
+      "static": "tests/verification.json",
+      "browser": "tests/browser-report.json",
+      "confluence": "not-verified"
+    }
+  },
+  "patterns": [
+    {
+      "id": "line-reveal",
+      "title": "추세·변화",
+      "category": "change",
+      "status": "implemented",
+      "file": "visuals/motion/line-reveal.html",
+      "best_for": [
+        "시간 흐름 속 지표 변화"
+      ],
+      "avoid_when": [
+        "단일 수치·정확한 시각 간격 미확인"
+      ],
+      "required_inputs": [
+        "change_index",
+        "series",
+        "unit",
+        "x_label"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "threshold-cross",
+      "title": "기준 초과",
+      "category": "change",
+      "status": "implemented",
+      "file": "visuals/motion/threshold-cross.html",
+      "best_for": [
+        "임계치와 최초 초과 시점"
+      ],
+      "avoid_when": [
+        "기준값이 없거나 출처가 불명확"
+      ],
+      "required_inputs": [
+        "series",
+        "threshold",
+        "unit",
+        "x_label"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "recovery",
+      "title": "발생·회복",
+      "category": "change",
+      "status": "implemented",
+      "file": "visuals/motion/recovery.html",
+      "best_for": [
+        "입력한 발생·회복 지점을 지표와 함께 설명"
+      ],
+      "avoid_when": [
+        "회복 시점을 추측해야 하는 경우"
+      ],
+      "required_inputs": [
+        "incident_index",
+        "recovery_index",
+        "series",
+        "unit",
+        "x_label"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "distribution-percentile",
+      "title": "분포·P95",
+      "category": "data",
+      "status": "implemented",
+      "file": "visuals/motion/distribution-percentile.html",
+      "best_for": [
+        "평균과 꼬리 지연을 구분"
+      ],
+      "avoid_when": [
+        "연속 히스토그램만 있고 원시 관측값 또는 이산값·건수가 없는 경우"
+      ],
+      "required_inputs": [
+        "counts",
+        "unit",
+        "values"
+      ],
+      "optional_inputs": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "sequential-flow",
+      "title": "순차 흐름",
+      "category": "process",
+      "status": "implemented",
+      "file": "visuals/motion/sequential-flow.html",
+      "best_for": [
+        "정해진 순서와 단계별 상태"
+      ],
+      "avoid_when": [
+        "실제로 병렬인 절차"
+      ],
+      "required_inputs": [
+        "steps"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "before-after",
+      "title": "전후 비교",
+      "category": "comparison",
+      "status": "implemented",
+      "file": "visuals/motion/before-after.html",
+      "best_for": [
+        "절차 구성의 차이"
+      ],
+      "avoid_when": [
+        "근거 없는 성과 수치 비교"
+      ],
+      "required_inputs": [
+        "after",
+        "before"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "parallel-flow",
+      "title": "병렬·합류",
+      "category": "process",
+      "status": "implemented",
+      "file": "visuals/motion/parallel-flow.html",
+      "best_for": [
+        "독립 두 경로의 동시 진행과 합류"
+      ],
+      "avoid_when": [
+        "세 개 이상 경로 또는 복잡한 의존성"
+      ],
+      "required_inputs": [
+        "join",
+        "left",
+        "right",
+        "start"
+      ],
+      "optional_inputs": [],
+      "complexity": "medium"
+    },
+    {
+      "id": "branch-flow",
+      "title": "조건 분기",
+      "category": "process",
+      "status": "implemented",
+      "file": "visuals/motion/branch-flow.html",
+      "best_for": [
+        "이미 알려진 선택 결과와 다른 후보"
+      ],
+      "avoid_when": [
+        "실시간 조건 판정이 필요한 경우"
+      ],
+      "required_inputs": [
+        "decision",
+        "routes",
+        "selected"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "approval-gate",
+      "title": "승인 대기",
+      "category": "process",
+      "status": "implemented",
+      "file": "visuals/motion/approval-gate.html",
+      "best_for": [
+        "자동 실행과 사람 판단의 경계"
+      ],
+      "avoid_when": [
+        "이미 승인된 결과만 요약"
+      ],
+      "required_inputs": [
+        "gate",
+        "reviewer",
+        "steps"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "retry-loop",
+      "title": "유한 재시도",
+      "category": "process",
+      "status": "implemented",
+      "file": "visuals/motion/retry-loop.html",
+      "best_for": [
+        "실패와 다음 시도, 정해진 종료"
+      ],
+      "avoid_when": [
+        "무한 재시도 또는 성공 후 추가 시도"
+      ],
+      "required_inputs": [
+        "attempts"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "request-response",
+      "title": "요청·응답",
+      "category": "system",
+      "status": "implemented",
+      "file": "visuals/motion/request-response.html",
+      "best_for": [
+        "두 구성 요소 사이의 전달 방향"
+      ],
+      "avoid_when": [
+        "복잡한 다중 서비스 시퀀스"
+      ],
+      "required_inputs": [
+        "client",
+        "request",
+        "response",
+        "server"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "queue-buildup",
+      "title": "대기열 누적",
+      "category": "cause-effect",
+      "status": "implemented",
+      "file": "visuals/motion/queue-buildup.html",
+      "best_for": [
+        "유입·처리 한도와 잔여 대기의 관계"
+      ],
+      "avoid_when": [
+        "확률적 대기열 이론이나 정확한 대기 시간 추정"
+      ],
+      "required_inputs": [
+        "arrivals",
+        "capacity"
+      ],
+      "optional_inputs": [
+        "initial"
+      ],
+      "complexity": "medium"
+    },
+    {
+      "id": "failure-propagation",
+      "title": "영향 전파",
+      "category": "cause-effect",
+      "status": "implemented",
+      "file": "visuals/motion/failure-propagation.html",
+      "best_for": [
+        "근거 있는 인과 전달 순서"
+      ],
+      "avoid_when": [
+        "상관관계만 확인된 상태"
+      ],
+      "required_inputs": [
+        "components"
+      ],
+      "optional_inputs": [],
+      "complexity": "low"
+    },
+    {
+      "id": "data-flow",
+      "category": "system",
+      "status": "planned"
+    },
+    {
+      "id": "service-chain",
+      "category": "system",
+      "status": "planned"
+    },
+    {
+      "id": "resource-exhaustion",
+      "category": "cause-effect",
+      "status": "planned"
+    },
+    {
+      "id": "bar-growth",
+      "category": "data",
+      "status": "planned"
+    },
+    {
+      "id": "scatter-build",
+      "category": "data",
+      "status": "planned"
+    },
+    {
+      "id": "anomaly-separation",
+      "category": "data",
+      "status": "planned"
+    },
+    {
+      "id": "hierarchy-expand",
+      "category": "structure",
+      "status": "planned"
+    },
+    {
+      "id": "layer-reveal",
+      "category": "structure",
+      "status": "planned"
+    },
+    {
+      "id": "component-focus",
+      "category": "structure",
+      "status": "planned"
+    },
+    {
+      "id": "relationship-map",
+      "category": "structure",
+      "status": "planned"
+    },
+    {
+      "id": "problem-solution",
+      "category": "story",
+      "status": "planned"
+    },
+    {
+      "id": "current-future",
+      "category": "story",
+      "status": "planned"
+    },
+    {
+      "id": "cause-effect",
+      "category": "story",
+      "status": "planned"
+    }
+  ]
+}

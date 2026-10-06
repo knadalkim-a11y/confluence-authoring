@@ -1,0 +1,99 @@
+{
+ "kind": "compose",
+ "data_kind": "example",
+ "source": "예시: 일반적인 구조를 단순화",
+ "title": "MCP: 도구 호출이 경계를 넘는 구조",
+ "claim": "호스트 안의 클라이언트가 경계 너머 서버의 도구를 호출한다.",
+ "root": {
+  "layout": "row",
+  "items": [
+   {
+    "layout": "column",
+    "frame": "solid",
+    "label": "호스트 (IDE·데스크톱 앱)",
+    "tone": "blue",
+    "items": [
+     {
+      "id": "llm",
+      "name": "LLM",
+      "tone": "purple"
+     },
+     {
+      "id": "cli",
+      "name": "MCP 클라이언트",
+      "tone": "blue"
+     }
+    ]
+   },
+   {
+    "layout": "column",
+    "frame": "dashed",
+    "label": "MCP 서버",
+    "tone": "green",
+    "items": [
+     {
+      "id": "tool",
+      "name": "도구",
+      "sub": "search_docs()",
+      "tone": "green"
+     },
+     {
+      "id": "res",
+      "name": "리소스",
+      "sub": "파일·DB",
+      "shape": "cylinder",
+      "tone": "gray"
+     }
+    ]
+   }
+  ]
+ },
+ "links": [
+  {
+   "from": "llm",
+   "to": "cli",
+   "label": "도구 선택"
+  },
+  {
+   "from": "cli",
+   "to": "tool",
+   "label": "JSON-RPC 호출"
+  },
+  {
+   "from": "tool",
+   "to": "res",
+   "label": "조회"
+  },
+  {
+   "from": "tool",
+   "to": "cli",
+   "label": "결과",
+   "style": "reply"
+  }
+ ],
+ "steps": [
+  {
+   "show": [
+    "llm",
+    "cli",
+    "L0"
+   ],
+   "caption": "모델은 어떤 도구를 쓸지 정할 뿐이다"
+  },
+  {
+   "show": [
+    "tool",
+    "res",
+    "L1",
+    "L2"
+   ],
+   "caption": "클라이언트가 경계 너머 서버에 호출을 보낸다"
+  },
+  {
+   "show": [
+    "L3"
+   ],
+   "caption": "결과는 같은 길로 돌아와 모델 입력이 된다"
+  }
+ ]
+}
