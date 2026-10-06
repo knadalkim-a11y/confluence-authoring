@@ -15,27 +15,24 @@ A recipe should state:
 
 Do not create a new recipe for cosmetic formatting differences.
 
-## Add a motion pattern
+## Extend a visual kind
 
-1. Define the explanation problem first.
-2. Add metadata to `references/motion-catalog.yaml`.
-3. Implement the pattern under `visuals/motion/`.
-4. Use `{{PREFIX}}` for every selector/ID/keyframe namespace.
-5. Keep the fragment free of external dependencies.
-6. Add reduced-motion and print/static behavior.
-7. Make example/synthetic data explicit.
-8. Add or update a gallery example.
-9. Add a test case.
-10. Validate a rendered instance.
-11. Only then change catalog status from `planned` to `implemented`.
+1. Start from the reader's question and a spec that the current kinds cannot express.
+2. Prefer extending the compose engine (a container, part or routing rule that works in every figure) over a new kind.
+3. Change the kind in `scripts/kinds/<kind>.py` and, if needed, its scene in `visuals/live/scenes/`.
+4. Add a test to `tests/test_visual_spec.py` and an example spec to `examples/visuals/` when it is a new idea.
+5. Run the checks in `tests/README.md`; for a visible layout change also `scripts/figure_metrics.py` against the
+   previous revision and a side-by-side for review.
+
+The CSS motion patterns (v0.1-0.3) are kept in `lab/` as reference; new visuals use the spec path.
 
 ## Avoid duplicates
 
-Do not add a new pattern merely for:
+Do not add a new kind or example merely for:
 - another color;
 - another project name;
 - a different sample sentence;
-- one extra stage when the existing pattern can be parameterized.
+- one extra stage when the existing kind can be parameterized.
 
 ## Compatibility
 

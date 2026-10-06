@@ -1,7 +1,7 @@
-# Status — v0.19.1 (steps pair with parts by timing; monitor-only by default)
+# Status — v0.20.0 (product and reference material separated; no figure changed)
 
-Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
-release or Confluence publication.
+Review branch: `ccr-38d9ef8e-zrdwh3` (v0.19.1 + v0.20.0, not merged yet). main has v0.19.0 (PR #2).
+No release or Confluence publication.
 
 ## Goal
 
@@ -62,6 +62,13 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.20.0 structure
+
+Product (SKILL.md, references, examples/visuals, scripts with kinds/, visuals/live, tests) and reference material
+(lab/: article cases, CSS patterns) are separated; the product imports nothing from lab. visual_spec split per kind,
+shared helpers in model.py, compose.js formatted. Output identical for all 146 figures and cases. Actual results:
+see the commit / PR verification list.
 
 ## v0.19.1 no numbers on the picture
 

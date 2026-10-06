@@ -1,0 +1,11 @@
+{"kind":"compose","data_kind":"example","source":"재현용 (사내 그림과 같은 구조, 내용은 가상)","title":"요청이 처리되는 순서",
+ "claim":"요청 두 종류가 각자 다른 처리 단계로 간다.","step_list":true,
+ "root":{"layout":"row","items":[
+   {"layout":"column","id":"req","label":"요청","items":[{"id":"a1","name":"문서 질문"},{"id":"a2","name":"휴가 신청"}]},
+   {"layout":"column","id":"proc","label":"처리","items":[{"id":"b1","name":"검색 후 답변"},{"id":"b2","name":"결재 시스템"}]}]},
+ "links":[{"from":"a1","to":"b1"},{"from":"a2","to":"b2"}],
+ "steps":[{"show":["a1"],"caption":"문서 질문이 들어온다"},
+          {"show":["proc"],"caption":"처리 단계가 준비된다"},
+          {"show":["L0"],"caption":"질문은 검색으로 간다"},
+          {"show":["a2","L1"],"caption":"휴가 신청은 결재로 간다"},
+          {"set":{"b2":"ok"},"caption":"결재가 끝나면 완료된다"}]}

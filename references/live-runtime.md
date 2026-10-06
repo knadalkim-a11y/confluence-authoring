@@ -1,6 +1,6 @@
 # Live runtime — architecture, contract and quality gates (v0.7.0)
 
-The CSS-keyframe renderer (`reference_scene.py`) bakes every movement into keyframes.
+The CSS-keyframe renderer (`lab/scripts/reference_scene.py`) bakes every movement into keyframes.
 That made state-driven pictures hard: decorative token streams needed disclaimers,
 fixed `0.9`-style caption times could run ahead of the model, and one generic shell
 (panels + metric cards + small line charts + numbered phase boxes) made every case look
@@ -14,7 +14,7 @@ basic patterns until each is migrated; a case uses exactly one tier at a time.
 
 | Layer | Location | Responsibility |
 |---|---|---|
-| Model | `scripts/monitoring_cases.py` (Python) | Deterministic numbers, event table, derived events (queue onset, peak, drain). Unit-tested. |
+| Model | `scripts/kinds/*.py` (spec kinds) or `lab/scripts/monitoring_cases.py` (reference cases), Python | Deterministic numbers, event table, derived events (queue onset, peak, drain). Unit-tested. |
 | Scene data | `*_live_data()` in the same module | Captions and playback pacing bound to model events; axes; labels. Text numbers are computed, never typed. |
 | Grammar | `visuals/live/grammars/*.js` | Reusable pure `draw` functions returning SVG strings for one visual idea, with wide and narrow geometry. No DOM. |
 | Scene | `visuals/live/scenes/<case>.js` | Maps model state at T to grammar inputs; status-line numbers; `probe(T)` for the browser gate. No numbers of its own. |
@@ -39,7 +39,7 @@ Implemented grammars:
   `spark` a compact trend with end dot.
 
 Implemented scenes: generic kinds `flow`, `trend`, `bars`, `timeline` (data from
-`scripts/visual_spec.py`, see `visual-specs.md`); custom `thread-pool`. The monitoring cases
+`scripts/kinds/`, see `visual-specs.md`); custom `thread-pool`. The monitoring cases
 pipeline-bottleneck, bounded-queue and cpu-latency are specs of `flow`/`trend`
 (`monitoring_cases.pipeline_spec` etc.). A kind renders live (script) or static (no script;
 wide and phone static scenes) from the same code. Visual language: `visual-guidelines.md`.
@@ -86,7 +86,7 @@ function curve with moving point — utilization-wait; flow+panels — cache-sta
 
 ## Quality gates
 
-`tests/test_live_runtime.py` (unit): model binding (`pool_model`; fluid queue balance,
+`lab/tests/test_live_runtime.py` (unit): model binding (`pool_model`; fluid queue balance,
 FIFO token departures, token rejections within one unit of the fluid balance; CPU series
 equal the shared scenario functions, verdicts absent before their event), captions on events,
 no-queue variant, static fallback equals the Node render of the same code, inert data,
@@ -103,12 +103,12 @@ Motion math (v0.12.0): `K.tween(T,t0,dur,curve)` with `K.CURVE` out/in/inOut/lin
 `K.spring`/`K.pop` (emphasis only, never a data position), `K.approach` (exact target after `settle`), `K.stagger`,
 `K.wave`/`K.saw`, `K.mix`. Data interpolation stays linear on the model; only presentation uses curves.
 
-`tests/test_live_runtime.py` also checks the kit parts (`K.ortho` never leaves a diagonal,
+`lab/tests/test_live_runtime.py` also checks the kit parts (`K.ortho` never leaves a diagonal,
 `K.at`, `K.ease`) and that the cascade and diagram scenes draw every connector as an orthogonal
 `K.wire` at 720/600/360 px. `visual_gates.MOTION_JS` (all live visuals): token speed <= 480 px/s,
 no diagonal wire, no moving dot outside `K.token` (see visual-guidelines "Motion and wiring parts").
 
-`tests/browser_live.py` (Chromium, JS on), for every live case: autoplay, height budget
+`lab/tests/browser_live.py` (Chromium, JS on), for every live case: autoplay, height budget
 at 715/360 px, no horizontal overflow, no SVG text overlap or clipping at six model times
 and two widths, browser `probe(T)` and status numbers equal the Python probe from
 `live_checks()` (e.g. `pool_state(T)`, fluid queue at T), caption equals the
@@ -127,8 +127,8 @@ widths still needs a human look.
 2. Reuse a grammar; add a new one only for a genuinely new visual idea, as a pure
    `draw` with wide and narrow geometry.
 3. Add `visuals/live/scenes/<case>.js`; register in `LIVE_BUILDERS`; add
-   `"runtime": "live"` to the case in `examples/monitoring-cases.json`.
-4. Add the case to `live_checks()` in `monitoring_cases.py` (sample times, a Python probe
+   `"runtime": "live"` to the case in `lab/examples/monitoring-cases.json`.
+4. Add the case to `live_checks()` in `lab/scripts/monitoring_cases.py` (sample times, a Python probe
    matching the scene's `probe(T)`, annotations bound to event times); extend unit tests
    for the case's own invariants; build the suite with `--baseline <previous build>` and run
    `tests/compare_baseline.py` to compare at the same model times and widths.

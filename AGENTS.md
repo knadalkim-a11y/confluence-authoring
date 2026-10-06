@@ -5,47 +5,49 @@ reuse the existing change instead of rebuilding completed work. Preserve unrelat
 recipes, user content and files. Do not force-push, merge, release or publish Confluence
 pages unless explicitly requested. New changes go on the current review branch.
 
-Basic motion source is player.* + selected scene + typed input + scripts/motion.py.
-Monitoring reference cases also use scripts/monitoring_cases.py and reference_scene.py.
-Generated gallery/macros come from that renderer; never hand-maintain a second demo
-implementation. Do not count planned catalog entries as implemented.
+## Layout of the repository
 
-Document visuals (v0.7.0+; compose kind v0.16.0: a layout tree of containers and parts; concept forms are its presets; diagram keeps its own tuned scene): new visuals go through the spec path (references/visual-specs.md,
-scripts/build_visual.py --check, examples/visuals/). Do not hand-write a scene a kind can express;
-for ideas, extend the compose engine (a container, part or routing rule that works everywhere), never one figure;
-extend the kind instead, with tests (tests/test_visual_spec.py) and the shared gates (scripts/visual_gates.py).
+- Product (what an author or in-house AI uses): SKILL.md, references/, recipes/, templates/,
+  examples/visuals/ (copyable specs), scripts/ (build_visual.py entry; visual_spec.py -> kinds/<kind>.py;
+  model.py shared numbers and caption pacing; choreo.py cues; live_scene.py bundling and the Node static render;
+  visual_gates.py browser gates; figure_metrics.py clutter numbers), visuals/live/ (kit, choreo, grammars,
+  scenes, runtime), tests/ (unit tests and frozen fixtures).
+- lab/ (reference material, see lab/README.md): the 18 monitoring-article cases + gc-pause bonus the engine was
+  measured against, and the v0.1-0.3 CSS motion patterns, with their tests. lab imports product modules; the
+  product never imports lab. Do not count planned catalog entries in lab as implemented.
 
-Live runtime (v0.4.0+): cases marked `"runtime": "live"` render model state at time T with
-one bundled inline script (scripts/live_scene.py + visuals/live/). Read
-references/live-runtime.md before touching them. Numbers come from the Python model only;
-captions and pacing bind to model events; the static fallback is the same JS scene run in
-Node. Do not hand-edit generated macros, add other scripts, or migrate a case without
-its unit and browser gates (tests/test_live_runtime.py, tests/browser_live.py). Migrated:
-all 18 article cases: thread-pool, cpu-throttling, cluster-cascade, event-loop, timeout-mismatch
-(custom scenes); pipeline-bottleneck, bounded-queue (flow); cpu-latency, slow-degradation,
-postmortem-timeline, traffic-patterns, survivorship-bias, memory-leak, memory-spike,
-utilization-wait, cache-stampede, deploy-comparison (trend); percentile-comparison
-(distribution). gc-pause (bonus) stays on the CSS tier; do not claim it is migrated. Each migration is checked
-side by side with the article demo (dist/ref18/pairs, local only, not committed).
+## Visuals
 
-Motion and wiring (v0.11.0+): moving dots are K.token at the kit pace (K.M), connectors are
-K.wire(K.ortho(...)), data-riding markers K.follow. State changes are cues from the kind (scripts/choreo.py + visuals/live/choreo.js,
-migrated: diagram, compose (incl. concept presets), trend, flow, cascade, thread-pool; durations in on-screen seconds), never a one-frame
-switch in scene code. Fix a pace or routing problem in the kit or
-the kind, never in one case; visual_gates.MOTION_JS enforces it for every live visual.
+New visuals go through the spec path (references/visual-specs.md, scripts/build_visual.py --check,
+examples/visuals/). Do not hand-write a scene a kind can express. For new ideas extend the compose engine
+(a container, part or routing rule that works everywhere), never one figure; extend the kind with tests
+(tests/test_visual_spec.py) and the shared gates (scripts/visual_gates.py). Concept forms are compose presets;
+diagram keeps its own tuned scene (visuals/live/scenes/diagram.js) because moving it onto compose made figures busier.
 
-Read references/diagram-layout.md for structure/flow work. Explicit route coordinates
-must generate both the visible line and particle motion. The CSS layout pass (cascade, event
-loop, pipeline) is retired: those cases are live scenes now, gated by tests/browser_live.py, and
-tests/browser_diagram_layout.py reports SKIP while no CSS layout case remains.
-Preserve previous mechanism changes and the 1.25x default. Run geometry and browser
-checks before considering a layout complete.
+Live runtime: one bundled inline script per macro (scripts/live_scene.py + visuals/live/); read
+references/live-runtime.md first. Numbers come from the Python model only; captions and pacing bind to model
+events; the static fallback is the same JS scene run in Node. Do not hand-edit generated macros or add other
+scripts. Moving dots are K.token at the kit pace, connectors K.wire(K.ortho(...)), data-riding markers K.follow;
+state changes are cues from the kind (choreo), never a one-frame switch in scene code. Fix a pace or routing
+problem in the kit or the kind, never in one case; visual_gates.MOTION_JS enforces it. Preserve the 1.25x default.
+visuals/live/*.js changed by hand keep their style; compose.js follows visuals/live/.prettierrc.json.
 
-A layout or routing change is accepted only when scripts/figure_metrics.py on the built figures (examples and the
-local evaluation sets) is not busier than the previous revision (bends, crossings, length) and a side-by-side shows
-no figure got worse; gates passing is not enough. Show the side-by-side to the user before committing a visible change.
+Step targets: each captioned step is about one part; the engine lights it while the step is current. Steps
+name parts by author ids only. Nothing numbered is drawn on the picture (the user rejected badges in 0.19.0).
 
-Run unit tests, build the gallery, and run browser tests when available. Record actual
-commands, environment and failures. Never report browser/Confluence verification
+## Accepting changes
+
+- A refactor must not change output: compare data and frames (3 widths x 5 times) of every example, the local
+  evaluation sets and the lab cases before and after, plus macros when no JS was reformatted.
+- A layout or routing change is accepted only when scripts/figure_metrics.py on the built figures (examples and
+  the local evaluation sets) is not busier than the previous revision (bends, crossings, length, near misses) and a
+  side-by-side shows no figure got worse; gates passing is not enough. The metrics do not see decorations
+  (badges, labels): judge those by eye. Show the side-by-side to the user before committing a visible change.
+- Reproduce in-house feedback with fictional content (internal data never leaves the company) and keep the
+  reproduction as a fixture in tests/fixtures/.
+
+Run unit tests (tests/ and lab/tests/), build the gallery, and run browser tests when available
+(build_visual.py --check on the examples, lab/tests/browser_live.py for the runtime, both with a second Korean
+font). Record actual commands, environment and failures. Never report browser/Confluence verification
 from static lint alone. Update docs/STATUS.md and PR verification from real results.
 Keep generated dist outputs, real content, secrets and font files out of Git history.

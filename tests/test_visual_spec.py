@@ -241,6 +241,26 @@ class VisualSpecTests(unittest.TestCase):
         from figure_metrics import metrics
         self.assertEqual(metrics(out['svg'])['near_misses'], 0)
 
+    def test_feedback_reproductions(self):
+        """In-house feedback, reproduced with fictional content (tests/fixtures/feedback-*.json): each builds, passes
+        the macro lint, and every list row or step caption names a part that is in the picture."""
+        from live_scene import node_static
+        import re
+        files = sorted((ROOT / 'tests/fixtures').glob('feedback-*.json'))
+        self.assertTrue(files)
+        for f in files:
+            with self.subTest(f.name):
+                spec = json.loads(f.read_text(encoding='utf-8'))
+                frag, info = make(spec, 'ca-fb-x'); d = info['data']
+                self.assertEqual(validate(frag), [])
+                captioned = [s for s in spec.get('steps', []) if s.get('caption')]
+                self.assertEqual(len(d['marks']), len(captioned))
+                if spec.get('step_list'): self.assertEqual(len(d['slist']), len(captioned))
+                ks = set(re.findall(r'data-k="([^"]+)"', node_static(d, 715)['svg']))
+                for m in d['marks']:   # boxes and labelled groups carry data-k; links and groups are checked by id
+                    self.assertTrue(m['target'] in ks or any(k.startswith(m['target'] + '.') for k in ks)
+                                    or m['kind'] in ('l', 'c', 'm'), m)
+
     def test_steps_point_at_parts(self):
         """Every captioned step has a part it is about; that part lights up while its row is current (no number is
         drawn on the picture); the claim caption carries no number; steps cannot name made-up ids or the whole figure."""

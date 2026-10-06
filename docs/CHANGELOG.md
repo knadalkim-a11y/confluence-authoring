@@ -1,5 +1,21 @@
 # Changes
 
+## 0.20.0 — structure: product and reference material separated
+
+A refactor; no figure changed. Checked by snapshots of all 146 figures and cases (data, aria, table, and the scene
+drawn at 3 widths x 5 times; macros and CSS fragments byte for byte until compose.js was reformatted).
+- `lab/`: the monitoring-article cases (monitoring_cases and their scenes, manifest, reviews), the v0.1-0.3 CSS
+  motion patterns, their assets, gallery and tests. lab imports the product; the product imports nothing from lab.
+- `scripts/model.py`: statistics, series, token and caption-pacing helpers the spec kinds share (were in
+  monitoring_cases). The preview page wrapper moved to live_scene.
+- `scripts/kinds/`: one module per kind with explicit imports; visual_spec.py is the entry point (was 1256 lines).
+- `visuals/live/scenes/compose.js` formatted with prettier (config in visuals/live/.prettierrc.json); compose
+  macros are about 17 KB larger.
+- SKILL.md reads only the spec path (130 lines, was 165); README, AGENTS, CONTRIBUTING, scripts/ and tests/ READMEs
+  rewritten for the new layout. Product tests use frozen fixtures instead of the case builders.
+- `tests/fixtures/feedback-4boxes-5steps.json`: the in-house feedback, reproduced with fictional content, as a
+  regression test (every list row names a part that is in the picture).
+
 ## 0.19.1 — no numbers on the picture
 
 Review of 0.19.0: the number badges on boxes and in link labels made figures look worse. The pairing stays in the

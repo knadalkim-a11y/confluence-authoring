@@ -29,7 +29,7 @@ an accidental crossing. The narrow cascade uses separately named input/output bu
 
 ## One geometry for line and motion
 
-`scripts/diagram_layout.py` contains small explicit node/route definitions, not a new
+`lab/scripts/diagram_layout.py` (reference cases) contains small explicit node/route definitions, not a new
 story hierarchy or generic graph engine. A `Route` owns its point list. Both the
 visible SVG rail and CSS motion path serialize that same list with `path_d()`.
 For shared buses, a composite route names the visible rail parts it follows.
