@@ -1,4 +1,4 @@
-# Status — v0.16.0 design phase 4 (composition engine: compose kind, concept forms as presets)
+# Status — v0.17.0 (composition engine; concept and diagram are its presets)
 
 Review branch: `feat/initial-authoring-skill`, Draft PR #1. No main merge, Draft removal,
 release or Confluence publication.
@@ -62,6 +62,17 @@ Fonts: Noto Sans CJK KR (default stack) and NanumGothic (forced with `--font`).
   fonts' metrics are close, so this is weak evidence for macOS/Windows fonts. The final run
   caught a regression of my trend label placer at 360 px under both fonts; fixed before the
   counts above.
+
+## v0.17.0 diagram on the engine
+
+`diagram` is a compose preset now (diagram.js removed); new parts: path steps, step list, legend, dashed border,
+relative bar, badge per state. Engine rules fixed while moving diagram are listed in the changelog; after each fix
+all figures were rebuilt. Actual results (2026-10-06, Chromium 141): unit 121 OK; 60/60 figures pass --check
+(23 examples, 9 dev, 8 held-out, 21 v0.15.1 external specs incl. 7 diagrams); 11 compose/diagram/concept examples
+pass under --font NanumGothic; browser_live 18/18 default and 18/18 NanumGothic; browser_monitoring PASS;
+browser_smoke pass; browser_diagram_layout SKIP; example gallery PASS. Side-by-side with the old diagram scene
+(my judgement): comparable on all three diagram examples after the fixes; the first build was worse on
+ai-agent-request. Held-out re-measurement is deferred: the user will give feedback from real use instead.
 
 ## v0.16.0 composition engine
 

@@ -88,7 +88,13 @@
   },
   {
    "set": {
-    "del": "ok"
+    "del": {
+     "state": "ok",
+     "badge": {
+      "text": "실행됨",
+      "kind": "ok"
+     }
+    }
    },
    "caption": "승인되면 그때 실행된다"
   }

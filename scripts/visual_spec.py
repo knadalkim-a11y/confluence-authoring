@@ -709,58 +709,61 @@ def diagram_data(spec):
         need(('path' in st) != ('paths' in st), f'{nm}: give "path" (one route) or "paths" (routes that happen at the same time)')
         paths = [st['path']] if 'path' in st else st['paths']
         need(isinstance(paths, list) and 1 <= len(paths) <= 3, f'{nm}.paths: 1-3 routes')
-        routes, nodes = [], []
+        routes = []
         for path in paths:
             need(isinstance(path, list) and len(path) >= 2 and all(x in where for x in path), f'{nm}.path: two or more component ids')
-            for a, b in zip(path, path[1:]):
-                need((a, b) in index, f'{nm}.path: no connection {a} -> {b}; add it to edges (direction matters)')
-            routes.append([index[(a, b)] for a, b in zip(path, path[1:])])
-            nodes += [x for x in path if x not in nodes]
-        steps.append(dict(edges=[i for r in routes for i in r], paths=routes, nodes=nodes,
+            for x, y in zip(path, path[1:]):
+                need((x, y) in index, f'{nm}.path: no connection {x} -> {y}; add it to edges (direction matters)')
+            routes.append([index[(x, y)] for x, y in zip(path, path[1:])])
+        steps.append(dict(edges=[i for r in routes for i in r], paths=routes, raw=paths, mark=CIRCLED[k],
                           text=text(fill(text(st.get('text'), f'{nm}.text', 2, 80), {}, f'{nm}.text'), f'{nm}.text', 2, 40)))
     need(len(steps) <= 6, 'steps: at most 6; a longer story needs two diagrams or prose')
-    for i, x in enumerate(steps):
-        x['mark'] = CIRCLED[i]
-    live = bool(steps) and motion != 'none'
-    n = len(steps)
-    # default choreography (choreo.py): step k starts at k; the old step falls back first, the new one
-    # rises as that fall is 80% through; the last 0.5 s settles everything into the final (static) scene
-    end = float(n) + 0.5 if n else 1.0
-    rate = [[0, 0.25]] if live else [[0, 1]]   # one step ~3.2 s at the default 1.25x
-    cues = []
-    if n:
-        times = list(range(n + 1))
-        used = lambda i, k: any(i in steps[j]['edges'] for j in range(k))
-        for i in range(len(edges)):
-            seq = [2 if i in steps[k]['edges'] else 1 if used(i, k) else 0 for k in range(n)] + [1 if used(i, n) else 0]
-            cues += choreo.levels(f'e{i}', 'level', seq, times, rate)
-        for nid in {x for st in steps for x in st['nodes']}:
-            seq = [1 if nid in steps[k]['nodes'] else 0 for k in range(n)] + [0]
-            lv = choreo.levels(f'n:{nid}', 'act', seq, times, rate)
-            cues += lv + [choreo.cue(f'n:{nid}', 'pop', c[2], 0.4, 0, 1, 'linear', rate) for c in lv if c[6] > c[5]]
-        for l in range(n):
-            cues += choreo.levels(f'l{l}', 'on', [2 if l == k else 1 if l < k else 0 for k in range(n)] + [1], times, rate)
-        cues = choreo.validate(cues, end)
-    captions = [[0.0 if live else end, '', claim]]
     dm = text(spec.get('dashed_means', '비동기·선택'), 'dashed_means', 1, 14)
-    data = dict(scene='diagram', time=dict(unit='', end=end, steps=n), cues=cues, layers=out, edges=edges, groups=groups, steps=steps, highlight=hl, dashed_means=dm,
-                types={k: v for k, v in NODE_TYPES.items() if v and any(n['type'] == k for x in out for n in x['nodes'])},
-                captions=captions, rate=rate, labels=dict(data_kind=DIAGRAM_KINDS[data_kind]))
-
-    def expect(T):
-        return dict(state={'step': n if T >= n - 1e-9 else min(n - 1, math.floor(T + 1e-9))}, stats=[])
-    samples = [round(i + 0.4, 4) for i in range(n)][:5] + [end]
-    while len(samples) < 6:
-        samples.append(end)
-    checks = dict(end=end, samples=samples, annotations=[], expect=expect if live else None, resize_at=round(end / 2, 4), choreo=bool(cues))
+    n = len(steps)
+    # --- preset: the diagram becomes a compose tree (docs/design/motion-concept-architecture.md, section 12) ---
+    # layers -> columns in a row (a group = a dashed frame around its layers); component types -> role tone and
+    # shape; edges -> links (dashed = reply style, explained in the legend); steps -> path steps with the
+    # numbered step list kept in the picture (print and no-JS keep the story)
+    TYPE_LOOK = {'system': ('blue', 'box', False), 'person': ('gray', 'pill', False), 'ai': ('purple', 'box', False),
+                 'data': ('green', 'cylinder', False), 'external': ('gray', 'box', True)}
+    def comp(x):
+        tone_, shape_, dashed_ = TYPE_LOOK[x['type']]
+        e = dict(id=x['id'], name=x['name'], tone=x['tone'] or tone_, shape=shape_)
+        if dashed_: e['dashed'] = True
+        if x['sub']: e['sub'] = x['sub']
+        if x['id'] in hl: e['state'] = 'selected'
+        return e
+    cols = [dict(layout='column', id=f'ly{i}', items=[comp(x) for x in ly['nodes']]) for i, ly in enumerate(out)]   # layer names go to the table, as before
+    items, i = [], 0
+    while i < len(cols):
+        gp = next((g for g in groups if g['a'] == i), None)
+        if gp:
+            items.append(dict(layout='row', id=f'grp{groups.index(gp)}', frame='dashed', label=gp['label'], tone=gp['tone'] or 'gray', items=cols[gp['a']:gp['b'] + 1]))
+            i = gp['b'] + 1
+        else:
+            items.append(cols[i]); i += 1
+    root = dict(layout='row', id='layers', items=items)
+    mark = ['' for _ in edges]
+    for x in steps:
+        mark[x['edges'][0]] += x['mark']
+    links = [dict(id=f'e{i}', **{'from': e['a'], 'to': e['b']}, style='reply' if e['dashed'] else 'flow', token=False,
+                  **({'label': (mark[i] + ' ' if mark[i] else '') + e['label']} if e['label'] else {})) for i, e in enumerate(edges)]
+    csteps = [dict(caption=x['text'], **({'path': x['raw'][0]} if len(x['raw']) == 1 else {'paths': x['raw']})) for x in steps] or None
+    legend = [dict(tone=TYPE_LOOK[t][0], shape=TYPE_LOOK[t][1], dashed=TYPE_LOOK[t][2], text=v) for t, v in NODE_TYPES.items()
+              if v and any(x['type'] == t for ly in out for x in ly['nodes'])]
+    if any(e['dashed'] for e in edges):
+        legend.append(dict(style='reply', text=f'점선 = {dm}'))
     name = {x['id']: x['name'] for ly in out for x in ly['nodes']}
-    head = ['구분', '항목', '설명']
     rows = [[f'구성 요소 · {ly["label"] or i + 1}', x['name'], x['sub'] or NODE_TYPES[x['type']] or '-'] for i, ly in enumerate(out) for x in ly['nodes']]
     rows += [['연결', f'{name[e["a"]]} → {name[e["b"]]}', (e['label'] or '-') + (' (점선)' if e['dashed'] else '')] for e in edges]
     route = lambda r: ' → '.join([name[edges[r[0]]['a']]] + [name[edges[i]['b']] for i in r])
     rows += [[f'단계 {x["mark"]}', ' · '.join(route(r) for r in x['paths']), x['text']] for x in steps]
-    return dict(data=data, aria=f'{title}. {claim}', notes=f'근거: {source} ({DIAGRAM_KINDS[data_kind]}).', table=(head, rows),
-                checks=checks, live=live, numeric=dict(steps=n), title=title)
+    info = compose_build(spec, root, links, csteps, ['구분', '항목', '설명'], rows,
+                         opts=dict(rate=0.25, step=1.0, live=bool(steps) and motion != 'none', step_list=True, legend=legend,
+                                   notes=f'근거: {source} ({DIAGRAM_KINDS[data_kind]}).'))
+    info['numeric'] = dict(steps=n)
+    info['data']['groups'] = [dict(label=g['label'], tone=g['tone']) for g in groups]   # kept for readers of the data
+    return info
 
 
 # ---------------------------------------------------------------- distribution
@@ -856,7 +859,7 @@ def compose_tree(root, ids):
         return i
 
     def element(n, nm, in_stack=False, in_life=False):
-        only(n, ('id', 'name', 'sub', 'shape', 'tone', 'state', 'code', 'badge', 'bubble', 'size', 'grow'), nm)
+        only(n, ('id', 'name', 'sub', 'shape', 'tone', 'state', 'code', 'badge', 'bubble', 'size', 'grow', 'dashed', 'bar'), nm)
         e = dict(t='e', id=take_id(n, nm, f'e{len(elems)}'), name=text(n.get('name'), f'{nm}.name', 1, 18 if in_stack else 16),
                  sub=text(n['sub'], f'{nm}.sub', 1, 28 if in_stack else 22) if n.get('sub') else '')
         shp = n.get('shape', 'box'); need(shp in SHAPES, f'{nm}.shape: one of {list(SHAPES)}')
@@ -873,9 +876,12 @@ def compose_tree(root, ids):
             bd = dict(text=text(bd.get('text'), f'{nm}.badge.text', 1, 10), kind=bd.get('kind', 'info'))
         size = n.get('size', 1); need(size in (1, 2, 3), f'{nm}.size: 1, 2 or 3 (relative height in a stack)')
         grow = n.get('grow', 1); need(grow in (1, 2, 3), f'{nm}.grow: 1, 2 or 3 (relative width in a row)')
+        dsh = n.get('dashed', False); need(isinstance(dsh, bool), f'{nm}.dashed: true for something outside your control (an external service)')
+        bar = n.get('bar'); need(bar is None or (isinstance(bar, (int, float)) and 0 <= bar <= 1), f'{nm}.bar: 0-1, a relative amount shown as a bar (not a measured number)')
         e.update(shape=shp, tone=tone(n.get('tone'), f'{nm}.tone') or (path[-1] if path else 'blue'), sts=[st], code=code,
-                 badge=bd, bubble=text(n['bubble'], f'{nm}.bubble', 1, 26) if n.get('bubble') else '', size=size, grow=grow)
-        need(not (in_life and (code or bd or n.get('bubble'))), f'{nm}: lifeline actors take a name and tone only')
+                 badge=bd, bds=[bd], bubble=text(n['bubble'], f'{nm}.bubble', 1, 26) if n.get('bubble') else '', size=size, grow=grow,
+                 dashed=dsh, bar=None if bar is None else round(float(bar), 3))
+        need(not (in_life and (code or bd or n.get('bubble') or bar is not None)), f'{nm}: lifeline actors take a name and tone only')
         elems.append(e)
         return e
 
@@ -939,9 +945,11 @@ def compose_tree(root, ids):
     return tree, elems, conts
 
 
-def compose_build(spec, root, links, steps, table_head=None, extra_rows=None):
-    """Shared body of the compose kind and its presets: validation, default choreography, captions, checks."""
+def compose_build(spec, root, links, steps, table_head=None, extra_rows=None, opts=None):
+    """Shared body of the compose kind and its presets: validation, default choreography, captions, checks.
+    opts (presets): rate (model s per wall s), step (model s per step), live, step_list, legend, notes."""
     kind, title, claim, source, data_kind, motion = common(spec)
+    opts = opts or {}
     ids = {}
     tree, elems, conts = compose_tree(root, ids)
     E = {e['id']: e for e in elems}
@@ -965,38 +973,66 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None):
         lid = l.get('id', f'L{k}'); need(isinstance(lid, str) and NODE_ID.match(lid) and lid not in ids, f'{nm}.id: unique letters/digits')
         ids[lid] = nm
         tok = l.get('token', st == 'flow'); need(isinstance(tok, bool), f'{nm}.token: true or false')
-        lk.append(dict(id=lid, a=a, b=b, label=text(l['label'], f'{nm}.label', 1, 14) if l.get('label') else '', style=st, via=via or '', token=tok))
-    need(len(lk) <= 16, 'links: at most 16')
+        lk.append(dict(id=lid, a=a, b=b, label=text(l['label'], f'{nm}.label', 1, 16) if l.get('label') else '', style=st, via=via or '', token=tok))
+    need(len(lk) <= 24, 'links: at most 24')
+    by_pair = {(l['a'], l['b']): l['id'] for l in lk}
     lifeline_msgs = [m for c in conts if c['L'] == 'lifelines' for m in c['msgs']]
 
-    # --- steps: what appears and changes when ---------------------------------------------------------------
-    live = motion != 'none'
+    # --- steps: what appears, changes and travels when -----------------------------------------------------
+    live = (motion != 'none') if opts.get('live') is None else opts['live']
     show, sets, caps = {}, [], []
     if steps is not None:
         need(isinstance(steps, list) and 1 <= len(steps) <= 6, 'steps: 1-6, in order')
         units = []
         for k, st in enumerate(steps):
-            nm = f'steps[{k}]'; only(st, ('show', 'set', 'caption'), nm)
+            nm = f'steps[{k}]'; only(st, ('show', 'set', 'caption', 'path', 'paths'), nm)
             sh = st.get('show') or []
             need(isinstance(sh, list) and all(x in ids for x in sh), f'{nm}.show: ids of elements, containers, links or lifeline messages ({", ".join(list(ids)[:12])}...)')
             se = st.get('set') or {}
-            need(isinstance(se, dict) and all(x in E and v in STATES for x, v in se.items()), f'{nm}.set: {{element id: state}}, states {list(STATES)}')
-            need(sh or se, f'{nm}: show something or set a state')
-            units.append(dict(show=sh, set=se, caption=text(st['caption'], f'{nm}.caption', 2, 60) if st.get('caption') else ''))
+            need(isinstance(se, dict) and all(x in E for x in se), f'{nm}.set: {{element id: state}} or {{id: {{"state": ..., "badge": {{...}}}}}}')
+            sv = {}
+            for x, v in se.items():
+                if isinstance(v, dict):
+                    only(v, ('state', 'badge'), f'{nm}.set.{x}')
+                    bd = v.get('badge')
+                    if bd is not None:
+                        only(bd, ('text', 'kind'), f'{nm}.set.{x}.badge'); need(bd.get('kind', 'info') in BADGES, f'{nm}.set.{x}.badge.kind: one of {list(BADGES)}')
+                        bd = dict(text=text(bd.get('text'), f'{nm}.set.{x}.badge.text', 1, 10), kind=bd.get('kind', 'info'))
+                    v = (v.get('state', 'normal'), bd)
+                else:
+                    v = (v, None)
+                need(v[0] in STATES, f'{nm}.set.{x}: state one of {list(STATES)}')
+                sv[x] = v
+            need(not ('path' in st and 'paths' in st), f'{nm}: give "path" (one route) or "paths" (routes at the same time)')
+            pths = [st['path']] if 'path' in st else st.get('paths') or []
+            need(isinstance(pths, list) and len(pths) <= 3, f'{nm}.paths: 1-3 routes')
+            routes = []
+            for pth in pths:
+                need(isinstance(pth, list) and len(pth) >= 2 and all(x in E for x in pth), f'{nm}.path: two or more element ids')
+                for a, b in zip(pth, pth[1:]):
+                    need((a, b) in by_pair, f'{nm}.path: no connection {a} -> {b}; add it to links (direction matters)')
+                routes.append([by_pair[(a, b)] for a, b in zip(pth, pth[1:])])
+            need(sh or sv or routes, f'{nm}: show something, set a state or follow a path')
+            units.append(dict(show=sh, set=sv, routes=routes, nodes=[x for p_ in pths for x in p_],
+                              caption=text(fill(text(st['caption'], f'{nm}.caption', 2, 80), {}, f'{nm}.caption'), f'{nm}.caption', 2, 60) if st.get('caption') else ''))
     else:
         units = []
         if tree['L'] == 'lifelines':
-            units.append(dict(show=[tree['id']], set={}, caption=''))
-            units += [dict(show=[m['key']], set={}, caption='') for m in tree['msgs']]
+            units.append(dict(show=[tree['id']], set={}, routes=[], nodes=[], caption=''))
+            units += [dict(show=[m['key']], set={}, routes=[], nodes=[], caption='') for m in tree['msgs']]
         else:
             kids = tree['kids'][::-1] if tree['L'] == 'stack' else tree['kids']   # a stack is built from the ground up
-            units = [dict(show=[k['id']], set={}, caption='') for k in kids]
+            units = [dict(show=[k['id']], set={}, routes=[], nodes=[], caption='') for k in kids]
             if tree['L'] == 'stack':
                 units[0]['show'] = [tree['id']] + units[0]['show']
-    # step lengths: long enough for the step's caption at the default speed (captions bind to steps)
-    base = 0.4 if steps is None and tree['L'] == 'stack' else STEP_MIN   # bands of one stack follow each other quickly
-    lens = [max(base, caption_need(u['caption']) * COMPOSE_RATE * DEFAULT_SPEED) if u['caption'] else base for u in units]
+    R_ = opts.get('rate', COMPOSE_RATE)
+    slist = bool(opts.get('step_list'))
+    # step lengths: long enough for the step's caption at the default speed (captions bind to steps); a step list
+    # in the picture is read at leisure, so it does not stretch the step
+    base = 0.4 if steps is None and tree['L'] == 'stack' else opts.get('step', STEP_MIN)
+    lens = [max(base, caption_need(u['caption']) * R_ * DEFAULT_SPEED) if u['caption'] and not slist else base for u in units]
     t0s = [round(sum(lens[:k]), 4) for k in range(len(units))]
+    total = round(sum(lens), 4)
     for k, u in enumerate(units):
         for x in u['show']:
             if x in E or any(x == l['id'] for l in lk) or any(x == m['key'] for m in lifeline_msgs):
@@ -1005,44 +1041,70 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None):
                 show.setdefault(x, t0s[k])
                 for i in under[x]:
                     show.setdefault(i, t0s[k])
-    for e in elems:              # not listed anywhere: there from the start (context)
+    listed = set(show)           # parts a step brings in (they enter); everything else is context, there from the start
+    for e in elems:
         show.setdefault(e['id'], 0.0)
     for c in conts:              # a frame or annotation appears with its first element
         show.setdefault(c['id'], min([show[i] for i in under[c['id']]] or [0.0]))
         show[c['id']] = min(show[c['id']], min([show[i] for i in under[c['id']]] or [show[c['id']]]))
     for c in conts:              # messages not listed follow their lifelines one after another
         for k, m in enumerate(c.get('msgs', [])):
-            show.setdefault(m['key'], show[c['id']] + 0.4 + 0.5 * k)
-    for l in lk:                 # a connector is drawn once both ends are there
-        show.setdefault(l['id'], max(show[l['a']], show[l['b']]) + 0.35)
-        show[l['id']] = max(show[l['id']], max(show[l['a']], show[l['b']]) + 0.35)
+            show.setdefault(m['key'], show[c['id']] + 0.8 * R_ + 1.0 * R_ * k)
+    for l in lk:                 # a connector is drawn once both ends are there (a context link between context parts is just there)
+        moving = steps is None or l['id'] in listed or l['a'] in listed or l['b'] in listed
+        if moving:
+            listed.add(l['id'])
+        show[l['id']] = max(show.get(l['id'], 0), max(show[l['a']], show[l['b']]) + (0.7 * R_ if moving else 0))
     for k, u in enumerate(units):
-        for x, v in u['set'].items():
-            E[x]['sts'].append(v)
-            sets.append((x, len(E[x]['sts']) - 1, t0s[k] + 0.25))
-        if u['caption']:
+        for x, (v, bd) in u['set'].items():
+            E[x]['sts'].append(v); E[x]['bds'].append(bd if bd is not None else E[x]['bds'][-1])
+            sets.append((x, len(E[x]['sts']) - 1, t0s[k] + 0.5 * R_))
+        if u['caption'] and not slist:
             caps.append([t0s[k], '', u['caption']])
-    end = round(max(sum(lens), max(show.values()) + 0.6) + HOLD + 0.35, 4)
-    rate = [[0, COMPOSE_RATE]] if live else [[0, 1]]
+    end = round(max(total, max(show.values()) + 1.2 * R_) + 2.7 * R_, 4)
+    rate = [[0, R_]] if live else [[0, 1]]
     cues = []
+    hot_l = {lid for u in units for r in u['routes'] for lid in r}
+    hot_n = {x for u in units for x in u['nodes']}
+    times = t0s + [total]
     if live:
         order = sorted(set(list(E) + list(C)), key=lambda i: show[i])
         for i in order:
-            cues += choreo.levels(i, 'on', [1], [show[i]], rate)
+            if steps is None or i in listed or (i in C and any(x in listed for x in under[i])):
+                cues += choreo.levels(i, 'on', [1], [show[i]], rate)
         for i in sorted([l['id'] for l in lk] + [m['key'] for m in lifeline_msgs], key=lambda i: show[i]):
-            cues.append(choreo.cue(i, 'reveal', show[i], 0.5, 0, 1, 'inOut', rate))
+            if steps is None or i in listed or i in [m['key'] for m in lifeline_msgs]:
+                cues.append(choreo.cue(i, 'reveal', show[i], 0.5, 0, 1, 'inOut', rate))
         for x, lvl, t in sets:
             cues.append(choreo.cue(x, 'act', t, 0.3, lvl - 1, lvl, 'inOut', rate))
+        for lid in hot_l:        # the current step's route stands out, then falls back
+            cues += choreo.levels(lid, 'level', [1 if any(lid in r for r in u['routes']) else 0 for u in units] + [0], times, rate)
+        for x in hot_n:
+            lv = choreo.levels(x, 'level', [1 if x in u['nodes'] else 0 for u in units] + [0], times, rate)
+            cues += lv + [choreo.cue(x, 'pop', c[2], 0.4, 0, 1, 'linear', rate) for c in lv if c[6] > c[5]]
+        if slist:
+            for k in range(len(units)):
+                cues += choreo.levels(f'sl{k}', 'level', [2 if k == j else 1 if k < j else 0 for j in range(len(units))] + [1], times, rate)
         cues = choreo.validate(cues, end)
     captions = ([[0.0, '', claim]] if not caps or caps[0][0] > 0 else []) + caps if live else [[end, '', (caps[-1][2] if caps else claim)]]
     if not live:
         for e in elems:
-            e['sts'] = [e['sts'][-1]]
+            e['sts'] = [e['sts'][-1]]; e['bds'] = [e['bds'][-1]]
     marks = [CIRCLED[i] if i < len(CIRCLED) else f'{i + 1}.' for i in range(len(captions))]
     for c, m in zip(captions, marks):
         c[1] = m if len(captions) > 1 else ''
+    legend = opts.get('legend') if opts.get('legend') is not None else spec.get('legend')
+    lg = []
+    for i, x in enumerate(legend or []):
+        nm = f'legend[{i}]'; only(x, ('tone', 'style', 'shape', 'dashed', 'text'), nm)
+        need(x.get('tone') in (None,) + ROLE_TONES and x.get('style') in (None,) + LINK_STYLES and x.get('shape') in (None,) + SHAPES, f'{nm}: tone, style or shape with a text')
+        lg.append(dict(tone=x.get('tone') or '', style=x.get('style') or '', shape=x.get('shape') or '', dashed=bool(x.get('dashed')), text=text(x.get('text'), f'{nm}.text', 1, 20)))
+    need(len(lg) <= 5, 'legend: at most 5 entries')
     data = dict(scene='compose', tree=tree, links=lk, time=dict(unit='', end=end), cues=cues, captions=captions, rate=rate,
-                labels=dict(data_kind=DIAGRAM_KINDS[data_kind]), show={k: round(v, 4) for k, v in show.items()})
+                labels=dict(data_kind=DIAGRAM_KINDS[data_kind]), show={k: round(v, 4) for k, v in show.items()},
+                paths=[dict(t0=t0s[k], t1=round(t0s[k] + lens[k], 4), routes=u['routes']) for k, u in enumerate(units) if u['routes']] if live else [],
+                steps=dict(t0=t0s, total=total, n=len(units)) if steps is not None and live else None,
+                slist=[dict(mark=CIRCLED[k], text=u['caption']) for k, u in enumerate(units)] if slist else [], legend=lg)
     # accessible table: every part in reading order, then connectors and steps
     names = {e['id']: e['name'] for e in elems}
     rows = list(extra_rows) if extra_rows is not None else None
@@ -1052,9 +1114,10 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None):
         def walk(n, trail):
             if n['t'] == 'e':
                 st = n['sts']
-                desc = ' · '.join(x for x in (n['sub'], n['badge']['text'] if n['badge'] else '', ' / '.join(n['code']),
+                desc = ' · '.join(x for x in (n['sub'], ' → '.join(dict.fromkeys(b['text'] for b in n['bds'] if b)), ' / '.join(n['code']),
                                               ('상태 ' + ' → '.join(STATE_KO[s] for s in st)) if st != ['normal'] else '',
-                                              ('말풍선: ' + n['bubble']) if n['bubble'] else '') if x)
+                                              ('말풍선: ' + n['bubble']) if n['bubble'] else '', '외부' if n['dashed'] else '',
+                                              f'상대적 양 {round(n["bar"] * 100)}%' if n['bar'] is not None else '') if x)
                 rows.append([' · '.join(trail) or '요소', n['name'], desc or '-'])
                 return
             lab = n['label'] or ''
@@ -1069,16 +1132,22 @@ def compose_build(spec, root, links, steps, table_head=None, extra_rows=None):
         for l in lk:
             rows.append(['연결', f'{names[l["a"]]} → {names[l["b"]]}', (l['label'] or '-') + ('' if l['style'] == 'flow' else f' ({LINK_KO[l["style"]]})')])
         if steps is not None:
+            lab_of = {l['id']: l for l in lk}
             for k, u in enumerate(units):
                 what = ', '.join(names.get(x) or C.get(x, {}).get('label') or x for x in u['show'])
-                ch = ', '.join(f'{names[x]} → {STATE_KO[v]}' for x, v in u['set'].items())
-                rows.append([f'단계 {CIRCLED[k]}', ' / '.join(v for v in (what, ch) if v), u['caption'] or '-'])
+                ch = ', '.join(f'{names[x]} → {STATE_KO[v]}' for x, (v, _) in u['set'].items())
+                rt = ' · '.join(' → '.join([names[lab_of[r[0]]['a']]] + [names[lab_of[i]['b']] for i in r]) for r in u['routes'])
+                rows.append([f'단계 {CIRCLED[k]}', ' / '.join(v for v in (rt, what, ch) if v), u['caption'] or '-'])
     n_s = len(units)
     samples = [round(min(end, t0s[k] + lens[k] * 0.7), 4) for k in range(n_s)][:5] + [end]
     while len(samples) < 6:
         samples.append(end)
-    checks = dict(end=end, samples=samples, annotations=[], expect=None, resize_at=round(end / 2, 4), choreo=live)
-    return dict(data=data, aria=f'{title}. {claim}', notes=f'출처: {source} ({DIAGRAM_KINDS[data_kind]}). 개념도이며 수치를 나타내지 않습니다.',
+
+    def expect(T):   # the browser's current step (scene probe) equals the model's
+        return dict(state={'step': n_s if T >= total - 1e-9 else max([k for k in range(n_s) if t0s[k] <= T + 1e-9] or [0])}, stats=[])
+    checks = dict(end=end, samples=samples, annotations=[], expect=expect if (live and steps is not None) else None,
+                  resize_at=round(end / 2, 4), choreo=live and bool(cues))
+    return dict(data=data, aria=f'{title}. {claim}', notes=opts.get('notes') or f'출처: {source} ({DIAGRAM_KINDS[data_kind]}). 개념도이며 수치를 나타내지 않습니다.',
                 table=(table_head or ['묶음', '요소', '설명'], rows), checks=checks, live=live,
                 numeric=dict(elements=len(elems), containers=len(conts), links=len(lk), steps=len(units)), title=title)
 
@@ -1090,9 +1159,10 @@ LINK_KO = {'flow': '흐름', 'reply': '응답', 'hidden': '숨은 의존', 'fail
 def compose_data(spec):
     """Kind "compose": {root: layout tree, links: [...], steps: [...]}; see references/visual-specs.md."""
     common(spec)
-    only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'root', 'links', 'steps'), 'compose spec')
+    only(spec, ('kind', 'title', 'claim', 'source', 'data_kind', 'motion', 'root', 'links', 'steps', 'step_list', 'legend'), 'compose spec')
+    need(spec.get('step_list') in (None, True, False), 'step_list: true keeps the numbered step captions in the picture (print and no-JS keep the story)')
     need(isinstance(spec.get('root'), dict) and 'layout' in spec['root'], 'root: a layout container ({"layout": "row", "items": [...]})')
-    return compose_build(spec, spec['root'], spec.get('links'), spec.get('steps'))
+    return compose_build(spec, spec['root'], spec.get('links'), spec.get('steps'), opts=dict(step_list=spec.get('step_list')))
 
 
 # ---------------------------------------------------------------- concept (presets on the compose engine)

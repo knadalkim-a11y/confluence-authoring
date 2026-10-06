@@ -178,6 +178,41 @@ class VisualSpecTests(unittest.TestCase):
                                 hit = max(x0, x1) > b[1] + 1 and min(x0, x1) < b[1] + b[3] - 1 and max(y0, y1) > b[2] + 1 and min(y0, y1) < b[2] + b[4] - 1
                                 self.assertFalse(hit, (m.group(1), m.group(2), k))
 
+    def test_compose_parts_v17(self):
+        """Engine parts added for the diagram preset and the gaps: badge per state, relative bar, dashed border,
+        path steps (route highlight + a travelling dot), the step list in the picture, a legend."""
+        info = build(load('tool-approval.json')); d = info['data']
+        el = {}
+        def walk(n):
+            if n['t'] == 'e': el[n['id']] = n
+            else: [walk(k) for k in n['kids']]
+        walk(d['tree'])
+        self.assertEqual([b['text'] for b in el['del']['bds']], ['승인 대기', '실행됨'])     # the chip changes with the state
+        bars = build(load('abstraction-layers.json'))['data']
+        walk(bars['tree']); self.assertEqual(el['e0']['bar'], 0.9)
+        base = load('multi-agent.json')
+        spec = copy.deepcopy(base); spec['root']['items'][0]['bar'] = 1.5
+        with self.assertRaises(SpecError): build(spec)
+        spec = copy.deepcopy(base); spec['steps'] = [{'path': ['or', 's2', 'rp'], 'caption': '하나의 작업이 지나가는 길'}]
+        r = build(spec); dd = r['data']
+        self.assertEqual(dd['paths'][0]['routes'], [['L1', 'L4']])
+        lv = [c for c in dd['cues'] if c[1] == 'level']
+        self.assertEqual(sorted({c[0] for c in lv}), ['L1', 'L4', 'or', 'rp', 's2'])          # route links and nodes stand out
+        self.assertEqual(r['checks']['expect'](0)['state']['step'], 0)
+        spec['steps'] = [{'path': ['s2', 'or'], 'caption': '거꾸로'}]
+        with self.assertRaisesRegex(SpecError, 'no connection'): build(spec)
+        spec = copy.deepcopy(base); spec['step_list'] = True
+        sl = build(spec)['data']
+        self.assertEqual([x['text'] for x in sl['slist']], [x['caption'] for x in base['steps']])
+        self.assertEqual(len(sl['captions']), 1)                                               # the list replaces caption steps
+        spec = copy.deepcopy(base); spec['legend'] = [{'tone': 'blue', 'text': '에이전트'}, {'style': 'reply', 'text': '점선 = 결과'}]
+        self.assertEqual(len(build(spec)['data']['legend']), 2)
+        spec['legend'] = [{'tone': 'pink', 'text': 'x'}]
+        with self.assertRaises(SpecError): build(spec)
+        dg = build(load('ai-agent-request.json'))['data']                                     # diagram preset: types -> legend, external -> dashed
+        self.assertTrue(dg['legend'] and dg['slist'])
+        walk(dg['tree']); self.assertTrue(any(e['dashed'] for e in el.values()))
+
     def test_concept(self):
         """concept kind: three forms, now presets drawn by the compose engine (split / stack / lifelines),
         default choreography that settles before the end."""
@@ -215,8 +250,10 @@ class VisualSpecTests(unittest.TestCase):
         self.assertFalse(build(load('rag-indexing.json'))['live'])   # structure only -> static
         self.assertEqual([r['checks']['expect'](t)['state']['step'] for t in (0, 1.5, 3.99, 4)], [0, 1, 3, 4])
         self.assertEqual(r['data']['captions'][-1][2], load('ai-agent-request.json')['claim'])
-        par = build(load('ai-adoption-approval.json'))['data']['steps'][0]
-        self.assertEqual(len(par['paths']), 2)                       # parallel routes in one step
+        d = build(load('ai-adoption-approval.json'))['data']
+        self.assertEqual(d['scene'], 'compose')                      # a preset of the compose engine (v0.17.0)
+        self.assertEqual(len(d['paths'][0]['routes']), 2)            # parallel routes in one step
+        self.assertEqual(len(d['slist']), len(load('ai-adoption-approval.json')['steps']))   # the step list stays in the picture
         base = load('rag-indexing.json')
         cases = {
             'data_kind': (lambda s: s.update(data_kind='measured'), 'current'),

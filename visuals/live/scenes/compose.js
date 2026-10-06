@@ -31,18 +31,32 @@ CA_SCENES['compose']=function(D,K,GR){
     if(s==='error')return {fill:K.TONE.red[0],st:'#e03131',sw:2,c:K.TONE.red[2],sc:C.text,w:700};
     if(s==='ok')return {fill:K.TONE.green[0],st:'#2f9e44',sw:2,c:K.TONE.green[2],sc:C.text,w:700};
     return {fill:t[0],st:t[1],sw:1.2,c:C.ink,sc:C.text,w:700};}
-  function styAt(e,T){var v=CH.v(e.id,'act',T,0),k=Math.min(Math.floor(v),e.sts.length-1),u=v-k,a=sty(e,e.sts[k]);
-    if(u<=1e-6||k+1>=e.sts.length)return a;var b=sty(e,e.sts[k+1]);
-    return {fill:K.mix(a.fill,b.fill,u),st:K.mix(a.st,b.st,u),sw:a.sw+(b.sw-a.sw)*u,c:K.mix(a.c,b.c,u),sc:K.mix(a.sc,b.sc,u),w:u<.5?a.w:b.w};}
+  function styAt(e,T){var v=CH.v(e.id,'act',T,0),k=Math.min(Math.floor(v),e.sts.length-1),u=v-k,a=sty(e,e.sts[k]),o=a;
+    if(u>1e-6&&k+1<e.sts.length){var b=sty(e,e.sts[k+1]);
+      o={fill:K.mix(a.fill,b.fill,u),st:K.mix(a.st,b.st,u),sw:a.sw+(b.sw-a.sw)*u,c:K.mix(a.c,b.c,u),sc:K.mix(a.sc,b.sc,u),w:u<.5?a.w:b.w};}
+    /* on the current step's path (cue "level"): the selected look, plus a short pop when the step starts */
+    var h=CH.v(e.id,'level',T,0),pu=CH.v(e.id,'pop',T,0),t=K.TONE[e.tone];
+    if(h>1e-6)o={fill:o.fill,st:K.mix(o.st,t[2],h),sw:o.sw+(2.2-o.sw)*h,c:K.mix(o.c,t[2],h),sc:o.sc,w:o.w};
+    if(pu>0&&pu<1)o.sw+=.6*Math.sin(Math.PI*pu);
+    return o;}
+  /* the chip for the current state: a state change swaps it (old out, then new in) */
+  function badgeAt(e,T){var v=CH.v(e.id,'act',T,0),k=Math.min(Math.floor(v),e.bds.length-1),u=v-k;
+    if(u<=1e-6||k+1>=e.bds.length||JSON.stringify(e.bds[k])===JSON.stringify(e.bds[k+1]))return {b:e.bds[k],o:1};
+    return u<.5?{b:e.bds[k],o:1-2*u}:{b:e.bds[k+1],o:2*u-1};}
+  function anyBadge(e){return e.bds.filter(Boolean);}
 
   /* ---- measuring ---- */
-  function eMin(e,g){var nm=Math.min(K.tw(e.name,g.fs),g.nw?120:170)+28,sb=e.sub?Math.min(K.tw(e.sub,12),g.nw?120:200)+24:0,cd=0;
+  function word(s,fs){return max(String(s).split(' ').map(function(x){return K.tw(x,fs);}));}
+  /* g.tight: a row that did not fit asks again with names and subs allowed to wrap at their spaces */
+  function eMin(e,g){var nm=g.tight?Math.max(word(e.name,g.fs)+24,Math.min(K.tw(e.name,g.fs),g.nw?120:170)/2+28):Math.min(K.tw(e.name,g.fs),g.nw?120:170)+28,
+      sb=e.sub?(g.tight?word(e.sub,12)+20:Math.min(K.tw(e.sub,12),g.nw?120:200)+24):0,cd=0;
     e.code.forEach(function(l){cd=Math.max(cd,K.tw(l,11)+36);});
-    return Math.max(g.nw?64:76,nm,sb,cd,e.badge?K.tw(e.badge.text,11)+40:0,e.bubble?Math.min(K.tw(e.bubble,12)+24,120):0);}
+    return Math.max(g.nw?64:76,nm,sb,cd,max(anyBadge(e).map(function(b){return K.tw(b.text,11)+40;})),e.bubble?Math.min(K.tw(e.bubble,12)+24,120):0);}
   function eBody(e,w,g){var fs=g.fs,ln=K.tw(e.name,fs)>w-16?wrap(e.name,fs-1,w-14):[e.name],f=ln.length>1?fs-1:fs;
     var sub=!e.sub?[]:K.tw(e.sub,12)<=w-14?[e.sub]:wrap(e.sub,12,w-14);
-    var ch=ln.length*(f+4)+sub.length*16+(e.badge?24:0)+(e.code.length?e.code.length*15+14:0);
-    return {ln:ln,f:f,sub:sub,ch:ch,h:Math.max(e.shape==='pill'?(g.nw?32:38):(g.nw?36:44),ch+(g.nw?12:18)+(e.shape==='cylinder'?10:0))};}   /* phones: tighter boxes keep the height budget */
+    var ls=ln.length>1?f+6:f+4;   /* wrapped name lines need the extra 2 px or their boxes touch */
+    var ch=ln.length*ls+sub.length*16+(anyBadge(e).length?24:0)+(e.code.length?e.code.length*15+14:0)+(e.bar!=null?12:0);
+    return {ln:ln,f:f,ls:ls,sub:sub,ch:ch,h:Math.max(e.shape==='pill'?(g.nw?32:38):(g.nw?36:44),ch+(g.nw?12:18)+(e.shape==='cylinder'?10:0))};}   /* phones: tighter boxes keep the height budget */
   function bubble(e,w,g){if(!e.bubble)return null;var bw=Math.min(Math.max(w,K.tw(e.bubble,12)+24),w+48),ln=wrap(e.bubble,12,bw-18);
     bw=Math.max(Math.min(bw,max(ln.map(function(l){return K.tw(l,12);}))+24),60);return {w:bw,ln:ln,h:ln.length*16+10};}
   function minW(n,g){if(n.t==='e')return eMin(n,g);var p=padLR(n,g),m;
@@ -55,32 +69,41 @@ CA_SCENES['compose']=function(D,K,GR){
   function padLR(n,g){return (n.frame?(g.nw?20:28):0)+(n.bracket?(g.nw?64:96):0);}
   /* gaps between row neighbours: room for the labels of links that join them, and for a boundary separator */
   /* tight: a label may wrap at its spaces, so the gap only needs its longest word (rows try this before wrapping) */
-  function gaps(n,g,tight){var out=[];for(var i=0;i+1<n.kids.length;i++){var a=n.kids[i],b=n.kids[i+1],gp=g.nw?20:28;
-      LK.forEach(function(l){if(l.via)return;if((under(a,l.a)&&under(b,l.b))||(under(a,l.b)&&under(b,l.a)))gp=Math.max(gp,!l.label?44:tight?Math.max(44,max(l.label.split(' ').map(function(x){return K.tw(x,12);}))+28):Math.min(K.tw(l.label,12)+36,g.nw?72:96));});
+  function gaps(n,g,tight){var out=[];for(var i=0;i+1<n.kids.length;i++){var a=n.kids[i],b=n.kids[i+1],gp=g.nw?20:28,cnt=0;
+      LK.forEach(function(l){if(l.via)return;if((under(a,l.a)&&under(b,l.b))||(under(a,l.b)&&under(b,l.a))){if(l.label)cnt++;
+        gp=Math.max(gp,!l.label?44:tight?Math.max(44,max(l.label.split(' ').map(function(x){return K.tw(x,12);}))+28):Math.min(K.tw(l.label,12)+36,g.nw?72:96));}});
+      if(cnt>2)gp+=Math.min(g.nw?24:84,14*(cnt-2));   /* many labels in one gap: room for them to spread (fan-out) */
       if(n.sep)gp=Math.max(gp,48);out.push(gp);}return out;}
   function vgap(n,i,g){var a=n.kids[i],b=n.kids[i+1],gp=g.nw?8:12;
     LK.forEach(function(l){if(l.via)return;if((under(a,l.a)&&under(b,l.b))||(under(a,l.b)&&under(b,l.a)))gp=Math.max(gp,l.label?36:28);});
     if(n.sep)gp=Math.max(gp,30);return gp;}
 
   /* ---- layout: lay(node, x, y, w, g, stretchTo) places the subtree and returns its height ---- */
-  function lay(n,x,y,w,g,minH){if(n.t==='e')return layEl(n,x,y,w,g,minH);
+  function lay(n,x,y,w,g,minH,mid){if(n.t==='e')return layEl(n,x,y,w,g,minH);
     var fr=n.frame,top=(n.span?30:0),lab=n.label&&!g.inSplit[n.id];
     var pl=fr?(g.nw?10:14):0,pr=pl+(n.bracket?(g.nw?64:96):0),pt=top+(fr?(n.label?32:14):(lab?24:0));
     var iw=w-pl-pr,ix=x+pl,iy=y+pt;
     var nl=n.note?wrap(n.note,12,iw):[],pb=(fr?12:0)+(n.banner?36:0)+(nl.length?nl.length*16+8:0);
     var b={x:x,y:y,w:w,top:top,pl:pl,pr:pr,pt:pt,pb:pb,nl:nl,fb:fr?12:0};g.B[n.id]=b;
-    var h=n.L==='row'?layRow(n,ix,iy,iw,g):n.L==='grid'?layGrid(n,ix,iy,iw,g):n.L==='stack'?layStack(n,ix,iy,iw,g):
+    var h=n.L==='row'||(n.L==='column'&&g.rot[n.id])?layRow(n,ix,iy,iw,g):n.L==='grid'?layGrid(n,ix,iy,iw,g):n.L==='stack'?layStack(n,ix,iy,iw,g):
       n.L==='split'?laySplit(n,ix,iy,iw,g):n.L==='lifelines'?layLife(n,ix,iy,iw,g):layCol(n,ix,iy,iw,g,false);
-    b=g.B[n.id]=Object.assign(g.B[n.id]||{},b);b.cy0=iy;b.cy1=iy+h;b.h=Math.max(pt+h+pb,minH||0);
+    if(mid&&minH>pt+h+pb+1){var dy=(minH-(pt+h+pb))/2;iy+=dy;   /* a frame stretched to its row's height keeps its content in the middle */
+      h=n.L==='row'||(n.L==='column'&&g.rot[n.id])?layRow(n,ix,iy,iw,g):n.L==='grid'?layGrid(n,ix,iy,iw,g):n.L==='stack'?layStack(n,ix,iy,iw,g):
+        n.L==='split'?laySplit(n,ix,iy,iw,g):n.L==='lifelines'?layLife(n,ix,iy,iw,g):layCol(n,ix,iy,iw,g,false);}
+    b=g.B[n.id]=Object.assign(g.B[n.id]||{},b);b.cy0=iy;b.cy1=iy+h;b.h=Math.max(iy-y+h+pb,minH||0);
     return b.h;}
-  function layEl(e,x,y,w,g,minH){var bd=eBody(e,w,g),bu=bubble(e,w,g),ex=bu?bu.h+10:0,h=Math.max(bd.h,(minH||0)-ex);
+  function layEl(e,x,y,w,g,minH){var bd=eBody(e,w,g),bu=bubble(e,w,g),ex=bu?bu.h+10:0,h=Math.max(bd.h,(minH||0)-ex,g.minh[e.id]||0);
     g.B[e.id]={x:x,y:y+ex,w:w,h:h,bd:bd,bu:bu,by:y};return ex+h;}
   function prefW(k,g,w){return k.t==='e'?Math.min(w,Math.max(minW(k,g)+24,g.nw?96:128)*(k.grow||1)):null;}
   /* a row lays its items on one line; when they do not fit it wraps into lines of equal count (like text), and
      only when even two a line do not fit it folds into a column */
   function layRow(n,x,y,w,g){var ks=n.kids,gp=gaps(n,g),mins=ks.map(function(k){return minW(k,g);}),per=0;
     function fits(i0,i1){return sum(mins.slice(i0,i1))+sum(gp.slice(i0,i1-1))<=w;}
-    if(!fits(0,ks.length)){var gt=gaps(n,g,1);if(sum(mins)+sum(gt)<=w)gp=gt;}   /* narrower gaps (labels wrap) before a second line */
+    if(!fits(0,ks.length)){var gt=gaps(n,g,1);if(sum(mins)+sum(gt)<=w)gp=gt;   /* narrower gaps (labels wrap) before a second line, */
+      else if(!g.tight){g.tight=1;var mt=ks.map(function(k){return minW(k,g);});g.tight=0;   /* then names wrapped onto two lines */
+        if(sum(mt)+sum(gt)<=w){gp=gt;mins=mt;}}}
+    var full=gaps(n,g),slack=w-sum(mins)-sum(gp),def=sum(full.map(function(f,i){return Math.max(0,f-gp[i]);}));
+    if(slack>0&&def>0)gp=gp.map(function(v,i){return v+Math.max(0,full[i]-v)*Math.min(1,slack/def);});   /* width left over goes back to narrowed gaps first (their labels), then to containers */
     for(var L=1;L<=Math.ceil(ks.length/2)&&!per;L++){var c=Math.ceil(ks.length/L),ok=true;   /* fewest lines, items spread evenly over them */
       for(var i=0;i<ks.length;i+=c)if(!fits(i,Math.min(ks.length,i+c)))ok=false;if(ok)per=c;}
     if(!per)return layCol(n,x,y,w,g,true);
@@ -100,18 +123,22 @@ CA_SCENES['compose']=function(D,K,GR){
   function layLine(n,ks,gp,mins,x,y,w,g){var ws=ks.map(function(k){return prefW(k,g,w);}),flex=[],fixed=0;
     ks.forEach(function(k,i){if(ws[i]==null)flex.push(i);else fixed+=ws[i];});
     var room=w-sum(gp);
-    if(flex.length){var gw=sum(flex.map(function(i){return ks[i].grow||1;})),rest=room-fixed;
-      flex.forEach(function(i){ws[i]=rest*(ks[i].grow||1)/gw;});
-      var lack=sum(flex.map(function(i){return Math.max(0,mins[i]-ws[i]);}));
-      if(lack>0){var spare=sum(ks.map(function(k,i){return ws[i]!=null&&k.t==='e'?ws[i]-mins[i]:0;}));
+    /* containers share what the elements leave by their grow weights; one that needs more gets its minimum and the
+       others share the rest; elements give up their spare width only when the containers still do not fit */
+    function share(rest){var big={},again=true;while(again){again=false;var gw=0,left=rest;
+        flex.forEach(function(i){if(big[i])left-=mins[i];else gw+=ks[i].grow||1;});
+        flex.forEach(function(i){if(!big[i]){ws[i]=left*(ks[i].grow||1)/gw;if(ws[i]<mins[i]-.5){big[i]=1;again=true;}}else ws[i]=mins[i];});}}
+    if(flex.length){var rest=room-fixed,need=sum(flex.map(function(i){return mins[i];}));
+      if(need>rest){var spare=sum(ks.map(function(k,i){return ws[i]!=null&&k.t==='e'?ws[i]-mins[i]:0;})),lack=need-rest;
         if(spare<lack)return null;
-        ks.forEach(function(k,i){if(k.t==='e')ws[i]-=(ws[i]-mins[i])*lack/spare;});
-        rest=room-sum(ks.map(function(k,i){return k.t==='e'?ws[i]:0;}));flex.forEach(function(i){ws[i]=rest*(ks[i].grow||1)/gw;});}}
+        ks.forEach(function(k,i){if(k.t==='e'&&ws[i]!=null)ws[i]-=(ws[i]-mins[i])*lack/spare;});
+        rest=room-sum(ks.map(function(k,i){return k.t==='e'?ws[i]:0;}));}
+      share(rest);}
     else if(fixed>room){var sp=fixed-sum(mins);ks.forEach(function(k,i){ws[i]-=(ws[i]-mins[i])*(fixed-room)/sp;});}
     var extra=room-sum(ws),gx=gp.slice();
     if(extra>0&&gp.length){var add=Math.min(extra/gp.length,g.nw?24:96);gx=gp.map(function(v){return v+add;});extra-=add*gp.length;}
     var hs=ks.map(function(k,i){return lay(k,0,0,ws[i],g);}),H=max(hs),cx=x+Math.max(0,extra)/2,seps=[];
-    ks.forEach(function(k,i){var framed=k.t==='c'&&k.frame;lay(k,cx,framed?y:y+(H-hs[i])/2,ws[i],g,framed?H:0);
+    ks.forEach(function(k,i){var framed=k.t==='c'&&k.frame;lay(k,cx,framed?y:y+(H-hs[i])/2,ws[i],g,framed?H:0,1);
       if(i<gx.length)seps.push({x:cx+ws[i]+gx[i]/2,y0:y,y1:y+H});cx+=ws[i]+(gx[i]||0);});
     return {H:H,seps:seps};}
   function layCol(n,x,y,w,g,folded){var ks=n.kids,cy=y,hseps=[],two=g.nw&&!folded&&NEL>6&&ks.length>=4&&ks.every(function(k){return k.t==='e';})&&
@@ -120,7 +147,9 @@ CA_SCENES['compose']=function(D,K,GR){
         pair.forEach(function(k,j){lay(k,x+j*(cw+8),cy,cw,g,H);});cy+=H+8;}
       var b0=g.B[n.id]||(g.B[n.id]={});b0.seps=[];b0.hseps=[];return cy-8-y;}
     var fill=g.nw||g.fill[n.id];
-    ks.forEach(function(k,i){var kw=k.t==='e'&&!fill?Math.min(w,Math.max(minW(k,g)+48,240)):w,h=lay(k,x+(w-kw)/2,cy,kw,g);cy+=h;
+    /* a folded row turns its columns into rows (a layer of side-by-side parts reads across, as on wide screens) */
+    ks.forEach(function(k,i){var kw=k.t==='e'&&!fill?Math.min(w,Math.max(minW(k,g)+48,240)):w,rot=folded&&k.t==='c'&&k.L==='column';if(rot)g.rot[k.id]=1;
+      var h=lay(k,x+(w-kw)/2,cy,kw,g);if(rot)delete g.rot[k.id];cy+=h;
       if(i+1<ks.length){var gp=vgap(n,i,g);if(folded&&n.sep)hseps.push(cy+gp/2);cy+=gp;}});
     var b=g.B[n.id]||(g.B[n.id]={});b.seps=[];b.hseps=hseps.map(function(sy){return {y:sy,x0:x,x1:x+w};});
     return cy-y;}
@@ -129,7 +158,7 @@ CA_SCENES['compose']=function(D,K,GR){
     for(var r=0;r<n.kids.length;r+=c){var row=n.kids.slice(r,r+c),hs=row.map(function(k){return lay(k,0,0,cw,g);}),H=max(hs);
       row.forEach(function(k,j){lay(k,x+j*(cw+gp),cy,cw,g,H);});cy+=H+gp;}
     var b=g.B[n.id]||(g.B[n.id]={});b.seps=[];b.hseps=[];return cy-gp-y;}
-  function inline(e,w,g){return !e.code.length&&!e.badge&&(!e.sub||K.tw(e.name,g.fs)+K.tw(e.sub,12)+48<w)&&K.tw(e.name,g.fs)+24<w;}   /* one line in a band: name (and sub) */
+  function inline(e,w,g){return !e.code.length&&!anyBadge(e).length&&e.bar==null&&(!e.sub||K.tw(e.name,g.fs)+K.tw(e.sub,12)+48<w)&&K.tw(e.name,g.fs)+24<w;}   /* one line in a band: name (and sub) */
   function layStack(n,x,y,w,g){var su=(n.free?1:0)+sum(n.kids.map(function(k){return k.size;})),cy=y,
       unit=g.nw?Math.max(28,Math.min(36,260/(su*Math.max(1,NS)))):Math.max(30,Math.min(42,300/su)),b=g.B[n.id]||(g.B[n.id]={});   /* bands share a height budget; sizes stay proportional */
     b.free=null;if(n.free){b.free={x:x,y:cy,w:w,h:unit};cy+=unit+6;}
@@ -155,13 +184,21 @@ CA_SCENES['compose']=function(D,K,GR){
         ln=wrap(m.mark+' '+m.text,12,Math.max(60,span)),r={y:y2+ln.length*LH+4,ln:ln,self:self};y2=r.y+(self?26:14);return r;});
     return y2-y;}
 
-  function geom(W){var g={W:W,nw:W<560,B:{},inSplit:{},fill:{}};g.fs=g.nw?13:14;
+  function geom(W){var g={W:W,nw:W<560,B:{},inSplit:{},fill:{},rot:{},minh:{}};g.fs=g.nw?13:14;
     (function mark(n){if(n.t==='e')return;if(n.L==='split')n.kids.forEach(function(p){g.inSplit[p.id]=1;g.fill[p.id]=1;});n.kids.forEach(mark);})(R);
     function gut(side){var m=0;LK.forEach(function(l){if(l.via===side)m=Math.max(m,18+(l.label?K.tw(l.label,12)+8:0));});return m;}
     var vl=gut('left'),vr=gut('right'),ml=vl||2,mr=vr||2,h=lay(R,ml,4,W-ml-mr,g);   /* 2 px keeps box borders off the edge */g.routes=routes(g);
-    if(g.blocked&&!vl&&!vr){var lw=18+max(LK.map(function(l){return l.label?K.tw(l.label,12)+8:0;}));   /* no clear path: make a gutter on both sides and route around */
+    var grow=0;for(var key in g.ports){var id=key.split('|')[0],n=g.ports[key].length,need=(n+1)*16;if(n>=3&&g.B[id].h<need){g.minh[id]=Math.max(g.minh[id]||0,need);grow=1;}}
+    if(grow){g.B={};h=lay(R,ml,4,W-ml-mr,g);g.routes=routes(g);}   /* a side with many links: the box grows so they can spread */
+    if(g.blocked&&g.nw&&!vl&&!vr){var lw=18+max(LK.map(function(l){return l.label?K.tw(l.label,12)+8:0;}));   /* no clear path: make a gutter on both sides and route around */
       g.B={};g.gut=1;h=lay(R,lw,4,W-2*lw,g);g.blocked=0;g.routes=routes(g);}
-    g.H=h+4+26;g.lab=labels(g);return g;}
+    var h0=h+4;g.routes.forEach(function(r,k){(r||[]).forEach(function(p){if(p[1]>h0-8)h=Math.max(h,p[1]+(LK[k].label?26:4));});});   /* a route around the bottom stays inside, with room for its label */
+    g.fh=h;var y=h+4;g.sl=[];
+    if((D.slist||[]).length){y+=g.nw?6:10;D.slist.forEach(function(it){var ln=wrap(it.text,13,W-48);g.sl.push({y:y+13,ln:ln});y+=ln.length*LH+(g.nw?1:3);});}
+    g.lg=[];var dk=K.tw(D.labels.data_kind,12)+16,lx=2,rows=[[]];
+    (D.legend||[]).forEach(function(d){var w=24+K.tw(d.text,12)+14;if(lx+w>W-dk&&rows[rows.length-1].length){rows.push([]);lx=2;}rows[rows.length-1].push({d:d,x:lx});lx+=w;});
+    if((D.legend||[]).length){y+=6;rows.forEach(function(r,i){r.forEach(function(it){it.y=y+(i+1)*20-4;g.lg.push(it);});});y+=(rows.length-1)*20;}   /* the last legend row shares the line of the data-kind label */
+    g.H=y+26;g.lab=labels(g);return g;}
 
   /* ---- links: orthogonal routes from the laid-out boxes ---- */
   /* plan: which sides a link leaves and enters; straight when the boxes face each other, one elbow otherwise */
@@ -171,7 +208,8 @@ CA_SCENES['compose']=function(D,K,GR){
     while(cb&&!up[PAR[cb.id]&&PAR[cb.id].id])cb=PAR[cb.id];if(!cb||!PAR[cb.id])return null;var lca=PAR[cb.id];
     ca=EL[l.a];while(ca&&PAR[ca.id]!==lca)ca=PAR[ca.id];if(!ca)return null;var A=g.B[ca.id],B2=g.B[cb.id];
     if(A.y+A.h<=B2.y+1||B2.y+B2.h<=A.y+1)return {ax:'v',at:A.y<B2.y?(A.y+A.h+B2.y)/2:(B2.y+B2.h+A.y)/2};
-    if(A.x+A.w<=B2.x+1||B2.x+B2.w<=A.x+1)return {ax:'h',at:A.x<B2.x?(A.x+A.w+B2.x)/2:(B2.x+B2.w+A.x)/2};return null;}
+    if(A.x+A.w<=B2.x+1||B2.x+B2.w<=A.x+1){var gp=A.x<B2.x?B2.x-(A.x+A.w):A.x-(B2.x+B2.w);   /* a run bends just before its target, so its label has the long run */
+      return {ax:'h',at:gp>40?(A.x<B2.x?B2.x-14:B2.x+B2.w+14):(A.x<B2.x?(A.x+A.w+B2.x)/2:(B2.x+B2.w+A.x)/2)};}return null;}
   function plan(l,g){var a=g.B[l.a],b=g.B[l.b];
     if(l.via)return {m:'via'};
     var ax=axis(l,g);   /* elbows turn in the gap between the two branches (a bus between a parent and its row of children) */
@@ -184,7 +222,15 @@ CA_SCENES['compose']=function(D,K,GR){
     return null;}
   /* routes for all links: links that leave one side of a box share its centre, so a parent and its children form
      a trunk and a bus (the elbow sits in the gap between the branches); two-way pairs run as parallel lines */
-  function routes(g){var P=LK.map(function(l){return plan(l,g);});
+  function routes(g){var P=LK.map(function(l){return plan(l,g);}),fan={},ports={},PY={};
+    /* left/right sides with two or more links: ports spread evenly along the side, ordered by where the other end is
+       (a two-way pair in link order), so runs never bunch; top/bottom sides keep one shared port (trunks and buses) */
+    LK.forEach(function(l,k){var p=P[k];if(!p||(p.m!=='h'&&p.m!=='hs'))return;
+      [[l.a,p.sa,l.b],[l.b,p.sb,l.a]].forEach(function(e){var key=e[0]+'|'+e[1],o=g.B[e[2]];(ports[key]=ports[key]||[]).push({k:k,o:o.y+o.h/2});});});
+    for(var key in ports){var L=ports[key];if(L.length<2)continue;var id=key.split('|')[0],b=g.B[id];
+      L.sort(function(x,y){return x.o-y.o||x.k-y.k;});L.forEach(function(e,i){PY[e.k+'|'+id]=b.y+b.h*(i+1)/(L.length+1);});}
+    g.ports=ports;
+    LK.forEach(function(l,k){var p=P[k];if(p&&(p.m==='h'||p.m==='hs')){var key=l.a+'|'+p.sa;fan[key]=(fan[key]||0)+1;}});   /* links leaving one side of a box */
     function cen(id){var b=g.B[id];return [b.x+b.w/2,b.y+b.h/2];}
     var EB=Object.keys(EL).map(function(id){return [id,g.B[id]];});
     function hit(pts,l){for(var i=1;i<pts.length;i++){var x0=Math.min(pts[i-1][0],pts[i][0]),x1=Math.max(pts[i-1][0],pts[i][0]),y0=Math.min(pts[i-1][1],pts[i][1]),y1=Math.max(pts[i-1][1],pts[i][1]);
@@ -193,24 +239,44 @@ CA_SCENES['compose']=function(D,K,GR){
     function around(l,side){var a=g.B[l.a],b=g.B[l.b],ya=a.y+a.h/2,yb=b.y+b.h/2,lo=Math.min(a.y,b.y),hi=Math.max(a.y+a.h,b.y+b.h),Lf=side==='left',X=Lf?Math.min(a.x,b.x):Math.max(a.x+a.w,b.x+b.w);
       EB.forEach(function(e){var c=e[1];if(c.y<hi&&c.y+c.h>lo)X=Lf?Math.min(X,c.x):Math.max(X,c.x+c.w);});X+=Lf?-12:12;
       if(X<2||X>g.W-2)return null;return [[Lf?a.x:a.x+a.w,ya],[X,ya],[X,yb],[Lf?b.x:b.x+b.w,yb]];}
+    function overUnder(l,side){var a=g.B[l.a],b=g.B[l.b],xa=a.x+a.w/2,xb=b.x+b.w/2,lo=Math.min(a.x,b.x),hi=Math.max(a.x+a.w,b.x+b.w),Tp=side==='top',Y=Tp?Math.min(a.y,b.y):Math.max(a.y+a.h,b.y+b.h);
+      EB.forEach(function(e){var c=e[1];if(c.x<hi&&c.x+c.w>lo)Y=Tp?Math.min(Y,c.y):Math.max(Y,c.y+c.h);});Y+=Tp?-12:12;
+      if(Y<2)return null;return [[xa,Tp?a.y:a.y+a.h],[xa,Y],[xb,Y],[xb,Tp?b.y:b.y+b.h]];}
     g.side={};
-    return LK.map(function(l,k){var r=route1(l,k);if(l.via){g.side[k]=l.via;return r;}if(r&&hit(r,l)){var al=[around(l,'right'),around(l,'left')];
-        for(var i=0;i<2;i++)if(al[i]&&!hit(al[i],l)){g.side[k]=i?'left':'right';return al[i];}g.blocked=1;}return r;});
+    /* a blocked link goes around: over or under a run, beside a drop (the other pair as a fallback) */
+    return LK.map(function(l,k){var r=route1(l,k);if(l.via){g.side[k]=l.via;return r;}if(r&&hit(r,l)){var hz=P[k]&&(P[k].m==='h'||P[k].m==='hs'),
+          names=hz?['top','bottom','right','left']:['right','left','top','bottom'],al=names.map(function(nm){return nm==='top'||nm==='bottom'?overUnder(l,nm):around(l,nm);});
+        for(var i=0;i<4;i++)if(al[i]&&!hit(al[i],l)){g.side[k]=names[i];return al[i];}g.blocked=1;}return r;});
     function route1(l,k){var p=P[k];if(!p)return null;var a=g.B[l.a],b=g.B[l.b],ac=cen(l.a),bc=cen(l.b),
         twin=LK.some(function(o){return o!==l&&o.a===l.b&&o.b===l.a&&!o.via;}),off=twin?(LK.some(function(o,j){return j<k&&o.a===l.b&&o.b===l.a;})?7:-7):0;   /* the earlier link of a pair runs above (left), its label above it */
       function pick(lo,hi,c1,c2){var m=(lo+hi)/2;return c1>=lo&&c1<=hi?c1:c2>=lo&&c2<=hi?c2:m;}
       function sx(bx,sd){return sd==='r'?bx.x+bx.w:bx.x;}function sy(bx,sd){return sd==='b'?bx.y+bx.h:bx.y;}
       if(p.m==='via')return around(l,l.via);
+      var ya=PY[k+'|'+l.a],yb=PY[k+'|'+l.b];
+      if((p.m==='hs'||p.m==='h')&&(ya!=null||yb!=null)){   /* spread ports: straight when both ends line up, else one elbow */
+        if(ya==null)ya=yb>=a.y+8&&yb<=a.y+a.h-8?yb:ac[1];if(yb==null)yb=ya>=b.y+8&&ya<=b.y+b.h-8?ya:bc[1];
+        var x0=sx(a,p.sa),x1=sx(b,p.sb);if(Math.abs(ya-yb)<1)return [[x0,ya],[x1,ya]];
+        var at=p.at;if(fan[l.a+'|'+p.sa]>1&&Math.abs(x1-x0)>40)at=x0+(x1>x0?14:-14);
+        if(twin)at=(x0+x1)/2;   /* both links of a two-way pair turn at one x, so they stay parallel instead of crossing */
+        return K.ortho([[x0,ya],[x1,yb]],'h',at);}
       if(p.m==='hs'){var yy=Math.max(p.lo,Math.min(p.hi,pick(p.lo,p.hi,ac[1],bc[1])+off));return [[sx(a,p.sa),yy],[sx(b,p.sb),yy]];}
       if(p.m==='vs'){var xx=Math.max(p.lo,Math.min(p.hi,pick(p.lo,p.hi,ac[0],bc[0])+off));return [[xx,sy(a,p.sa)],[xx,sy(b,p.sb)]];}
-      if(p.m==='h')return K.ortho([[sx(a,p.sa),ac[1]+off],[sx(b,p.sb),bc[1]+off]],'h',p.at);
+      if(p.m==='h'){var x0=sx(a,p.sa),x1=sx(b,p.sb),at=p.at;   /* a fan-out turns next to its source, so each branch has its own run (and label) */
+        if(fan[l.a+'|'+p.sa]>1&&Math.abs(x1-x0)>40)at=x0+(x1>x0?14:-14);
+        return K.ortho([[x0,ac[1]+off],[x1,bc[1]+off]],'h',at);}
       return K.ortho([[ac[0]+off,sy(a,p.sa)],[bc[0]+off,sy(b,p.sb)]],'v',p.at);}}
   /* label places, decided once per layout: candidates on every segment (longest first) - above/below a run,
      right/left of a drop - and the first that clears every box, earlier labels and the figure edge wins. The later
      link of a two-way pair tries below first; a loop around the side labels its outer side first. */
   function labels(g){var taken=Object.keys(EL).map(function(id){var b=g.B[id];return [b.x,b.y,b.x+b.w,b.y+b.h];});
-    function free(r){if(r[0]<2||r[2]>g.W-2||r[1]<0||r[3]>g.H-26)return false;for(var i=0;i<taken.length;i++){var q=taken[i];if(r[2]>q[0]+1&&r[0]<q[2]-1&&r[3]>q[1]+1&&r[1]<q[3]-1)return false;}return true;}
-    return LK.map(function(l,k){var p=g.routes[k];if(!p)return null;var out={},below=LK.some(function(o,j){return j<k&&o.a===l.b&&o.b===l.a&&!o.via;}),sd=g.side[k];
+    (function cl(n){if(n.t==='e')return;var b=g.B[n.id];   /* group names, split headers and separator words are taken too */
+      if(n.label&&!g.inSplit[n.id]){var x0=b.x+(n.frame?b.pl:0),y0=b.y+b.top+(n.frame?20:15);taken.push([x0-2,y0-13,x0+K.tw(n.label,13)+4,y0+4]);}
+      (b.hdr||[]).forEach(function(h){var w=K.tw(h.p.label,14)+4,x0=h.a==='middle'?h.x-w/2:h.x;taken.push([x0,h.y-14,x0+w,h.y+4]);});
+      (b.seps||[]).forEach(function(sp){var w=K.tw(n.sep,12)+4;taken.push([sp.x-w/2,sp.y1+11,sp.x+w/2,sp.y1+28]);});
+      n.kids.forEach(cl);})(R);
+    function free(r){if(r[0]<2||r[2]>g.W-2||r[1]<0||r[3]>g.fh+2)return false;for(var i=0;i<taken.length;i++){var q=taken[i];if(r[2]>q[0]+1&&r[0]<q[2]-1&&r[3]>q[1]+1&&r[1]<q[3]-1)return false;}return true;}
+    return LK.map(function(l,k){var p=g.routes[k];if(!p)return null;var out={},below=LK.some(function(o,j){return j<k&&o.a===l.b&&o.b===l.a&&!o.via;}),sd=g.side[k],
+        first=!below&&LK.some(function(o){return o!==l&&o.a===l.b&&o.b===l.a&&!o.via;});   /* of a two-way pair, each label sits on its line's outer side */
       var segs=[];for(var i=1;i<p.length;i++)segs.push(i);segs.sort(function(x,y){return Math.hypot(p[y][0]-p[y-1][0],p[y][1]-p[y-1][1])-Math.hypot(p[x][0]-p[x-1][0],p[x][1]-p[x-1][1]);});
       var a0=p[segs[0]-1],b0=p[segs[0]],mx0=(a0[0]+b0[0])/2,my0=(a0[1]+b0[1])/2;
       if(l.style==='fail'){out.x=mx0;out.y=my0+5;taken.push([mx0-9,my0-9,mx0+9,my0+8]);}
@@ -219,19 +285,22 @@ CA_SCENES['compose']=function(D,K,GR){
         if(hz){var ln=K.tw(l.label,12)>len-12?wrap(l.label,12,Math.max(40,len-12)):[l.label],up={lx:mx,ly:my-6-(ln.length-1)*LH,an:'middle',ln:ln},dn={lx:mx,ly:my+16,an:'middle',ln:ln};
           if(l.style==='fail'){up.ly-=11;dn.ly+=13;}cands.push.apply(cands,below?[dn,up]:[up,dn]);}
         else[.5,.3,.7,.15,.85].forEach(function(f){var yy=a[1]+(b[1]-a[1])*f+4,r={lx:mx+6,ly:yy,an:'start',ln:[l.label]},lf={lx:mx-6,ly:yy,an:'end',ln:[l.label]};   /* along a drop: middle first, then nearer either end */
-          cands.push.apply(cands,sd==='left'||(!sd&&below)?[lf,r]:[r,lf]);});});
+          cands.push.apply(cands,sd==='left'||(!sd&&first)?[lf,r]:[r,lf]);});});
       function box(c){var w=max(c.ln.map(function(x){return K.tw(x,12);}))+4,x0=c.an==='start'?c.lx-2:c.an==='end'?c.lx-w+2:c.lx-w/2;return [x0,c.ly-13,x0+w,c.ly+(c.ln.length-1)*LH+4];}
       var pick=null;for(var j=0;j<cands.length&&!pick;j++)if(free(box(cands[j])))pick=cands[j];
-      pick=pick||cands[0];taken.push(box(pick));out.lx=pick.lx;out.ly=pick.ly;out.an=pick.an;out.ln=pick.ln;return out;});}
+      if(!pick){var best=1e9;cands.forEach(function(c){var r=box(c),a=0;taken.forEach(function(q){a+=Math.max(0,Math.min(r[2],q[2])-Math.max(r[0],q[0]))*Math.max(0,Math.min(r[3],q[3])-Math.max(r[1],q[1]));});
+          if(r[0]<2||r[2]>g.W-2)a+=1e6;if(a<best){best=a;pick=c;}});}   /* nowhere free: the least covered place (the gates report it) */taken.push(box(pick));out.lx=pick.lx;out.ly=pick.ly;out.an=pick.an;out.ln=pick.ln;return out;});}
   var LS={none:{c:C.faint,t:C.muted,d:'2 4'},flow:{c:C.blue,t:C.blueText,d:null},reply:{c:'#868e96',t:C.text,d:'5 4'},hidden:{c:C.red,t:C.redText,d:'3 3'},fail:{c:C.red,t:C.redText,d:null}};
   function trim(p,len){var o=[p[0]],d=0;for(var i=1;i<p.length;i++){var s=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);
       if(d+s>=len){var r=s?(len-d)/s:0;o.push([p[i-1][0]+(p[i][0]-p[i-1][0])*r,p[i-1][1]+(p[i][1]-p[i-1][1])*r]);return o;}o.push(p[i]);d+=s;}return o;}
   function head(p,c){var n=p.length,x=p[n-1][0],y=p[n-1][1],dx=x-p[n-2][0],dy=y-p[n-2][1],l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l,bx=x-7*ux,by=y-7*uy;
     return '<path data-head="1" d="M'+K.f(bx-4*uy)+' '+K.f(by+4*ux)+'L'+K.f(x)+' '+K.f(y)+'L'+K.f(bx+4*uy)+' '+K.f(by-4*ux)+'" fill="none" stroke="'+c+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>';}
   function longest(p){var bi=1,bl=-1;for(var i=1;i<p.length;i++){var l=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);if(l>bl){bl=l;bi=i;}}return bi;}
+  var HOT={none:'#868e96',flow:'#1864ab',reply:'#495057',hidden:'#c92a2a',fail:'#c92a2a'};
   function link(l,k,T,g){var p=g.routes[k];if(!p)return '';var u=CH.v(l.id,'reveal',T,1);if(u<=0)return '';
-    var s=LS[l.style],L=K.plen(p),q=u<1?trim(p,L*u):p,o=attr(K.wire(q,s.c,{sw:1.6,d:s.d}),'data-ends="'+l.a+' '+l.b+'"');
-    if(u>=.999&&l.style!=='none')o+=head(p,s.c);
+    var s=LS[l.style],h=CH.v(l.id,'level',T,0),c=K.mix(s.c,HOT[l.style],h),L=K.plen(p),q=u<1?trim(p,L*u):p,   /* on the current step's path: darker and wider */
+      o=attr(K.wire(q,c,{sw:1.6+1.2*h,d:s.d}),'data-ends="'+l.a+' '+l.b+'"');
+    if(u>=.999&&l.style!=='none')o+=head(p,c);
     var lv=K.clamp((u-.5)/.5),t='',P=g.lab[k];
     if(P&&P.x!=null)t+=K.text(P.x,P.y,'✕',{fs:14,c:C.redText,a:'middle',w:700,plate:1}).replace(/<text /,'<text data-free="1" ');
     if(P&&P.ln)P.ln.forEach(function(x,j){t+=K.text(P.lx,P.ly+j*LH,x,{fs:12,c:s.t,a:P.an,w:700,plate:1}).replace(/<text /,'<text data-free="1" ');});
@@ -241,8 +310,22 @@ CA_SCENES['compose']=function(D,K,GR){
     var t1=s0+K.wall(D.rate,s0,.5),L=K.plen(p),dur=K.wall(D.rate,t1,L/K.M.speed);   /* one dot at the shared pace (K.M.speed px per second on screen) */
     if(T<t1||T>=t1+dur||t1+dur>end)return '';var q=K.at(p,(T-t1)/dur*L);return K.token(q.x,q.y,l.id+'.k',4,LS[l.style].c);}
 
+  /* a step that follows a path sends one dot along its links (through each box on the way), at least at the kit
+     pace and fast enough to arrive within the step (capped well under the gate's speed limit) */
+  function pathTokens(T,g){var o='';(D.paths||[]).forEach(function(P,k){var ts=P.t0+K.wall(D.rate,P.t0,.3);if(T<ts||T>=P.t1)return;
+      P.routes.forEach(function(r,j){var pts=[];r.forEach(function(lid){var i=-1;LK.forEach(function(l,ii){if(l.id===lid)i=ii;});var q=g.routes[i];if(!q)return;
+          if(pts.length){var bb=g.B[LK[i].a];pts.push([bb.x+bb.w/2,bb.y+bb.h/2]);}pts=pts.concat(q);});
+        if(pts.length<2)return;var L=K.plen(pts),rt=K.wall(D.rate,ts,1),avail=(P.t1-ts)/rt,v=Math.min(300,Math.max(K.M.speed,L/(avail*.85))),dur=K.wall(D.rate,ts,L/v);
+        if(T>=ts+dur)return;var q=K.at(pts,(T-ts)/dur*L);o+=K.token(q.x,q.y,'p'+k+'_'+j,4.5,C.blue);});});return o;}
+  function stepList(T,g){var o='';(g.sl||[]).forEach(function(it,k){var lv=CH.v('sl'+k,'level',T,1),c=lv<=1?K.mix(C.muted,C.text,lv):K.mix(C.text,C.blueText,lv-1);
+      it.ln.forEach(function(x,j){o+=attr(K.text(14,it.y+j*LH,(j?'':D.slist[k].mark+' ')+x,{fs:13,c:c,w:lv>1.5?700:400}),j?'':'data-k="sl'+k+'"');});});return o;}
+  function legend(g){var o='';(g.lg||[]).forEach(function(it){var x=it.x,y=it.y;
+      if(it.d.style)o+=K.line(x,y-4,x+18,y-4,LS[it.d.style].c,{sw:1.6,d:LS[it.d.style].d});
+      else{var t=K.TONE[it.d.tone||'gray'];o+=K.rect(x+2,y-11,14,12,{r:it.d.shape==='pill'?6:3,fill:t[0],st:t[1],d:it.d.dashed?'3 2':null});}
+      o+=K.text(x+24,y,it.d.text,{fs:12,c:C.text});});return o;}
+
   /* ---- drawing ---- */
-  function shape(e,b,s){var o={r:e.shape==='pill'?Math.min(b.h/2,22):e.shape==='doc'?4:e.shape==='cylinder'?6:8,fill:s.fill,st:s.st,sw:s.sw},
+  function shape(e,b,s){var o={r:e.shape==='pill'?Math.min(b.h/2,22):e.shape==='doc'?4:e.shape==='cylinder'?6:8,fill:s.fill,st:s.st,sw:s.sw,d:e.dashed?'5 3':null},
       r=attr(K.rect(b.x,b.y,b.w,b.h,o),'data-solid="'+e.id+'" data-k="'+e.id+'.s"');
     if(e.shape==='cylinder')r+='<path d="M'+K.f(b.x)+' '+K.f(b.y+8)+'Q'+K.f(b.x+b.w/2)+' '+K.f(b.y+20)+' '+K.f(b.x+b.w)+' '+K.f(b.y+8)+'" fill="none" stroke="'+s.st+'" stroke-width="'+K.f(s.sw)+'"/>';
     if(e.shape==='doc')r+='<path d="M'+K.f(b.x+b.w-12)+' '+K.f(b.y)+'L'+K.f(b.x+b.w)+' '+K.f(b.y+12)+'" fill="none" stroke="'+s.st+'" stroke-width="'+K.f(s.sw)+'"/>';
@@ -250,11 +333,12 @@ CA_SCENES['compose']=function(D,K,GR){
   function element(e,T,g){var b=g.B[e.id],s=styAt(e,T),bd=b.bd,cx=b.x+b.w/2,o=shape(e,b,s),din='data-in="'+e.id+'"';
     if(b.il){o+=attr(K.rich(cx,b.y+b.h/2+g.fs*.36,[[e.name,s.c,s.w===700?1:0]].concat(e.sub?[['   '+e.sub,s.sc,0]]:[]),{fs:g.fs,a:'middle'}),din);}
     else{var y=b.y+(b.h-bd.ch)/2+(e.shape==='cylinder'?5:0)+bd.f*.85;
-      bd.ln.forEach(function(l){o+=attr(K.text(cx,y,l,{fs:bd.f,c:s.c,a:'middle',w:s.w}),din);y+=bd.f+4;});
+      bd.ln.forEach(function(l){o+=attr(K.text(cx,y,l,{fs:bd.f,c:s.c,a:'middle',w:s.w}),din);y+=bd.ls;});
       bd.sub.forEach(function(l){o+=attr(K.text(cx,y,l,{fs:12,c:s.sc,a:'middle'}),din);y+=16;});
-      if(e.badge){o+=K.pill(cx,y+6,e.badge.text,e.badge.kind,{fs:11}).replace(/<text /,'<text '+din+' ');y+=24;}
+      if(anyBadge(e).length){var ba=badgeAt(e,T);if(ba.b)o+=K.enter(K.pill(cx,y+6,ba.b.text,ba.b.kind,{fs:11}).replace(/<text /,'<text '+din+' '),ba.o,e.id+'.b'+(ba.b.text));y+=24;}
       if(e.code.length){var cy=y-8;o+=K.rect(b.x+10,cy,b.w-20,e.code.length*15+8,{r:4,fill:'#fff',st:C.rule});
-        e.code.forEach(function(l,j){o+=attr('<text x="'+K.f(b.x+18)+'" y="'+K.f(cy+15+j*15)+'" font-size="11" font-family="'+MONO+'" fill="'+C.ink+'" xml:space="preserve">'+K.esc(l)+'</text>',din);});}}
+        e.code.forEach(function(l,j){o+=attr('<text x="'+K.f(b.x+18)+'" y="'+K.f(cy+15+j*15)+'" font-size="11" font-family="'+MONO+'" fill="'+C.ink+'" xml:space="preserve">'+K.esc(l)+'</text>',din);});y+=e.code.length*15+14;}
+      if(e.bar!=null){var bw=b.w-24,by0=b.y+b.h-12;o+=K.rect(b.x+12,by0,bw,4,{r:2,fill:C.rule})+K.rect(b.x+12,by0,Math.max(2,bw*e.bar),4,{r:2,fill:K.TONE[e.tone][1]});}}   /* a relative amount, not a measurement */
     if(b.bu){var bu=b.bu,bx=Math.max(0,Math.min(g.W-bu.w,cx-bu.w/2)),by=b.by,t=K.TONE[e.tone];
       o+=K.rect(bx,by,bu.w,bu.h,{r:8,fill:'#fff',st:t[1],sw:1.2})+'<path d="M'+K.f(cx-6)+' '+K.f(by+bu.h-.5)+'L'+K.f(cx)+' '+K.f(by+bu.h+7)+'L'+K.f(cx+6)+' '+K.f(by+bu.h-.5)+'" fill="#fff" stroke="'+t[1]+'" stroke-width="1.2"/>';
       bu.ln.forEach(function(l,j){o+=K.text(bx+bu.w/2,by+17+j*16,l,{fs:12,c:C.text,a:'middle'});});}
@@ -290,8 +374,8 @@ CA_SCENES['compose']=function(D,K,GR){
   function draw(T,g){var cs='',ms='',es='',ls='',ts='';g.top='';
     (function walk(n){if(n.t==='e'){es+=element(n,T,g);return;}cs+=container(n,T,g);n.kids.forEach(walk);if(n.L==='lifelines')ms+=messages(n,T,g);})(R);
     LK.forEach(function(l,k){ls+=link(l,k,T,g);ts+=token(l,k,T,g);});
-    return cs+ms+ls+g.top+es+ts+K.text(g.W,g.H-4,D.labels.data_kind,{fs:12,c:C.muted,a:'end'});}
+    return cs+ms+ls+g.top+es+ts+pathTokens(T,g)+stepList(T,g)+legend(g)+K.text(g.W,g.H-4,D.labels.data_kind,{fs:12,c:C.muted,a:'end'});}
   function stats(){return {left:[]};}
-  function probe(T){return {};}
+  function probe(T){var S=D.steps;if(!S)return {};var k=0;S.t0.forEach(function(t,i){if(t<=T+1e-9)k=i;});return {step:T>=S.total-1e-9?S.n:k};}
   return {end:end,geom:geom,draw:draw,stats:stats,probe:probe};
 };

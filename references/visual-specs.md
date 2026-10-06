@@ -248,15 +248,24 @@ operation across all of it), `grow` (1-3 width share in a row).
 Elements: `id` (needed to link or step), `name` (≤ 16; 18 in a stack), `sub` (≤ 22), `shape` (`box` · `pill` ·
 `cylinder` storage · `doc` file/document), `tone` (inherits the container's), `state` (`normal` · `selected` ·
 `muted` not chosen / idle · `error` · `ok`), `code` (≤ 5 lines × 30 chars: the data itself, e.g. a row, JSON),
-`badge` (`{"text": ≤ 10, "kind": ok|bad|warn|info}`), `bubble` (≤ 26: what this side assumes), `size`, `grow`.
+`badge` (`{"text": ≤ 10, "kind": ok|bad|warn|info}`), `bubble` (≤ 26: what this side assumes), `size`, `grow`,
+`dashed` (true: outside your control, e.g. an external service), `bar` (0-1: a relative amount drawn as a bar inside
+the box; say what it means in `sub` or a note; it is not a measured number).
 
 Links: `{from, to}` element ids, `label` (≤ 14), `style` (`flow` request/data, default, a dot travels it once ·
 `reply` dashed answer · `hidden` a dependency the code does not show · `fail` broken, with ✕ · `none` explicitly
-no connection), `via` (`left`/`right`: loop around the side, e.g. retry), `id` (default `L0`, `L1`, … in order).
+no connection), `via` (`left`/`right`: loop around the side, e.g. retry), `id` (default `L0`, `L1`, … in order),
+`token` (false: no travelling dot).
 
 Steps (optional, 1-6): `show` (ids of elements, containers = all inside, links, lifeline messages `<id>.m<k>`),
-`set` (`{id: state}`: a state change, animated), `caption` (≤ 60; the step lasts until it can be read). Without
-`steps` each top-level part enters in turn (a stack bottom-up). Parts never shown by a step are there from the start.
+`set` (`{id: state}` or `{id: {"state": …, "badge": {…}}}`: a state change, animated; the chip swaps with it),
+`path` / `paths` (element ids along existing links, 1-3 routes: the route stands out for the step and one dot
+travels it), `caption` (≤ 60; the step lasts until it can be read). Without `steps` each top-level part enters in
+turn (a stack bottom-up). Parts never shown by a step are there from the start (context).
+
+Figure level: `step_list: true` keeps the numbered step captions in the picture (current one highlighted; print and
+the no-JS figure keep the story; the caption line then shows the claim), `legend` (≤ 5 entries
+`{"tone" | "style" | "shape", "dashed"?, "text": ≤ 20}`, drawn at the bottom left).
 
 What the engine does for you, so the spec never carries coordinates:
 - Rows give elements their natural width and containers the rest; gaps grow to fit link labels. A row that does
@@ -271,7 +280,12 @@ What the engine does for you, so the spec never carries coordinates:
 Not for numbers (use a chart kind), and not for metaphors (tangled lines, a seesaw): say those in prose. Keep
 one claim per figure; if it needs more than ~12 elements, split it.
 
-### `diagram` — components, connections, and the path through them
+### `diagram` — components, connections, and the path through them (a `compose` preset since v0.17.0)
+
+The spec is unchanged. It expands into a compose tree: layers → columns in a row (on phones the row folds and each
+layer reads across), groups → dashed frames, component types → role tone and shape (person = pill, data =
+cylinder, external = dashed border; listed in the legend), dashed edges → `reply` links (with `dashed_means` in
+the legend), steps → path steps with the step list kept in the picture.
 
 ```json
 {"kind": "diagram", "data_kind": "proposed",

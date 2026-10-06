@@ -1,5 +1,24 @@
 # Changes
 
+## 0.17.0 — diagram on the composition engine; remaining gaps
+
+- `diagram` is now a compose preset (`visuals/live/scenes/diagram.js` removed; one implementation for every
+  structure and idea figure). The spec is unchanged: layers → columns, groups → dashed frames, types → tone and
+  shape plus legend, steps → path steps with the step list in the picture.
+- New compose parts (generic, documented in visual-specs.md): step `path`/`paths` (route highlight + one dot),
+  `step_list`, `legend`, element `dashed` and `bar` (relative amount), and a badge that changes with the state
+  (`set: {id: {state, badge}}`, swapped old-out/new-in).
+- Engine rules found while moving diagram (each fixed once in the engine, then all figures rebuilt):
+  rows try names wrapped onto two lines before wrapping the row; containers in a row get their minimum and share
+  the rest; leftover width goes back to narrowed gaps first; a gap with many labelled links widens; a frame
+  stretched to its row's height centres its content; a folded row turns its columns into rows; blocked links also
+  go over or under; runs bend next to their target, fan-outs next to their source, two-way pairs at one x; ports on
+  a crowded left/right side spread evenly and the box grows when needed; a bottom detour reserves room for its
+  label; group names and separator words are taken places for link labels; the side-gutter relayout is phone-only.
+- Old vs new: ai-adoption-approval comparable or clearer, rag-indexing comparable, ai-agent-request first worse
+  (empty frame, bunched fan-out labels), then comparable after the port and gap rules (my judgement).
+- Examples: abstraction-layers (bars); tool-approval now swaps its chip on approval.
+
 ## 0.16.0 — composition engine (design phase 4)
 
 - New kind `compose`: a figure is one tree of layout containers (`row`, `column`, `grid`, `stack`, `split`,

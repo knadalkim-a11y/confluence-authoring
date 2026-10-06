@@ -10,7 +10,7 @@ Monitoring reference cases also use scripts/monitoring_cases.py and reference_sc
 Generated gallery/macros come from that renderer; never hand-maintain a second demo
 implementation. Do not count planned catalog entries as implemented.
 
-Document visuals (v0.7.0+; compose kind v0.16.0: a layout tree of containers and parts, concept forms are its presets): new visuals go through the spec path (references/visual-specs.md,
+Document visuals (v0.7.0+; compose kind v0.16.0: a layout tree of containers and parts; concept forms (v0.16.0) and diagram (v0.17.0) are its presets): new visuals go through the spec path (references/visual-specs.md,
 scripts/build_visual.py --check, examples/visuals/). Do not hand-write a scene a kind can express;
 for ideas, extend the compose engine (a container, part or routing rule that works everywhere), never one figure;
 extend the kind instead, with tests (tests/test_visual_spec.py) and the shared gates (scripts/visual_gates.py).
@@ -30,7 +30,7 @@ side by side with the article demo (dist/ref18/pairs, local only, not committed)
 
 Motion and wiring (v0.11.0+): moving dots are K.token at the kit pace (K.M), connectors are
 K.wire(K.ortho(...)), data-riding markers K.follow. State changes are cues from the kind (scripts/choreo.py + visuals/live/choreo.js,
-migrated: diagram, trend, flow, cascade, thread-pool; durations in on-screen seconds), never a one-frame
+migrated: compose (incl. diagram and concept presets), trend, flow, cascade, thread-pool; durations in on-screen seconds), never a one-frame
 switch in scene code. Fix a pace or routing problem in the kit or
 the kind, never in one case; visual_gates.MOTION_JS enforces it for every live visual.
 
